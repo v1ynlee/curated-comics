@@ -358,3 +358,19 @@ body {
 .title-korean  { font-family: 'Malgun Gothic', sans-serif; font-weight: 700; }
 .title-japanese { font-family: 'Yu Gothic', 'MS Gothic', sans-serif; font-weight: 700; }
 .title-chinese  { font-family: 'Microsoft YaHei', 'SimSun', sans-serif; font-weight: 700; }
+
+/* ── Mobile Utilities ───────────────────────────────────────── */
+
+/* iOS safe area bottom padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar but keep scrollable */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

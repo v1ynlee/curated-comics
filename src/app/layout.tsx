@@ -2,13 +2,6 @@
 // Root Layout
 // Source of truth: docs/design/TYPOGRAPHY_SYSTEM.md
 //                  docs/architecture/COMPONENT_ARCHITECTURE.md
-//
-// Font strategy:
-//   - DM Sans (body) — variable, preloaded
-//   - Playfair Display (display) — variable, preloaded
-//   - JetBrains Mono (data) — variable, lazy
-//   - Caveat (accent) — variable, lazy
-//   - Datatype — local font (not on Google), loaded via CSS
 // ============================================================
 
 import type { Metadata } from 'next';
@@ -19,33 +12,32 @@ import {
   Caveat,
 } from 'next/font/google';
 import { Providers } from '@/components/providers/Providers';
+import { Navigation } from '@/components/layout/Navigation';
+import { MobileNav } from '@/components/layout/MobileNav';
+import { Footer } from '@/components/layout/Footer';
+import { PageTransition } from '@/components/layout/PageTransition';
 import './globals.css';
 
 // ── Font Definitions ──────────────────────────────────────────
 
-// Body font — critical, preloaded
 const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
   display: 'swap',
-  // Variable font — all weights available
 });
 
-// Display font — critical for hero, preloaded
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
   display: 'swap',
 });
 
-// Data/mono font — lazy loaded (stats, ratings)
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains',
   display: 'optional',
 });
 
-// Accent/handwritten font — lazy loaded (annotations)
 const caveat = Caveat({
   subsets: ['latin'],
   variable: '--font-caveat',
@@ -96,12 +88,6 @@ export default function RootLayout({
         'h-full antialiased',
       ].join(' ')}
     >
-      <head>
-        {/*
-          Skip-to-content link — accessibility requirement.
-          Visually hidden until focused.
-        */}
-      </head>
       <body className="min-h-full bg-bg-deep text-text-primary font-body">
         {/* Skip navigation — accessibility */}
         <a
@@ -112,9 +98,23 @@ export default function RootLayout({
         </a>
 
         <Providers>
-          <main id="main-content" role="main">
-            {children}
-          </main>
+          {/* Desktop floating nav */}
+          <Navigation />
+
+          {/* Page content with transitions */}
+          <PageTransition>
+            <main
+              id="main-content"
+              role="main"
+              className="min-h-screen pb-16 md:pb-0"
+            >
+              {children}
+            </main>
+            <Footer />
+          </PageTransition>
+
+          {/* Mobile bottom nav */}
+          <MobileNav />
         </Providers>
       </body>
     </html>

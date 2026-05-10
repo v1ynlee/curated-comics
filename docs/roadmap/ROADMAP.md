@@ -48,37 +48,37 @@ The project is divided into phases that build upon each other. Each phase delive
 ### Goal: Landing page + Library browse + Title detail — the core loop
 
 **Landing Page:**
-- [ ] Cinematic hero section with atmospheric background
-- [ ] Animated title reveal
-- [ ] Featured titles showcase
-- [ ] Scroll-triggered section reveals
-- [ ] Navigation (floating desktop, bottom mobile)
-- [ ] Smooth page transitions
+- [x] Cinematic hero section with atmospheric background
+- [x] Animated title reveal
+- [x] Featured titles showcase
+- [x] Scroll-triggered section reveals
+- [x] Navigation (floating desktop, bottom mobile)
+- [x] Smooth page transitions
 
 **Library Browse:**
-- [ ] Asymmetrical masonry grid
-- [ ] Title cards with blur-up image loading
-- [ ] Category tabs (reading, completed, dropped, etc.)
-- [ ] Basic filtering (genre, origin)
-- [ ] Sort controls
-- [ ] Responsive layout (2-col mobile, masonry desktop)
-- [ ] Scroll-triggered card reveals
-- [ ] Hover effects (desktop)
+- [x] Asymmetrical masonry grid
+- [x] Title cards with blur-up image loading
+- [x] Category tabs (reading, completed, dropped, etc.)
+- [x] Basic filtering (genre, origin)
+- [x] Sort controls
+- [x] Responsive layout (2-col mobile, masonry desktop)
+- [x] Scroll-triggered card reveals
+- [x] Hover effects (desktop)
 
 **Title Detail:**
-- [ ] Immersive title hero (cover as backdrop)
-- [ ] Multi-dimensional rating display
-- [ ] Basic review section
-- [ ] External links
-- [ ] Genre/mood tags
-- [ ] Related titles (basic)
-- [ ] Shared element transition from card
+- [x] Immersive title hero (cover as backdrop)
+- [x] Multi-dimensional rating display
+- [x] Basic review section
+- [x] External links
+- [x] Genre/mood tags
+- [x] Related titles (basic)
+- [x] Shared element transition from card
 
 **Data Layer:**
-- [ ] Supabase queries for titles, ratings, reviews
-- [ ] TanStack Query integration
-- [ ] Prefetching on hover
-- [ ] Loading states with skeletons
+- [x] Supabase queries for titles, ratings, reviews
+- [x] TanStack Query integration
+- [x] Prefetching on hover
+- [x] Loading states with skeletons
 
 **Deliverable:** Functional reading library with cinematic presentation. Visitors can browse, filter, and view title details.
 

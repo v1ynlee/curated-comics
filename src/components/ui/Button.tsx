@@ -8,6 +8,7 @@
 
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/cn';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -17,6 +18,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
+  /** Render as child element (e.g. Link) */
+  asChild?: boolean;
   children: React.ReactNode;
 }
 
@@ -47,12 +50,21 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'h-13 px-7 text-lg gap-2.5',
 };
 
+const baseClasses = [
+  'relative inline-flex items-center justify-center',
+  'font-heading font-medium tracking-wide',
+  'rounded-sm transition-all duration-150',
+  'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+  'disabled:opacity-50 disabled:cursor-not-allowed',
+].join(' ');
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       variant = 'primary',
       size = 'md',
       isLoading = false,
+      asChild = false,
       className,
       children,
       disabled,
@@ -60,23 +72,31 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const classes = cn(
+      baseClasses,
+      variantClasses[variant],
+      sizeClasses[size],
+      className,
+    );
+
+    if (asChild) {
+      return (
+        <Slot
+          ref={ref as React.Ref<HTMLElement>}
+          className={classes}
+          {...(props as React.HTMLAttributes<HTMLElement>)}
+        >
+          {children}
+        </Slot>
+      );
+    }
+
     return (
       <motion.button
         ref={ref}
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-        className={cn(
-          // Base
-          'relative inline-flex items-center justify-center',
-          'font-heading font-medium tracking-wide',
-          'rounded-sm transition-all duration-150',
-          'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          // Variant + size
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        )}
+        className={classes}
         disabled={disabled || isLoading}
         aria-busy={isLoading}
         {...(props as React.ComponentProps<typeof motion.button>)}
