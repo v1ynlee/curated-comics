@@ -33,13 +33,13 @@ Sourced from `docs/roadmap/ROADMAP.md` — Phase 0 checked items.
 ### Infrastructure
 - [x] Image processing script (Sharp)
 - [x] Placeholder image generation
+- [x] Supabase project created
+- [x] Database schema migrated (all tables)
+- [x] Seed data (genres, moods, achievements)
+- [x] CI/CD pipeline (GitHub Actions)
 
 ### Pending (external / infra — not code)
-- [ ] Supabase project created
-- [ ] Database schema migrated (all tables)
-- [ ] Seed data (genres, moods, achievements)
 - [ ] Vercel deployment configured
-- [ ] CI/CD pipeline (GitHub Actions)
 
 ---
 
@@ -102,6 +102,42 @@ Phase 0 establishes the complete technical foundation. No UI features — just t
 **Decision:** Already enabled in `tsconfig.json`. No changes needed.
 
 **Reasoning:** Strict mode catches null/undefined errors at compile time. Given the volume of data (300-500 titles), type safety is critical for preventing runtime errors in data transformations.
+
+### 8. Database Migration Strategy
+
+**Decision:** 14 numbered migrations in `supabase/migrations/`, pushed via `supabase db push --yes`. Seed data in `supabase/seed.sql`, applied via `--include-seed`.
+
+**Migration order rationale:**
+- 001–002: Reference tables (genres, moods) first — titles FK depends on them
+- 003: titles table — core entity
+- 004–005: ratings, reviews — 1:1 with titles, cascade delete
+- 006: Junction tables — depend on both titles and genres/moods
+- 007: external_links — depends on titles
+- 008: achievements — standalone, no FK to titles (progress computed by trigger)
+- 009: reading_history — depends on titles
+- 010: title_tags — depends on titles
+- 011: Views — depend on all tables above
+- 012: Functions + triggers — depend on all tables
+- 013: RLS policies — applied last so all tables exist
+- 014: Fix migration — corrected a failed index from 009
+
+**Index fix:** `date_trunc()` on a `DATE` column is not `IMMUTABLE` in PostgreSQL, so it can't be used in an index expression. Migration 009 failed on the index (not the table). Migration 014 adds a simple `read_date` index instead, which the monthly view can use via range scan.
+
+### 9. RLS Security Model
+
+**Decision:** Public (anon) gets `SELECT` on non-hidden content. Authenticated users get full access. No hardcoded owner UUID — any authenticated user has write access for now.
+
+**Reasoning:** Phase 0 doesn't implement Supabase Auth yet (that's Phase 4). The current model is correct for a public showcase: visitors can read, the owner can write after logging in. The `hidden = FALSE` filter on public policies ensures draft/private titles are never exposed.
+
+**Future:** Phase 4 will tighten this to `auth.uid() = OWNER_UUID` once the admin interface is built.
+
+### 10. CI/CD Pipeline
+
+**Decision:** GitHub Actions workflow with three jobs: `lint` → `build` → `migrate`. Migrations only push on `push` to `main`, not on PRs.
+
+**Reasoning:** Prevents accidental schema changes from unreviewed branches reaching production. The `lint` → `build` dependency ensures we never push broken migrations after a broken build. `concurrency: cancel-in-progress` prevents queue buildup on rapid pushes.
+
+**Required secrets:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`.
 
 ---
 
