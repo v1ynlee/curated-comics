@@ -8,6 +8,7 @@
 import { cn } from '@/lib/cn';
 import { BadgeCard } from './BadgeCard';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Trophy } from 'lucide-react';
 import type { Achievement, AchievementRarity } from '@/types/achievements';
 
 const RARITY_ORDER: AchievementRarity[] = ['legendary', 'epic', 'rare', 'common'];
@@ -39,7 +40,7 @@ export function BadgeGrid({ achievements, isLoading = false, className }: BadgeG
   if (achievements.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="text-4xl" aria-hidden="true">🏆</span>
+        <Trophy size={40} className="text-text-tertiary" aria-hidden="true" />
         <p className="font-body text-text-secondary">No achievements yet.</p>
       </div>
     );

@@ -53,3 +53,5 @@ next-env.d.ts
 .vscode
 
 trash/**
+
+docs/devlog/HANDOFF.md

@@ -16,6 +16,7 @@ import { ReadingStreak } from '@/components/stats/ReadingStreak';
 import { YearlyArc } from '@/components/stats/YearlyArc';
 import { BadgeGrid } from '@/components/achievements/BadgeGrid';
 import { useReadingStatistics, useAchievements } from '@/hooks/useStats';
+import { BookOpen, BookMarked, Clock, Star } from 'lucide-react';
 
 export default function StatsPage() {
   const { data: stats, isLoading: statsLoading } = useReadingStatistics();
@@ -64,14 +65,14 @@ export default function StatsPage() {
               label="Titles Read"
               value={stats.totalTitles}
               color="var(--color-accent-primary)"
-              icon="📚"
+              icon={<BookOpen size={20} />}
               index={0}
             />
             <StatCard
               label="Chapters Read"
               value={stats.totalChaptersRead}
               color="var(--color-accent-tertiary)"
-              icon="📖"
+              icon={<BookMarked size={20} />}
               index={1}
             />
             <StatCard
@@ -80,7 +81,7 @@ export default function StatsPage() {
               suffix="h"
               decimals={1}
               color="var(--color-accent-secondary)"
-              icon="⏱️"
+              icon={<Clock size={20} />}
               index={2}
             />
             <StatCard
@@ -89,7 +90,7 @@ export default function StatsPage() {
               decimals={1}
               suffix=" / 10"
               color="var(--color-accent-quaternary)"
-              icon="⭐"
+              icon={<Star size={20} />}
               index={3}
             />
           </div>

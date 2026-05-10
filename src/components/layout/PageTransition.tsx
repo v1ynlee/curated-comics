@@ -2,8 +2,6 @@
 
 // ============================================================
 // PageTransition — AnimatePresence wrapper for route changes
-// Source of truth: docs/motion/ANIMATION_GUIDELINES.md — Rule 4
-//                  docs/motion/MOTION_SYSTEM.md — Category 2
 // ============================================================
 
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,7 +13,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const prefersReduced = usePrefersReducedMotion();
 
-  // Reduced motion: instant swap, no animation
   const variants = prefersReduced
     ? {
         initial: { opacity: 0 },
@@ -32,6 +29,8 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         animate="animate"
         exit="exit"
         variants={variants}
+        // Ensure this wrapper never clips or blocks the fixed nav above it
+        style={{ position: 'relative', zIndex: 0 }}
       >
         {children}
       </motion.div>

@@ -11,11 +11,11 @@ import { useKonamiCode } from '@/hooks/useKonamiCode';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const MESSAGES = [
-  '↑↑↓↓←→←→BA — You found it! 🎮',
-  'Aura level: MAXIMUM ✨',
-  'SSS+ Reader detected 👑',
-  'Brainrot confirmed 🧠',
-  'You are built different 💪',
+  'You found the Konami code!',
+  'Aura level: MAXIMUM',
+  'SSS+ Reader detected',
+  'Brainrot confirmed',
+  'You are built different',
 ];
 
 export function EasterEgg() {

@@ -1,13 +1,12 @@
 // ============================================================
 // ReviewSection — personal review display with enhanced features
-// Source of truth: docs/design/UI_UX_DIRECTION.md
-//                  docs/roadmap/ROADMAP.md — Phase 2: Review System Enhancement
 // ============================================================
 
 'use client';
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Review } from '@/types/title';
 
@@ -58,7 +57,7 @@ export function ReviewSection({ review, vibeCheck, quotableLines, className }: R
       {review.hasSpoilers ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3 p-3 rounded-sm bg-semantic-warning/10 border border-semantic-warning/20">
-            <span className="text-semantic-warning text-sm" aria-hidden="true">⚠</span>
+            <AlertTriangle size={14} className="text-semantic-warning shrink-0" aria-hidden="true" />
             <span className="font-heading text-[10px] uppercase tracking-[0.15em] text-semantic-warning">
               This review contains spoilers
             </span>

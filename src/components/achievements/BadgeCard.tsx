@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProgressRing } from './ProgressRing';
 import type { Achievement } from '@/types/achievements';
@@ -115,7 +116,7 @@ export function BadgeCard({ achievement, index = 0 }: BadgeCardProps) {
             className="absolute inset-0 flex items-center justify-center rounded-sm"
             aria-hidden="true"
           >
-            <span className="text-text-tertiary/40 text-2xl">🔒</span>
+            <Lock size={20} className="text-text-tertiary/40" />
           </div>
         )}
       </motion.button>
@@ -185,10 +186,7 @@ function BadgeDetailModal({
           className="absolute top-3 right-3 p-1 text-text-tertiary hover:text-text-primary transition-colors focus-visible:outline-accent-primary rounded-sm"
           aria-label="Close"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={16} aria-hidden="true" />
         </button>
 
         {/* Content */}

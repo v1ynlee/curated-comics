@@ -9,6 +9,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { RatingDisplay } from '@/components/title/RatingDisplay';
@@ -210,10 +211,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                   'focus-visible:outline-accent-primary',
                 )}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <line x1="19" y1="12" x2="5" y2="12" />
-                  <polyline points="12 19 5 12 12 5" />
-                </svg>
+                <ArrowLeft size={14} aria-hidden="true" />
                 Back to Library
               </Link>
             </ScrollReveal>

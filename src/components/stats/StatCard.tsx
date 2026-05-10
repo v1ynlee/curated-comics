@@ -21,7 +21,6 @@ interface StatCardProps {
   className?: string;
   index?: number;
 }
-
 export function StatCard({
   label,
   value,

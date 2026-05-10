@@ -1,11 +1,7 @@
 'use client';
 
-// ============================================================
-// Global Error Boundary
-// Source of truth: docs/roadmap/ROADMAP.md — Phase 3: Visual Polish
-// ============================================================
-
 import { useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -14,7 +10,6 @@ interface ErrorProps {
 
 export default function GlobalError({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Log to error reporting service in production
     if (process.env.NODE_ENV === 'production') {
       console.error('[GlobalError]', error);
     }
@@ -23,7 +18,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-bg-deep">
       <div className="container-content flex flex-col items-center gap-6 text-center">
-        <span className="text-5xl" aria-hidden="true">⚠️</span>
+        <AlertTriangle size={48} className="text-semantic-warning" aria-hidden="true" />
 
         <div className="flex flex-col gap-2">
           <h1 className="font-display text-3xl font-bold text-text-primary">

@@ -1,9 +1,6 @@
-// ============================================================
-// Offline Page — shown by service worker when network unavailable
-// ============================================================
-
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { WifiOff } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Offline' };
 
@@ -16,7 +13,7 @@ export default function OfflinePage() {
       </div>
 
       <div className="container-content flex flex-col items-center gap-6 text-center">
-        <span className="text-6xl" aria-hidden="true">📡</span>
+        <WifiOff size={48} className="text-text-tertiary" aria-hidden="true" />
 
         <div className="flex flex-col gap-2">
           <h1 className="font-display text-3xl font-bold text-text-primary">

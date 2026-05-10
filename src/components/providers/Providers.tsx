@@ -9,15 +9,18 @@
 import { QueryProvider } from './QueryProvider';
 import { LenisProvider } from './LenisProvider';
 import { KeyboardShortcutsProvider } from './KeyboardShortcutsProvider';
+import { ThemeProvider } from './ThemeProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
-      <LenisProvider>
-        <KeyboardShortcutsProvider>
-          {children}
-        </KeyboardShortcutsProvider>
-      </LenisProvider>
+      <ThemeProvider>
+        <LenisProvider>
+          <KeyboardShortcutsProvider>
+            {children}
+          </KeyboardShortcutsProvider>
+        </LenisProvider>
+      </ThemeProvider>
     </QueryProvider>
   );
 }

@@ -10,6 +10,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, X, Inbox } from 'lucide-react';
 import { TitleCard } from '@/components/library/TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { useTitles } from '@/hooks/useTitles';
@@ -61,8 +62,7 @@ export default function SearchPage() {
         >
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
+        </svg>        <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -84,10 +84,7 @@ export default function SearchPage() {
             className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-colors focus-visible:outline-accent-primary rounded-sm"
             aria-label="Clear search"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={16} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -123,7 +120,7 @@ export default function SearchPage() {
               animate={{ opacity: 1 }}
               className="flex flex-col items-center gap-3 py-20 text-center"
             >
-              <span className="text-5xl" aria-hidden="true">🔍</span>
+              <Search size={40} className="text-text-tertiary" aria-hidden="true" />
               <p className="font-body text-text-secondary max-w-xs">
                 Type a title name, genre, or vibe to search the archive.
               </p>
@@ -135,7 +132,7 @@ export default function SearchPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center gap-3 py-20 text-center"
             >
-              <span className="text-5xl" aria-hidden="true">📭</span>
+              <Inbox size={40} className="text-text-tertiary" aria-hidden="true" />
               <p className="font-body text-text-secondary max-w-xs">
                 Nothing found. Try a different search term.
               </p>

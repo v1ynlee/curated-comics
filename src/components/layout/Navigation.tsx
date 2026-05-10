@@ -2,21 +2,16 @@
 
 // ============================================================
 // Navigation — floating desktop nav
-// Source of truth: docs/design/UI_UX_DIRECTION.md
-//                  docs/architecture/COMPONENT_ARCHITECTURE.md
-//
-// Behavior:
-//   - Transparent at top, solid on scroll
-//   - Hides on scroll-down, reveals on scroll-up
-//   - Active route highlighted
 // ============================================================
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GradientText } from '@/components/ui/GradientText';
+import { useUIStore } from '@/stores/useUIStore';
 
 const NAV_ITEMS = [
   { href: '/',         label: 'Home' },
@@ -25,30 +20,27 @@ const NAV_ITEMS = [
   { href: '/tiers',    label: 'Tiers' },
   { href: '/stats',    label: 'Stats' },
 ] as const;
+
 export function Navigation() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const { theme, toggleTheme } = useUIStore();
 
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
-
       setScrolled(currentY > 20);
-
-      // Hide on scroll-down (> 60px from top), show on scroll-up
       if (currentY > 60) {
         if (delta > 8) setVisible(false);
         else if (delta < -8) setVisible(true);
       } else {
         setVisible(true);
       }
-
       lastScrollY.current = currentY;
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -117,20 +109,36 @@ export function Navigation() {
             </ul>
           </nav>
 
-          {/* Search */}
-          <Link
-            href="/search"
-            className={cn(
-              'p-2 rounded-sm text-text-tertiary hover:text-text-primary transition-colors',
-              'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-            )}
-            aria-label="Search titles"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </Link>
+          {/* Right actions */}
+          <div className="flex items-center gap-1">
+            {/* Search */}
+            <Link
+              href="/search"
+              className={cn(
+                'p-2 rounded-sm text-text-tertiary hover:text-text-primary transition-colors',
+                'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+              )}
+              aria-label="Search titles"
+            >
+              <Search size={18} aria-hidden="true" />
+            </Link>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                'p-2 rounded-sm text-text-tertiary hover:text-text-primary transition-colors',
+                'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+              )}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun size={18} aria-hidden="true" />
+              ) : (
+                <Moon size={18} aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </motion.header>
       )}
     </AnimatePresence>

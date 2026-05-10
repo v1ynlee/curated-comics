@@ -92,7 +92,7 @@ export default function RootLayout({
         playfairDisplay.variable,
         jetbrainsMono.variable,
         caveat.variable,
-        'h-full antialiased',
+        'antialiased',
       ].join(' ')}
     >
       <head>
@@ -108,7 +108,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="min-h-full bg-bg-deep text-text-primary font-body">
+      <body className="bg-bg-deep text-text-primary font-body overflow-x-hidden">
         {/* Skip navigation — accessibility */}
         <a
           href="#main-content"
