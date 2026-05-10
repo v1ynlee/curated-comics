@@ -30,8 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — never commit secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Allow the example template (no real secrets)
+!.env.local.example
 
 # vercel
 .vercel
@@ -39,3 +45,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated placeholder images (run scripts/generate-placeholders.js to recreate)
+/public/images/covers/
+/public/images/banners/
+
+.vscode

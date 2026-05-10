@@ -1,65 +1,89 @@
-import Image from "next/image";
+// ============================================================
+// Landing Page — Phase 0 Placeholder
+// Full cinematic hero is Phase 1. This page validates that
+// the design system, fonts, and CSS variables are working.
+// ============================================================
+
+import { GradientText } from '@/components/ui/GradientText';
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-bg-deep">
+      {/* Ambient background gradient */}
+      <div
+        aria-hidden="true"
+        className="particle-field pointer-events-none absolute inset-0 -z-10"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-mid to-bg-surface opacity-80" />
+        <div className="absolute left-1/4 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary opacity-5 blur-3xl" />
+        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 translate-x-1/2 translate-y-1/2 rounded-full bg-accent-quaternary opacity-5 blur-3xl" />
+      </div>
+
+      {/* Content */}
+      <div className="container-content flex flex-col items-center gap-8 text-center">
+        {/* Label */}
+        <span className="font-heading text-xs font-medium uppercase tracking-[0.2em] text-text-tertiary">
+          Phase 0 — Foundation
+        </span>
+
+        {/* Title */}
+        <h1 className="font-display text-6xl font-black leading-none tracking-tight md:text-8xl">
+          <GradientText>Comic Curated</GradientText>
+        </h1>
+
+        {/* Tagline */}
+        <p className="max-w-md font-body text-lg font-light text-text-secondary md:text-xl">
+          A cinematic personal comic-reading showcase.
+          <br />
+          <span className="text-text-tertiary text-base">
+            Korean manhwa · Chinese manhua · Japanese manga
+          </span>
+        </p>
+
+        {/* Design system validation */}
+        <div className="mt-8 grid grid-cols-2 gap-3 text-left sm:grid-cols-4">
+          {[
+            { label: 'DM Sans', className: 'font-body', sample: 'Body text' },
+            { label: 'Playfair', className: 'font-display', sample: 'Display' },
+            { label: 'JetBrains', className: 'font-data', sample: '8.5 / 10' },
+            { label: 'Caveat', className: 'font-accent', sample: 'Personal note' },
+          ].map(({ label, className, sample }) => (
+            <div
+              key={label}
+              className="rounded-sm border border-white/10 bg-surface-elevated/50 px-4 py-3"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <p className="font-data text-xs text-text-tertiary">{label}</p>
+              <p className={`mt-1 text-base text-text-primary ${className}`}>
+                {sample}
+              </p>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Color palette */}
+        <div className="flex gap-2">
+          {[
+            'bg-accent-primary',
+            'bg-accent-secondary',
+            'bg-accent-tertiary',
+            'bg-accent-quaternary',
+            'bg-semantic-success',
+            'bg-semantic-danger',
+          ].map((color) => (
+            <div
+              key={color}
+              className={`h-6 w-6 rounded-full ${color}`}
+              title={color}
+              aria-label={color}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
+
+        {/* Status */}
+        <p className="font-data text-xs text-text-tertiary">
+          Design system ✓ · Fonts ✓ · CSS variables ✓ · Providers ✓
+        </p>
+      </div>
     </div>
   );
 }

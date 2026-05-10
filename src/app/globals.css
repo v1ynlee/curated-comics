@@ -1,26 +1,360 @@
+/* ============================================================
+   Comic Curated — Global Styles
+   Source of truth: docs/branding/BRANDING_DIRECTION.md
+                    docs/design/TYPOGRAPHY_SYSTEM.md
+                    docs/design/DESIGN_PRINCIPLES.md
+                    docs/motion/MOTION_SYSTEM.md
+                    docs/accessibility/ACCESSIBILITY_NOTES.md
+
+   Tailwind v4: theme defined via @theme inline.
+   No tailwind.config.js needed.
+   ============================================================ */
+
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ── Tailwind v4 Theme ─────────────────────────────────────── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Colors — Background */
+  --color-bg-deep:     #08080f;
+  --color-bg-mid:      #0f0f1a;
+  --color-bg-surface:  #1a1a2e;
+  --color-surface-elevated: #252540;
+
+  /* Colors — Text */
+  --color-text-primary:   #f0f0f5;
+  --color-text-secondary: #a0a0b8;
+  --color-text-tertiary:  #6b6b80;
+  --color-text-accent:    #e0d0ff;
+
+  /* Colors — Accent */
+  --color-accent-primary:    #8b5cf6;
+  --color-accent-secondary:  #f59e0b;
+  --color-accent-tertiary:   #06b6d4;
+  --color-accent-quaternary: #ec4899;
+
+  /* Colors — Semantic */
+  --color-semantic-success: #10b981;
+  --color-semantic-warning: #f59e0b;
+  --color-semantic-danger:  #ef4444;
+  --color-semantic-info:    #3b82f6;
+
+  /* Colors — Tier */
+  --color-tier-sss: #ffd700;
+  --color-tier-s:   #e040fb;
+  --color-tier-a:   #8b5cf6;
+  --color-tier-b:   #3b82f6;
+  --color-tier-c:   #6b7280;
+  --color-tier-d:   #4b5563;
+  --color-tier-f:   #ef4444;
+
+  /* Typography — Font Families
+     CSS variables from next/font are injected as --font-dm-sans etc.
+     We map them here so components can use semantic names. */
+  --font-display: var(--font-playfair, 'Playfair Display'), 'Georgia', serif;
+  --font-heading: 'Datatype', 'Oswald', 'Arial Narrow', sans-serif;
+  --font-body:    var(--font-dm-sans, 'DM Sans'), 'Inter', system-ui, sans-serif;
+  --font-accent:  var(--font-caveat, 'Caveat'), 'Ink Free', cursive;
+  --font-data:    var(--font-jetbrains, 'JetBrains Mono'), 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Typography — Type Scale (Major Third 1.25) */
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  3.75rem;
+  --text-7xl:  4.5rem;
+  --text-8xl:  6rem;
+  --text-9xl:  8rem;
+
+  /* Spacing */
+  --spacing-section: 6rem;
+  --spacing-section-sm: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* Animation Durations */
+  --duration-instant:   50ms;
+  --duration-fast:      150ms;
+  --duration-normal:    300ms;
+  --duration-smooth:    500ms;
+  --duration-cinematic: 800ms;
+  --duration-epic:      1200ms;
+
+  /* Z-Index Scale */
+  --z-below:      -1;
+  --z-base:        0;
+  --z-raised:     10;
+  --z-overlay:    20;
+  --z-modal:      30;
+  --z-nav:        40;
+  --z-toast:      50;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base Styles ───────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent layout shift from scrollbar appearing */
+  scrollbar-gutter: stable;
+  /* Smooth scroll — overridden by Lenis in JS */
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-deep);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent horizontal overflow */
+  overflow-x: hidden;
 }
+
+/* ── Focus Styles ──────────────────────────────────────────── */
+
+/* Custom focus ring — visible only for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Selection ─────────────────────────────────────────────── */
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 30%, transparent);
+  color: var(--color-text-primary);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-mid);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-elevated);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* ── Typography Utilities ──────────────────────────────────── */
+
+.font-display  { font-family: var(--font-display); }
+.font-heading  { font-family: var(--font-heading); }
+.font-body     { font-family: var(--font-body); }
+.font-accent   { font-family: var(--font-accent); }
+.font-data     { font-family: var(--font-data); }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-quaternary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow text — for SSS+ tier, achievements */
+.glow-text {
+  text-shadow:
+    0 0 10px var(--color-accent-primary),
+    0 0 20px var(--color-accent-primary),
+    0 0 40px var(--color-accent-primary);
+}
+
+.glow-text-gold {
+  text-shadow:
+    0 0 10px #ffd700,
+    0 0 20px #ffd700,
+    0 0 40px rgba(255, 215, 0, 0.5);
+}
+
+/* Vertical text — decorative Japanese-style */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* ── Screen Reader Only ─────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Layout Utilities ──────────────────────────────────────── */
+
+/* Cinematic full-bleed section */
+.section-full-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+/* Content container */
+.container-content {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container-content {
+    padding-inline: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-content {
+    padding-inline: 5rem;
+  }
+}
+
+/* ── CSS Keyframe Animations ───────────────────────────────── */
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-elevated) 25%,
+    color-mix(in srgb, var(--color-surface-elevated) 60%, var(--color-text-tertiary)) 50%,
+    var(--color-surface-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Ambient glow pulse */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Floating ambient element */
+@keyframes float-ambient {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+.animate-float {
+  animation: float-ambient 6s ease-in-out infinite;
+}
+
+/* Gradient background shift */
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* Spin (for loading indicators) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ── Reduced Motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  .parallax-layer {
+    transform: none !important;
+  }
+
+  .particle-field {
+    display: none !important;
+  }
+}
+
+/* ── High Contrast Mode ─────────────────────────────────────── */
+
+@media (forced-colors: active) {
+  .gradient-text,
+  .gradient-text-gold {
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
+  }
+
+  .glow-text,
+  .glow-text-gold {
+    text-shadow: none;
+  }
+}
+
+/* ── CJK Typography ─────────────────────────────────────────── */
+
+.title-korean  { font-family: 'Malgun Gothic', sans-serif; font-weight: 700; }
+.title-japanese { font-family: 'Yu Gothic', 'MS Gothic', sans-serif; font-weight: 700; }
+.title-chinese  { font-family: 'Microsoft YaHei', 'SimSun', sans-serif; font-weight: 700; }
