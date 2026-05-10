@@ -99,10 +99,6 @@
 }
 
 /* ── Z-Index Utilities ─────────────────────────────────────── */
-/*
-  Tailwind v4 does NOT auto-generate z-{name} utilities from --z-{name}
-  CSS variables in @theme inline. We must define them explicitly via @utility.
-*/
 
 @utility z-below    { z-index: var(--z-below); }
 @utility z-base     { z-index: var(--z-base); }
@@ -112,37 +108,41 @@
 @utility z-nav      { z-index: var(--z-nav); }
 @utility z-toast    { z-index: var(--z-toast); }
 
-/* ── Base Styles ───────────────────────────────────────────── */
-
+/* ── Light Mode — Full Design System Override ──────────────── */
 /*
-  Light mode overrides — applied via data-theme="light" on <html>.
   ALL color tokens are overridden so every component using CSS vars
-  automatically adapts. Hard-coded colors (border-white/5 etc.) are
-  handled via the [data-theme="light"] overrides below.
+  adapts automatically. Text colors are intentionally dark and high-
+  contrast for readability. Accents are slightly deepened for legibility
+  on light backgrounds.
 */
+
 [data-theme="light"] {
-  --color-bg-deep:          #f4f4fb;
-  --color-bg-mid:           #eaeaf5;
-  --color-bg-surface:       #ddddf0;
-  --color-surface-elevated: #d0d0e8;
-  --color-text-primary:     #0f0f1a;
-  --color-text-secondary:   #3a3a5c;
-  --color-text-tertiary:    #6060a0;
-  --color-text-accent:      #4a2080;
-  /* Slightly muted accents for light bg readability */
-  --color-accent-primary:    #7c3aed;
-  --color-accent-secondary:  #d97706;
-  --color-accent-tertiary:   #0891b2;
-  --color-accent-quaternary: #db2777;
+  /* Backgrounds — warm off-white, not pure white */
+  --color-bg-deep:          #f2f2f8;
+  --color-bg-mid:           #e8e8f2;
+  --color-bg-surface:       #dcdcec;
+  --color-surface-elevated: #cecee0;
+
+  /* Text — strong contrast, NOT gray */
+  --color-text-primary:   #0a0a14;   /* near-black */
+  --color-text-secondary: #1e1e38;   /* dark navy, clearly readable */
+  --color-text-tertiary:  #4a4a70;   /* medium purple-gray, still readable */
+  --color-text-accent:    #3a1a70;
+
+  /* Accents — deepened for light bg legibility */
+  --color-accent-primary:    #6d28d9;
+  --color-accent-secondary:  #b45309;
+  --color-accent-tertiary:   #0369a1;
+  --color-accent-quaternary: #be185d;
 }
 
-/* Light mode body */
+/* Body */
 [data-theme="light"] body {
   background-color: var(--color-bg-deep);
   color: var(--color-text-primary);
 }
 
-/* Light mode scrollbar */
+/* Scrollbar */
 [data-theme="light"] ::-webkit-scrollbar-track {
   background: var(--color-bg-mid);
 }
@@ -150,43 +150,70 @@
   background: var(--color-surface-elevated);
 }
 
-/* Light mode — fix hard-coded white/black borders & backgrounds */
-[data-theme="light"] .border-white\/5,
-[data-theme="light"] .border-white\/10,
-[data-theme="light"] .border-white\/20 {
-  border-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
-}
+/* ── Light Mode — Hard-coded class overrides ───────────────── */
+/*
+  Tailwind classes that use hard-coded white/black values need
+  explicit overrides since CSS vars don't reach inside them.
+*/
 
-[data-theme="light"] .bg-bg-mid\/90,
-[data-theme="light"] .bg-bg-mid\/95 {
-  background-color: color-mix(in srgb, var(--color-bg-mid) 92%, transparent);
-}
+/* Borders */
+[data-theme="light"] .border-white\/5  { border-color: rgba(10, 10, 20, 0.08); }
+[data-theme="light"] .border-white\/10 { border-color: rgba(10, 10, 20, 0.12); }
+[data-theme="light"] .border-white\/20 { border-color: rgba(10, 10, 20, 0.18); }
+[data-theme="light"] .border-white\/30 { border-color: rgba(10, 10, 20, 0.25); }
 
-[data-theme="light"] .bg-bg-deep\/60,
-[data-theme="light"] .bg-bg-deep\/70 {
-  background-color: color-mix(in srgb, var(--color-bg-deep) 70%, transparent);
-}
+/* Nav background when scrolled */
+[data-theme="light"] .bg-bg-mid\/90  { background-color: rgba(232, 232, 242, 0.94); }
+[data-theme="light"] .bg-bg-mid\/95  { background-color: rgba(232, 232, 242, 0.97); }
+[data-theme="light"] .bg-bg-mid\/50  { background-color: rgba(232, 232, 242, 0.60); }
 
-/* Light mode nav — themed shadow instead of black */
+/* Hero gradient overlays */
+[data-theme="light"] .bg-bg-deep\/60 { background-color: rgba(242, 242, 248, 0.60); }
+[data-theme="light"] .bg-bg-deep\/70 { background-color: rgba(242, 242, 248, 0.70); }
+[data-theme="light"] .bg-bg-deep\/80 { background-color: rgba(242, 242, 248, 0.80); }
+[data-theme="light"] .bg-bg-deep\/90 { background-color: rgba(242, 242, 248, 0.90); }
+
+/* Surface cards */
+[data-theme="light"] .bg-surface-elevated\/20 { background-color: rgba(206, 206, 224, 0.30); }
+[data-theme="light"] .bg-surface-elevated\/30 { background-color: rgba(206, 206, 224, 0.45); }
+[data-theme="light"] .bg-surface-elevated\/50 { background-color: rgba(206, 206, 224, 0.60); }
+[data-theme="light"] .bg-surface-elevated\/60 { background-color: rgba(206, 206, 224, 0.70); }
+[data-theme="light"] .bg-surface-elevated\/70 { background-color: rgba(206, 206, 224, 0.80); }
+[data-theme="light"] .bg-surface-elevated\/80 { background-color: rgba(206, 206, 224, 0.90); }
+
+/* bg-white/* overrides — these look fine in light mode already */
+
+/* ── Light Mode — Component-specific fixes ─────────────────── */
+
+/* Nav — themed shadow, no black */
 [data-theme="light"] header[role="banner"] {
-  box-shadow: 0 1px 20px color-mix(in srgb, var(--color-accent-primary) 12%, transparent),
-              0 1px 4px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  box-shadow:
+    0 1px 0 rgba(10, 10, 20, 0.08),
+    0 2px 16px rgba(109, 40, 217, 0.10);
 }
 
-/* Light mode footer */
+/* Nav active indicator line — use accent color (visible on light bg) */
+[data-theme="light"] .nav-active-indicator {
+  background-color: var(--color-accent-primary);
+}
+
+/* Footer */
 [data-theme="light"] footer[role="contentinfo"] {
-  border-top-color: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
-  background-color: color-mix(in srgb, var(--color-bg-mid) 80%, transparent);
+  border-top-color: rgba(10, 10, 20, 0.10);
+  background-color: rgba(232, 232, 242, 0.80);
 }
 
-/* Light mode surface cards */
-[data-theme="light"] .bg-surface-elevated\/30,
-[data-theme="light"] .bg-surface-elevated\/50,
-[data-theme="light"] .bg-surface-elevated\/60 {
-  background-color: color-mix(in srgb, var(--color-surface-elevated) 50%, transparent);
+/* Achievement modal backdrop */
+[data-theme="light"] .bg-bg-deep\/70 {
+  background-color: rgba(242, 242, 248, 0.75);
 }
 
-/* Light mode gradient text stays vivid */
+/* Achievement card bg */
+[data-theme="light"] .bg-bg-surface {
+  background-color: var(--color-bg-surface);
+}
+
+/* Gradient text — keep vivid */
 [data-theme="light"] .gradient-text {
   background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-quaternary));
   -webkit-background-clip: text;
@@ -194,36 +221,18 @@
   background-clip: text;
 }
 
-/* ── Theme Transition — smooth ripple/crossfade ────────────── */
+/* ── Theme Transition ──────────────────────────────────────── */
 /*
-  We use a CSS view-transition on the html element.
-  ThemeProvider triggers it via document.startViewTransition().
-  Fallback: simple opacity crossfade for browsers without VT support.
+  View Transition API crossfade (ThemeProvider).
+  CSS transitions on all elements as universal fallback.
+  Reduced-motion: instant, no animation.
 */
 
-html {
-  /* Smooth color transitions on all elements during theme switch */
-  transition:
-    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* All elements inherit smooth color transitions */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-duration: 0.35s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* View Transition API — ripple from click origin */
 ::view-transition-old(root) {
-  animation: theme-fade-out 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: theme-fade-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 ::view-transition-new(root) {
-  animation: theme-fade-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: theme-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes theme-fade-out {
@@ -236,6 +245,12 @@ html {
 }
 
 /* ── Base Resets ───────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html {
   scrollbar-gutter: stable;
@@ -252,6 +267,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   min-height: 100vh;
+  /* Smooth color transitions for theme switching */
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth color transitions on all elements */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Focus Styles ──────────────────────────────────────────── */
@@ -315,7 +340,7 @@ body {
   background-clip: text;
 }
 
-/* Glow text — for SSS+ tier, achievements */
+/* Glow text */
 .glow-text {
   text-shadow:
     0 0 10px var(--color-accent-primary),
@@ -330,11 +355,7 @@ body {
     0 0 40px rgba(255, 215, 0, 0.5);
 }
 
-/*
-  Heading glow — pulsing soft glow on major page headings.
-  Uses the current text color via currentColor-based shadow.
-  Apply .heading-glow to h1/h2 elements on key pages.
-*/
+/* Heading glow — pulsing soft glow on major page headings */
 .heading-glow {
   animation: heading-glow-pulse 3s ease-in-out infinite;
 }
@@ -353,7 +374,7 @@ body {
   }
 }
 
-/* Vertical text — decorative Japanese-style */
+/* Vertical text */
 .vertical-text {
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -454,7 +475,7 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* Button shimmer sweep — used by the redesigned Button component */
+/* Button shimmer sweep */
 @keyframes btn-shimmer {
   0%   { transform: translateX(-100%) skewX(-12deg); }
   100% { transform: translateX(200%) skewX(-12deg); }

@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   images: {
     // Prefer AVIF, fall back to WebP
     formats: ['image/avif', 'image/webp'],
+    // Allowed quality values (must include all values used in <Image quality={n}>)
+    qualities: [75, 80, 85, 90],
     // Device sizes for responsive images
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     // Image sizes for fixed-width images

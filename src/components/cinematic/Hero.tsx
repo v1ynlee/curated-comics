@@ -8,13 +8,16 @@
 // Background images:
 //   dark  → /images/background.png
 //   light → /images/background-light.png
+//
+// AtmosphericBg is NOT used here — the background image provides
+// the visual depth. Corner gradients are rendered inline so they
+// adapt to the active theme via CSS custom properties.
 // ============================================================
 
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { AtmosphericBg } from './AtmosphericBg';
 import { GradientText } from '@/components/ui/GradientText';
 import { Button } from '@/components/ui/Button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
@@ -22,9 +25,7 @@ import { useUIStore } from '@/stores/useUIStore';
 import { getGSAP } from '@/lib/gsap-setup';
 import { cn } from '@/lib/cn';
 
-// First-load sequence timings (seconds)
 const SEQUENCE = {
-  bg: 0,
   label: 0.2,
   title: 0.5,
   subtitle: 0.8,
@@ -37,7 +38,6 @@ export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const theme = useUIStore((s) => s.theme);
 
-  // Parallax on scroll — hero content drifts up as user scrolls
   useEffect(() => {
     if (prefersReduced || !containerRef.current) return;
 
@@ -72,6 +72,7 @@ export function Hero() {
   const bgSrc = theme === 'light'
     ? '/images/background-light.png'
     : '/images/background.png';
+  const bgOpacity = theme === 'light' ? 0.25 : 0.18;
 
   return (
     <section
@@ -85,7 +86,7 @@ export function Hero() {
         className="absolute inset-0 -z-20"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
         aria-hidden="true"
       >
         <Image
@@ -94,27 +95,35 @@ export function Hero() {
           fill
           priority
           quality={85}
-          className={cn(
-            'object-cover object-center',
-            theme === 'light' ? 'opacity-30' : 'opacity-20',
-          )}
+          className="object-cover object-center"
+          style={{ opacity: bgOpacity }}
           sizes="100vw"
         />
-        {/* Gradient overlay to blend with UI */}
+        {/* Gradient overlay — uses inline style so CSS vars resolve correctly */}
         <div
-          className={cn(
-            'absolute inset-0',
-            theme === 'light'
-              ? 'bg-gradient-to-b from-bg-deep/60 via-bg-deep/40 to-bg-deep/80'
-              : 'bg-gradient-to-b from-bg-deep/70 via-bg-deep/50 to-bg-deep/90',
-          )}
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to bottom,
+              color-mix(in srgb, var(--color-bg-deep) 55%, transparent) 0%,
+              color-mix(in srgb, var(--color-bg-deep) 35%, transparent) 40%,
+              color-mix(in srgb, var(--color-bg-deep) 75%, transparent) 100%)`,
+          }}
         />
       </motion.div>
 
-      {/* Atmospheric background (orbs + particles) */}
-      <AtmosphericBg className="-z-10" />
+      {/* ── Corner accent gradients — theme-aware ──────────── */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div
+          className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full blur-[160px]"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-primary) 7%, transparent)' }}
+        />
+        <div
+          className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full blur-[140px]"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-quaternary) 5%, transparent)' }}
+        />
+      </div>
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────────── */}
       <div className="hero-content container-content flex flex-col items-center gap-6 text-center pt-16 md:pt-0">
         {/* Section label */}
         <motion.span
