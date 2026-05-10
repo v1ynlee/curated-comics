@@ -374,3 +374,39 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Performance Utilities ──────────────────────────────────── */
+
+/* Defer rendering of off-screen sections */
+.content-deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* GPU containment for animated cards */
+.card-contained {
+  contain: layout style;
+}
+
+/* ── Error & Empty States ───────────────────────────────────── */
+
+.state-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  border: 1px solid var(--color-semantic-danger);
+  border-radius: var(--radius-sm);
+  background-color: color-mix(in srgb, var(--color-semantic-danger) 5%, transparent);
+}
