@@ -2,22 +2,54 @@
 // GSAP + ScrollTrigger Setup
 // Source of truth: docs/motion/ANIMATION_GUIDELINES.md
 //
-// Import this module ONCE in a client component that wraps
-// the app (e.g. Providers). It registers plugins and sets
-// up the Lenis ↔ ScrollTrigger sync.
+// IMPORTANT: Do NOT import gsap or ScrollTrigger at module
+// level in components. Always use getGSAP() inside useEffect
+// to ensure plugins are registered before use.
+//
+// This module is client-only. It must never run on the server.
 // ============================================================
 
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+let _gsap: typeof import('gsap').gsap | null = null;
+let _ScrollTrigger: typeof import('gsap/ScrollTrigger').ScrollTrigger | null = null;
+let _registered = false;
 
-let registered = false;
+/**
+ * Lazily initialise GSAP + ScrollTrigger.
+ * Safe to call multiple times — only registers once.
+ * Must be called inside useEffect (client-only).
+ */
+export async function getGSAP() {
+  if (typeof window === 'undefined') return null;
 
-export function registerGSAP() {
-  if (registered || typeof window === 'undefined') return;
-  gsap.registerPlugin(ScrollTrigger);
-  // Disable lag smoothing so Lenis RAF drives everything
-  gsap.ticker.lagSmoothing(0);
-  registered = true;
+  if (!_gsap) {
+    const { gsap } = await import('gsap');
+    const { ScrollTrigger } = await import('gsap/ScrollTrigger');
+    _gsap = gsap;
+    _ScrollTrigger = ScrollTrigger;
+  }
+
+  if (!_registered && _gsap && _ScrollTrigger) {
+    _gsap.registerPlugin(_ScrollTrigger);
+    _gsap.ticker.lagSmoothing(0);
+    _registered = true;
+  }
+
+  return { gsap: _gsap!, ScrollTrigger: _ScrollTrigger! };
 }
 
-export { gsap, ScrollTrigger };
+/**
+ * Synchronous version — only works after getGSAP() has been
+ * awaited at least once. Returns null if not yet initialised.
+ */
+export function getGSAPSync() {
+  if (!_registered || !_gsap || !_ScrollTrigger) return null;
+  return { gsap: _gsap, ScrollTrigger: _ScrollTrigger };
+}
+
+/**
+ * @deprecated Use getGSAP() inside useEffect instead.
+ * Kept for backward compatibility with LenisProvider.
+ */
+export function registerGSAP() {
+  // No-op — registration now happens lazily in getGSAP()
+}

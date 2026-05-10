@@ -8,13 +8,14 @@
 // Lenis drives ALL scroll behavior. GSAP ScrollTrigger is
 // synced to Lenis's RAF loop (single requestAnimationFrame).
 // Reduced motion: Lenis is disabled, native scroll used.
+//
+// GSAP is imported dynamically inside useEffect to avoid
+// SSR issues with Turbopack (gsap.context requires window).
 // ============================================================
 
 import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { registerGSAP } from '@/lib/gsap-setup';
+import { getGSAP } from '@/lib/gsap-setup';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useUIStore } from '@/stores/useUIStore';
 
@@ -28,37 +29,45 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
   }, [prefersReduced, setReducedMotion]);
 
   useEffect(() => {
-    // Register GSAP plugins once
-    registerGSAP();
+    if (prefersReduced) return;
 
-    if (prefersReduced) {
-      // Respect reduced motion — use native scroll
-      return;
-    }
+    let tickerFn: ((time: number) => void) | null = null;
 
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    });
+    getGSAP().then((g) => {
+      if (!g) return;
+      const { gsap, ScrollTrigger } = g;
 
-    lenisRef.current = lenis;
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 2,
+      });
 
-    // Sync Lenis scroll position with GSAP ScrollTrigger
-    lenis.on('scroll', ScrollTrigger.update);
+      lenisRef.current = lenis;
 
-    // Drive Lenis from GSAP's ticker (single RAF loop)
-    gsap.ticker.add((time: number) => {
-      lenis.raf(time * 1000);
+      // Sync Lenis scroll position with GSAP ScrollTrigger
+      lenis.on('scroll', ScrollTrigger.update);
+
+      // Drive Lenis from GSAP's ticker (single RAF loop)
+      tickerFn = (time: number) => lenis.raf(time * 1000);
+      gsap.ticker.add(tickerFn);
     });
 
     return () => {
-      lenis.destroy();
-      lenisRef.current = null;
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
+      // Remove ticker if it was added
+      if (tickerFn) {
+        getGSAP().then((g) => {
+          if (g && tickerFn) g.gsap.ticker.remove(tickerFn);
+        });
+      }
     };
   }, [prefersReduced]);
 

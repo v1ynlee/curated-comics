@@ -8,7 +8,7 @@
 
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/cn';
-import { gsap, ScrollTrigger } from '@/lib/gsap-setup';
+import { getGSAP } from '@/lib/gsap-setup';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePerformanceTier } from '@/hooks/usePerformanceTier';
 
@@ -34,20 +34,28 @@ export function ParallaxSection({
   useEffect(() => {
     if (!enabled || !containerRef.current) return;
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: 1,
-        onUpdate: (self) => {
-          const yOffset = self.progress * 60 * speed;
-          gsap.set(containerRef.current, { y: yOffset });
-        },
-      });
-    }, containerRef);
+    let cleanup: (() => void) | undefined;
 
-    return () => ctx.revert();
+    getGSAP().then((g) => {
+      if (!g || !containerRef.current) return;
+      const { gsap, ScrollTrigger } = g;
+
+      const ctx = gsap.context(() => {
+        ScrollTrigger.create({
+          trigger: containerRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            gsap.set(containerRef.current, { y: self.progress * 60 * speed });
+          },
+        });
+      }, containerRef);
+
+      cleanup = () => ctx.revert();
+    });
+
+    return () => cleanup?.();
   }, [enabled, speed]);
 
   return (

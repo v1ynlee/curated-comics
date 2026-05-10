@@ -13,7 +13,7 @@ import { AtmosphericBg } from './AtmosphericBg';
 import { GradientText } from '@/components/ui/GradientText';
 import { Button } from '@/components/ui/Button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { gsap, ScrollTrigger } from '@/lib/gsap-setup';
+import { getGSAP } from '@/lib/gsap-setup';
 import { cn } from '@/lib/cn';
 
 // First-load sequence timings (seconds)
@@ -34,22 +34,31 @@ export function Hero() {
   useEffect(() => {
     if (prefersReduced || !containerRef.current) return;
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1,
-        onUpdate: (self) => {
-          gsap.set('.hero-content', {
-            y: self.progress * -60,
-            opacity: 1 - self.progress * 0.6,
-          });
-        },
-      });
-    }, containerRef);
+    let cleanup: (() => void) | undefined;
 
-    return () => ctx.revert();
+    getGSAP().then((g) => {
+      if (!g || !containerRef.current) return;
+      const { gsap, ScrollTrigger } = g;
+
+      const ctx = gsap.context(() => {
+        ScrollTrigger.create({
+          trigger: containerRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            gsap.set('.hero-content', {
+              y: self.progress * -60,
+              opacity: 1 - self.progress * 0.6,
+            });
+          },
+        });
+      }, containerRef);
+
+      cleanup = () => ctx.revert();
+    });
+
+    return () => cleanup?.();
   }, [prefersReduced]);
 
   const stagger = prefersReduced ? 0 : 1;
