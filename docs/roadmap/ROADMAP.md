@@ -167,22 +167,22 @@ The project is divided into phases that build upon each other. Each phase delive
 ### Goal: Owner can manage content without touching code
 
 **Admin Interface:**
-- [ ] Authentication (Supabase Auth)
-- [ ] Title CRUD (add, edit, delete)
-- [ ] Rating editor
-- [ ] Review editor (markdown)
-- [ ] Image upload with auto-processing
-- [ ] Genre/mood assignment
-- [ ] External link management
-- [ ] Tier assignment (drag-and-drop)
-- [ ] Reading progress update
-- [ ] Bulk operations
+- [x] Authentication (Supabase Auth)
+- [x] Title CRUD (add, edit, delete)
+- [x] Rating editor
+- [x] Review editor (markdown)
+- [x] Image upload with auto-processing
+- [x] Genre/mood assignment
+- [x] External link management
+- [x] Tier assignment (drag-and-drop)
+- [x] Reading progress update
+- [x] Bulk operations
 
 **Content Pipeline:**
-- [ ] Image upload → Sharp processing → CDN
-- [ ] Automatic blur placeholder generation
-- [ ] Dominant color extraction
-- [ ] Responsive variant generation
+- [x] Image upload → Sharp processing → CDN
+- [x] Automatic blur placeholder generation
+- [x] Dominant color extraction
+- [x] Responsive variant generation
 
 **Deliverable:** Self-service content management. Owner can add/edit titles, write reviews, and manage the library.
 
