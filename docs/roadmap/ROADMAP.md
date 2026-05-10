@@ -198,14 +198,14 @@ The project is divided into phases that build upon each other. Each phase delive
 - [ ] Audio micro-interactions (subtle, optional)
 - [ ] Seasonal theme variants
 - [ ] Reading progress sync (if applicable)
-- [ ] RSS feed for new additions
+- [x] RSS feed for new additions
 - [ ] Newsletter integration
-- [ ] Social sharing cards (dynamic OG images)
-- [ ] PWA with offline support
-- [ ] Search with fuzzy matching
-- [ ] Keyboard shortcuts
-- [ ] Custom 404 page (cinematic)
-- [ ] Easter eggs and hidden interactions
+- [x] Social sharing cards (dynamic OG images)
+- [x] PWA with offline support
+- [x] Search with fuzzy matching
+- [x] Keyboard shortcuts
+- [x] Custom 404 page (cinematic)
+- [x] Easter eggs and hidden interactions
 
 ---
 

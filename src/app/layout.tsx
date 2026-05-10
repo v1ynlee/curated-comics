@@ -12,11 +12,15 @@ import {
   Caveat,
 } from 'next/font/google';
 import { Providers } from '@/components/providers/Providers';
+import { ServiceWorkerRegistration } from '@/components/providers/ServiceWorkerRegistration';
 import { Navigation } from '@/components/layout/Navigation';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { CustomCursor } from '@/components/cinematic/CustomCursor';
+import { EasterEgg } from '@/components/cinematic/EasterEgg';
+import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
+import { SITE_URL } from '@/lib/constants';
 import './globals.css';
 
 // ── Font Definitions ──────────────────────────────────────────
@@ -54,9 +58,7 @@ export const metadata: Metadata = {
   },
   description:
     'A cinematic personal comic-reading showcase — Korean manhwa, Chinese manhua, and Japanese manga.',
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://comic-curated.com',
-  ),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website',
     siteName: 'Comic Curated',
@@ -68,6 +70,10 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  // PWA theme color
+  other: {
+    'theme-color': '#08080f',
   },
 };
 
@@ -89,6 +95,19 @@ export default function RootLayout({
         'h-full antialiased',
       ].join(' ')}
     >
+      <head>
+        {/* RSS feed discovery */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Comic Curated — New Titles"
+          href="/feed.xml"
+        />
+        {/* PWA */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <body className="min-h-full bg-bg-deep text-text-primary font-body">
         {/* Skip navigation — accessibility */}
         <a
@@ -99,8 +118,17 @@ export default function RootLayout({
         </a>
 
         <Providers>
+          {/* PWA service worker */}
+          <ServiceWorkerRegistration />
+
           {/* Custom cursor — desktop only, high-perf only */}
           <CustomCursor />
+
+          {/* Easter egg — Konami code */}
+          <EasterEgg />
+
+          {/* Keyboard shortcuts help modal */}
+          <KeyboardShortcutsHelp />
 
           {/* Desktop floating nav */}
           <Navigation />
