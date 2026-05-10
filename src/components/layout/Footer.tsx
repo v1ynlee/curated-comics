@@ -1,5 +1,6 @@
 // ============================================================
 // Footer — cinematic footer with copyright
+// Light/dark theme aware via CSS custom properties.
 // ============================================================
 
 import Link from 'next/link';

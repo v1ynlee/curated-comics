@@ -18,6 +18,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { CustomCursor } from '@/components/cinematic/CustomCursor';
 import { EasterEgg } from '@/components/cinematic/EasterEgg';
 import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
+import { BackToTop } from '@/components/ui/BackToTop';
 import { SITE_URL } from '@/lib/constants';
 import './globals.css';
 
@@ -132,6 +133,7 @@ export default function RootLayout({
           </PageTransition>
 
           <MobileNav />
+          <BackToTop />
         </Providers>
       </body>
     </html>

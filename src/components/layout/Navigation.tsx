@@ -58,9 +58,9 @@ export function Navigation() {
             'fixed top-0 inset-x-0 z-nav',
             'hidden md:flex items-center justify-between',
             'px-8 h-16',
-            'transition-colors duration-300',
+            'transition-all duration-300',
             scrolled
-              ? 'bg-bg-mid/90 backdrop-blur-md border-b border-white/5'
+              ? 'bg-bg-mid/90 backdrop-blur-md border-b border-white/5 shadow-[0_1px_20px_rgba(0,0,0,0.15)]'
               : 'bg-transparent',
           )}
         >

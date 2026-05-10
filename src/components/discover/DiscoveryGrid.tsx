@@ -6,6 +6,7 @@
 // ============================================================
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
 import { TitleCard } from '@/components/library/TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { useTitles } from '@/hooks/useTitles';
@@ -37,7 +38,7 @@ export function DiscoveryGrid({ activeMood }: DiscoveryGridProps) {
           {activeMood ? (
             <>
               <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-text-tertiary">
-                {activeMood.emoji} {activeMood.name}
+                {activeMood.name}
               </span>
               <p className="font-body text-sm text-text-secondary max-w-md">
                 {activeMood.description}
@@ -86,9 +87,7 @@ export function DiscoveryGrid({ activeMood }: DiscoveryGridProps) {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-3 py-20 text-center"
           >
-            <span className="text-4xl" aria-hidden="true">
-              {activeMood?.emoji ?? '📚'}
-            </span>
+            <BookOpen size={40} className="text-text-tertiary" aria-hidden="true" />
             <p className="font-body text-text-secondary max-w-xs">
               {activeMood
                 ? `No titles tagged with "${activeMood.name}" yet.`

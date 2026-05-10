@@ -40,7 +40,7 @@ export default function DiscoverPage() {
           <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
             Mood-Based Discovery
           </span>
-          <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight">
+          <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight heading-glow">
             Discover
           </h1>
           <p className="font-body text-text-secondary max-w-md">

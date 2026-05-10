@@ -4,15 +4,21 @@
 // Hero — cinematic landing hero section
 // Source of truth: docs/design/UI_UX_DIRECTION.md
 //                  docs/motion/MOTION_SYSTEM.md — First Load Sequence
+//
+// Background images:
+//   dark  → /images/background.png
+//   light → /images/background-light.png
 // ============================================================
 
 import { useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AtmosphericBg } from './AtmosphericBg';
 import { GradientText } from '@/components/ui/GradientText';
 import { Button } from '@/components/ui/Button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useUIStore } from '@/stores/useUIStore';
 import { getGSAP } from '@/lib/gsap-setup';
 import { cn } from '@/lib/cn';
 
@@ -29,6 +35,7 @@ const SEQUENCE = {
 export function Hero() {
   const prefersReduced = usePrefersReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const theme = useUIStore((s) => s.theme);
 
   // Parallax on scroll — hero content drifts up as user scrolls
   useEffect(() => {
@@ -62,6 +69,9 @@ export function Hero() {
   }, [prefersReduced]);
 
   const stagger = prefersReduced ? 0 : 1;
+  const bgSrc = theme === 'light'
+    ? '/images/background-light.png'
+    : '/images/background.png';
 
   return (
     <section
@@ -69,7 +79,39 @@ export function Hero() {
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
       aria-labelledby="hero-title"
     >
-      {/* Atmospheric background */}
+      {/* ── Background image — theme-aware ─────────────────── */}
+      <motion.div
+        key={bgSrc}
+        className="absolute inset-0 -z-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        aria-hidden="true"
+      >
+        <Image
+          src={bgSrc}
+          alt=""
+          fill
+          priority
+          quality={85}
+          className={cn(
+            'object-cover object-center',
+            theme === 'light' ? 'opacity-30' : 'opacity-20',
+          )}
+          sizes="100vw"
+        />
+        {/* Gradient overlay to blend with UI */}
+        <div
+          className={cn(
+            'absolute inset-0',
+            theme === 'light'
+              ? 'bg-gradient-to-b from-bg-deep/60 via-bg-deep/40 to-bg-deep/80'
+              : 'bg-gradient-to-b from-bg-deep/70 via-bg-deep/50 to-bg-deep/90',
+          )}
+        />
+      </motion.div>
+
+      {/* Atmospheric background (orbs + particles) */}
       <AtmosphericBg className="-z-10" />
 
       {/* Content */}
@@ -90,6 +132,7 @@ export function Hero() {
           className={cn(
             'font-display font-black leading-none tracking-tight',
             'text-[clamp(3rem,10vw,8rem)]',
+            'heading-glow',
           )}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 24, filter: prefersReduced ? 'none' : 'blur(8px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}

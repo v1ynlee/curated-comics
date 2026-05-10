@@ -3,12 +3,57 @@
 // ============================================================
 // MoodCard — individual mood category card
 // Source of truth: docs/design/UI_UX_DIRECTION.md — Genre/Mood Discovery
+//
+// Emojis are replaced with lucide-react icons mapped by mood slug.
 // ============================================================
 
 import { motion } from 'framer-motion';
+import {
+  Heart,
+  Sparkles,
+  Brain,
+  Drama,
+  Coffee,
+  Flame,
+  Sword,
+  Zap,
+  HeartCrack,
+  Crown,
+  Skull,
+  RefreshCw,
+  Building2,
+  BarChart2,
+  Palette,
+  Trash2,
+  BookOpen,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { Mood } from '@/types/title';
+
+// Map mood slug → lucide icon component
+const MOOD_ICONS: Record<string, React.ElementType> = {
+  'depression-arc':    HeartCrack,
+  'aura-farming':      Sparkles,
+  'brainrot':          Brain,
+  'manipulator-mc':    Drama,
+  'comfy-sol':         Coffee,
+  'revenge-fantasy':   Flame,
+  'murim-addiction':   Sword,
+  'power-fantasy':     Zap,
+  'emotional-damage':  Heart,
+  'villainess-era':    Crown,
+  'necromancer-vibes': Skull,
+  'regression-loop':   RefreshCw,
+  'tower-climbing':    Building2,
+  'system-addict':     BarChart2,
+  'art-god':           Palette,
+  'guilty-trash':      Trash2,
+};
+
+function getMoodIcon(slug: string): React.ElementType {
+  return MOOD_ICONS[slug] ?? BookOpen;
+}
 
 interface MoodCardProps {
   mood: Mood;
@@ -20,6 +65,7 @@ interface MoodCardProps {
 export function MoodCard({ mood, isActive, onSelect, index = 0 }: MoodCardProps) {
   const prefersReduced = usePrefersReducedMotion();
   const accentColor = mood.atmosphere.accentColor;
+  const Icon = getMoodIcon(mood.slug);
 
   return (
     <motion.button
@@ -53,9 +99,16 @@ export function MoodCard({ mood, isActive, onSelect, index = 0 }: MoodCardProps)
           : undefined
       }
     >
-      {/* Emoji */}
-      <span className="text-2xl leading-none" aria-hidden="true">
-        {mood.emoji}
+      {/* Icon */}
+      <span
+        className="flex items-center justify-center w-8 h-8 rounded-md"
+        aria-hidden="true"
+        style={{
+          color: accentColor,
+          backgroundColor: `${accentColor}18`,
+        }}
+      >
+        <Icon size={16} strokeWidth={1.75} />
       </span>
 
       {/* Name */}

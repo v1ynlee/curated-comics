@@ -4,6 +4,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Plus, BookOpen, ExternalLink } from 'lucide-react';
 import { getServerUser } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 
@@ -33,19 +34,19 @@ export default async function AdminDashboardPage() {
           href="/admin/titles/new"
           title="Add Title"
           description="Add a new manhwa, manhua, or manga to the library."
-          icon="➕"
+          icon={<Plus size={20} aria-hidden="true" />}
         />
         <AdminCard
           href="/admin/titles"
           title="Manage Titles"
           description="Edit, delete, or bulk-update existing titles."
-          icon="📚"
+          icon={<BookOpen size={20} aria-hidden="true" />}
         />
         <AdminCard
           href="/"
           title="View Site"
           description="Open the public-facing site in a new tab."
-          icon="🌐"
+          icon={<ExternalLink size={20} aria-hidden="true" />}
           external
         />
       </div>
@@ -63,7 +64,7 @@ function AdminCard({
   href: string;
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
   external?: boolean;
 }) {
   return (
@@ -73,7 +74,12 @@ function AdminCard({
       rel={external ? 'noopener noreferrer' : undefined}
       className="flex flex-col gap-3 p-5 rounded-sm bg-surface-elevated/50 border border-white/5 hover:border-white/10 hover:bg-surface-elevated/70 transition-all duration-150 focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2"
     >
-      <span className="text-2xl" aria-hidden="true">{icon}</span>
+      <span
+        className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent-primary/10 text-accent-primary"
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
       <div className="flex flex-col gap-1">
         <span className="font-heading text-sm font-bold text-text-primary">{title}</span>
         <span className="font-body text-xs text-text-secondary">{description}</span>

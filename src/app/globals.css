@@ -49,9 +49,7 @@
   --color-tier-d:   #4b5563;
   --color-tier-f:   #ef4444;
 
-  /* Typography — Font Families
-     CSS variables from next/font are injected as --font-dm-sans etc.
-     We map them here so components can use semantic names. */
+  /* Typography — Font Families */
   --font-display: var(--font-playfair, 'Playfair Display'), 'Georgia', serif;
   --font-heading: 'Datatype', 'Oswald', 'Arial Narrow', sans-serif;
   --font-body:    var(--font-dm-sans, 'DM Sans'), 'Inter', system-ui, sans-serif;
@@ -116,41 +114,131 @@
 
 /* ── Base Styles ───────────────────────────────────────────── */
 
-/* Light mode overrides — applied via data-theme="light" on <html> */
+/*
+  Light mode overrides — applied via data-theme="light" on <html>.
+  ALL color tokens are overridden so every component using CSS vars
+  automatically adapts. Hard-coded colors (border-white/5 etc.) are
+  handled via the [data-theme="light"] overrides below.
+*/
 [data-theme="light"] {
-  --color-bg-deep:          #f8f8fc;
-  --color-bg-mid:           #f0f0f8;
-  --color-bg-surface:       #e8e8f4;
-  --color-surface-elevated: #dcdcee;
+  --color-bg-deep:          #f4f4fb;
+  --color-bg-mid:           #eaeaf5;
+  --color-bg-surface:       #ddddf0;
+  --color-surface-elevated: #d0d0e8;
   --color-text-primary:     #0f0f1a;
   --color-text-secondary:   #3a3a5c;
-  --color-text-tertiary:    #6b6b90;
+  --color-text-tertiary:    #6060a0;
   --color-text-accent:      #4a2080;
+  /* Slightly muted accents for light bg readability */
+  --color-accent-primary:    #7c3aed;
+  --color-accent-secondary:  #d97706;
+  --color-accent-tertiary:   #0891b2;
+  --color-accent-quaternary: #db2777;
 }
 
+/* Light mode body */
 [data-theme="light"] body {
   background-color: var(--color-bg-deep);
   color: var(--color-text-primary);
 }
 
+/* Light mode scrollbar */
 [data-theme="light"] ::-webkit-scrollbar-track {
   background: var(--color-bg-mid);
 }
-
 [data-theme="light"] ::-webkit-scrollbar-thumb {
   background: var(--color-surface-elevated);
 }
 
+/* Light mode — fix hard-coded white/black borders & backgrounds */
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/20 {
+  border-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+[data-theme="light"] .bg-bg-mid\/90,
+[data-theme="light"] .bg-bg-mid\/95 {
+  background-color: color-mix(in srgb, var(--color-bg-mid) 92%, transparent);
+}
+
+[data-theme="light"] .bg-bg-deep\/60,
+[data-theme="light"] .bg-bg-deep\/70 {
+  background-color: color-mix(in srgb, var(--color-bg-deep) 70%, transparent);
+}
+
+/* Light mode nav — themed shadow instead of black */
+[data-theme="light"] header[role="banner"] {
+  box-shadow: 0 1px 20px color-mix(in srgb, var(--color-accent-primary) 12%, transparent),
+              0 1px 4px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+/* Light mode footer */
+[data-theme="light"] footer[role="contentinfo"] {
+  border-top-color: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+  background-color: color-mix(in srgb, var(--color-bg-mid) 80%, transparent);
+}
+
+/* Light mode surface cards */
+[data-theme="light"] .bg-surface-elevated\/30,
+[data-theme="light"] .bg-surface-elevated\/50,
+[data-theme="light"] .bg-surface-elevated\/60 {
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 50%, transparent);
+}
+
+/* Light mode gradient text stays vivid */
+[data-theme="light"] .gradient-text {
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-quaternary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Theme Transition — smooth ripple/crossfade ────────────── */
+/*
+  We use a CSS view-transition on the html element.
+  ThemeProvider triggers it via document.startViewTransition().
+  Fallback: simple opacity crossfade for browsers without VT support.
+*/
+
+html {
+  /* Smooth color transitions on all elements during theme switch */
+  transition:
+    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* All elements inherit smooth color transitions */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 0.35s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* View Transition API — ripple from click origin */
+::view-transition-old(root) {
+  animation: theme-fade-out 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+::view-transition-new(root) {
+  animation: theme-fade-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Base Resets ───────────────────────────────────────────── */
+
 html {
-  /* Prevent layout shift from scrollbar appearing */
   scrollbar-gutter: stable;
-  /* Smooth scroll — overridden by Lenis in JS */
   scroll-behavior: smooth;
 }
 
@@ -163,13 +251,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  /* Ensure full-page scroll works correctly */
   min-height: 100vh;
 }
 
 /* ── Focus Styles ──────────────────────────────────────────── */
 
-/* Custom focus ring — visible only for keyboard users */
 :focus-visible {
   outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
@@ -244,6 +330,29 @@ body {
     0 0 40px rgba(255, 215, 0, 0.5);
 }
 
+/*
+  Heading glow — pulsing soft glow on major page headings.
+  Uses the current text color via currentColor-based shadow.
+  Apply .heading-glow to h1/h2 elements on key pages.
+*/
+.heading-glow {
+  animation: heading-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes heading-glow-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 8px color-mix(in srgb, var(--color-accent-primary) 40%, transparent),
+      0 0 20px color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
+  }
+  50% {
+    text-shadow:
+      0 0 16px color-mix(in srgb, var(--color-accent-primary) 60%, transparent),
+      0 0 40px color-mix(in srgb, var(--color-accent-primary) 30%, transparent),
+      0 0 60px color-mix(in srgb, var(--color-accent-primary) 10%, transparent);
+  }
+}
+
 /* Vertical text — decorative Japanese-style */
 .vertical-text {
   writing-mode: vertical-rl;
@@ -266,13 +375,11 @@ body {
 
 /* ── Layout Utilities ──────────────────────────────────────── */
 
-/* Cinematic full-bleed section */
 .section-full-bleed {
   width: 100vw;
   margin-left: calc(50% - 50vw);
 }
 
-/* Content container */
 .container-content {
   width: 100%;
   max-width: 1440px;
@@ -294,7 +401,6 @@ body {
 
 /* ── CSS Keyframe Animations ───────────────────────────────── */
 
-/* Skeleton shimmer */
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -311,7 +417,6 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
-/* Ambient glow pulse */
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.6; }
   50%       { opacity: 1; }
@@ -321,7 +426,6 @@ body {
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
-/* Floating ambient element */
 @keyframes float-ambient {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-12px); }
@@ -331,7 +435,6 @@ body {
   animation: float-ambient 6s ease-in-out infinite;
 }
 
-/* Gradient background shift */
 @keyframes gradient-shift {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
@@ -343,13 +446,36 @@ body {
   animation: gradient-shift 8s ease infinite;
 }
 
-/* Spin (for loading indicators) */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Button shimmer sweep — used by the redesigned Button component */
+@keyframes btn-shimmer {
+  0%   { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-12deg);
+  pointer-events: none;
+}
+
+.btn-shimmer:hover::after {
+  animation: btn-shimmer 0.6s ease forwards;
 }
 
 /* ── Reduced Motion ─────────────────────────────────────────── */
@@ -375,6 +501,11 @@ body {
   .particle-field {
     display: none !important;
   }
+
+  .heading-glow {
+    animation: none !important;
+    text-shadow: none !important;
+  }
 }
 
 /* ── High Contrast Mode ─────────────────────────────────────── */
@@ -388,7 +519,8 @@ body {
   }
 
   .glow-text,
-  .glow-text-gold {
+  .glow-text-gold,
+  .heading-glow {
     text-shadow: none;
   }
 }
@@ -401,12 +533,10 @@ body {
 
 /* ── Mobile Utilities ───────────────────────────────────────── */
 
-/* iOS safe area bottom padding */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Hide scrollbar but keep scrollable */
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -417,13 +547,11 @@ body {
 
 /* ── Performance Utilities ──────────────────────────────────── */
 
-/* Defer rendering of off-screen sections */
 .content-deferred {
   content-visibility: auto;
   contain-intrinsic-size: 0 400px;
 }
 
-/* GPU containment for animated cards */
 .card-contained {
   contain: layout style;
 }
