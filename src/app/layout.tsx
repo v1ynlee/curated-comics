@@ -1,7 +1,5 @@
 // ============================================================
 // Root Layout
-// Source of truth: docs/design/TYPOGRAPHY_SYSTEM.md
-//                  docs/architecture/COMPONENT_ARCHITECTURE.md
 // ============================================================
 
 import type { Metadata } from 'next';
@@ -22,8 +20,6 @@ import { EasterEgg } from '@/components/cinematic/EasterEgg';
 import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
 import { SITE_URL } from '@/lib/constants';
 import './globals.css';
-
-// ── Font Definitions ──────────────────────────────────────────
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -49,8 +45,6 @@ const caveat = Caveat({
   display: 'optional',
 });
 
-// ── Metadata ──────────────────────────────────────────────────
-
 export const metadata: Metadata = {
   title: {
     default: 'Comic Curated',
@@ -71,13 +65,10 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  // PWA theme color
   other: {
     'theme-color': '#08080f',
   },
 };
-
-// ── Root Layout ───────────────────────────────────────────────
 
 export default function RootLayout({
   children,
@@ -96,20 +87,18 @@ export default function RootLayout({
       ].join(' ')}
     >
       <head>
-        {/* RSS feed discovery */}
         <link
           rel="alternate"
           type="application/rss+xml"
           title="Comic Curated — New Titles"
           href="/feed.xml"
         />
-        {/* PWA */}
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="bg-bg-deep text-text-primary font-body overflow-x-hidden">
-        {/* Skip navigation — accessibility */}
+        {/* Skip navigation */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-toast focus:px-4 focus:py-2 focus:bg-accent-primary focus:text-white focus:rounded-md"
@@ -118,22 +107,19 @@ export default function RootLayout({
         </a>
 
         <Providers>
-          {/* PWA service worker */}
           <ServiceWorkerRegistration />
-
-          {/* Custom cursor — desktop only, high-perf only */}
           <CustomCursor />
-
-          {/* Easter egg — Konami code */}
           <EasterEgg />
-
-          {/* Keyboard shortcuts help modal */}
           <KeyboardShortcutsHelp />
 
-          {/* Desktop floating nav */}
+          {/*
+            Navigation sits OUTSIDE PageTransition so it is never inside
+            a Framer Motion stacking context. This is the fix for nav
+            being unclickable — PageTransition creates a stacking context
+            that was covering the fixed nav.
+          */}
           <Navigation />
 
-          {/* Page content with transitions */}
           <PageTransition>
             <main
               id="main-content"
@@ -145,7 +131,6 @@ export default function RootLayout({
             <Footer />
           </PageTransition>
 
-          {/* Mobile bottom nav */}
           <MobileNav />
         </Providers>
       </body>

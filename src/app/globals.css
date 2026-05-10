@@ -100,6 +100,20 @@
   --z-toast:      50;
 }
 
+/* ── Z-Index Utilities ─────────────────────────────────────── */
+/*
+  Tailwind v4 does NOT auto-generate z-{name} utilities from --z-{name}
+  CSS variables in @theme inline. We must define them explicitly via @utility.
+*/
+
+@utility z-below    { z-index: var(--z-below); }
+@utility z-base     { z-index: var(--z-base); }
+@utility z-raised   { z-index: var(--z-raised); }
+@utility z-overlay  { z-index: var(--z-overlay); }
+@utility z-modal    { z-index: var(--z-modal); }
+@utility z-nav      { z-index: var(--z-nav); }
+@utility z-toast    { z-index: var(--z-toast); }
+
 /* ── Base Styles ───────────────────────────────────────────── */
 
 /* Light mode overrides — applied via data-theme="light" on <html> */

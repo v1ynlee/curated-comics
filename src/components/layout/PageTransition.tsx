@@ -2,6 +2,8 @@
 
 // ============================================================
 // PageTransition — AnimatePresence wrapper for route changes
+// Navigation is rendered OUTSIDE this component in layout.tsx
+// so it is never inside a Framer Motion stacking context.
 // ============================================================
 
 import { AnimatePresence, motion } from 'framer-motion';
@@ -29,8 +31,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         animate="animate"
         exit="exit"
         variants={variants}
-        // Ensure this wrapper never clips or blocks the fixed nav above it
-        style={{ position: 'relative', zIndex: 0 }}
       >
         {children}
       </motion.div>

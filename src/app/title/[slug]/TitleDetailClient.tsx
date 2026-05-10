@@ -30,10 +30,10 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
   return (
     <article aria-labelledby="title-heading">
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end overflow-hidden">
-        {/* Blurred backdrop */}
+      <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end">
+        {/* Blurred backdrop — isolated so it doesn't clip the fixed nav */}
         <div
-          className="absolute inset-0 -z-10"
+          className="absolute inset-0 -z-10 overflow-hidden"
           aria-hidden="true"
           style={{ backgroundColor: dominantColor }}
         >
