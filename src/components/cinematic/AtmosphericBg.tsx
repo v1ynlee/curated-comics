@@ -46,9 +46,15 @@ export function AtmosphericBg({
       {/* Base gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-mid to-bg-surface opacity-90" />
 
-      {/* Accent orbs */}
-      <div className="absolute left-1/4 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary opacity-[0.04] blur-[120px]" />
-      <div className="absolute right-1/4 bottom-1/3 h-[400px] w-[400px] translate-x-1/2 translate-y-1/2 rounded-full bg-accent-quaternary opacity-[0.04] blur-[100px]" />
+      {/* Accent orbs — animated on high-perf */}
+      <div className={cn(
+        'absolute left-1/4 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary blur-[120px]',
+        tier === 'high' && !prefersReduced ? 'animate-pulse-glow opacity-[0.05]' : 'opacity-[0.04]',
+      )} />
+      <div className={cn(
+        'absolute right-1/4 bottom-1/3 h-[400px] w-[400px] translate-x-1/2 translate-y-1/2 rounded-full bg-accent-quaternary blur-[100px]',
+        tier === 'high' && !prefersReduced ? 'animate-pulse-glow opacity-[0.05]' : 'opacity-[0.04]',
+      )} style={{ animationDelay: '1.5s' }} />
       <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-tertiary opacity-[0.03] blur-[80px]" />
 
       {/* Floating particles — CSS only */}

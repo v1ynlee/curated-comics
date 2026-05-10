@@ -157,7 +157,11 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
             {/* Review */}
             {title.review && (
               <ScrollReveal>
-                <ReviewSection review={title.review} />
+                <ReviewSection
+                  review={title.review}
+                  vibeCheck={title.vibeCheck}
+                  quotableLines={title.quotableLines}
+                />
               </ScrollReveal>
             )}
 

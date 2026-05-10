@@ -1,9 +1,10 @@
 'use client';
 
 // ============================================================
-// TitleCard — individual title card with blur-up image
+// TitleCard — individual title card with blur-up image + tilt
 // Source of truth: docs/design/UI_UX_DIRECTION.md
 //                  docs/motion/MOTION_SYSTEM.md — Card Interaction
+//                  docs/motion/ANIMATION_GUIDELINES.md — Rule 7
 // ============================================================
 
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import { Tag } from '@/components/ui/Tag';
 import { CoverImage } from '@/components/ui/CoverImage';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePrefetchTitle } from '@/hooks/useTitles';
+import { useCardTilt } from '@/hooks/useCardTilt';
 import { formatRating } from '@/lib/utils';
 import { TIER_CONFIG } from '@/types/title';
 import type { Title } from '@/types/title';
@@ -33,6 +35,7 @@ export function TitleCard({
 }: TitleCardProps) {
   const prefersReduced = usePrefersReducedMotion();
   const prefetchTitle = usePrefetchTitle();
+  const { tiltStyle, handlers } = useCardTilt(6);
 
   const tierConfig = title.tier ? TIER_CONFIG[title.tier] : null;
   const overallRating = title.ratings?.overall;
@@ -47,9 +50,12 @@ export function TitleCard({
         duration: 0.5,
         ease: [0.0, 0.0, 0.2, 1.0],
       }}
-      whileHover={prefersReduced ? undefined : { y: -4 }}
       className={cn('group relative flex flex-col', className)}
       aria-label={title.titleEnglish}
+      style={tiltStyle}
+      onMouseMove={handlers.onMouseMove as React.MouseEventHandler<HTMLElement>}
+      onMouseEnter={handlers.onMouseEnter as React.MouseEventHandler<HTMLElement>}
+      onMouseLeave={handlers.onMouseLeave as React.MouseEventHandler<HTMLElement>}
     >
       <Link
         href={`/title/${title.slug}`}

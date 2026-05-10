@@ -16,6 +16,7 @@ import { Navigation } from '@/components/layout/Navigation';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
 import { PageTransition } from '@/components/layout/PageTransition';
+import { CustomCursor } from '@/components/cinematic/CustomCursor';
 import './globals.css';
 
 // ── Font Definitions ──────────────────────────────────────────
@@ -98,6 +99,9 @@ export default function RootLayout({
         </a>
 
         <Providers>
+          {/* Custom cursor — desktop only, high-perf only */}
+          <CustomCursor />
+
           {/* Desktop floating nav */}
           <Navigation />
 

@@ -89,33 +89,33 @@ The project is divided into phases that build upon each other. Each phase delive
 ### Goal: Mood discovery, tier lists, and enhanced interactions
 
 **Mood/Genre Discovery:**
-- [ ] Mood selector with atmospheric transitions
-- [ ] Per-mood visual treatment (color, particles, gradient)
-- [ ] Discovery grid with mood-filtered results
-- [ ] Mood cards with emoji and description
-- [ ] Smooth transitions between moods
+- [x] Mood selector with atmospheric transitions
+- [x] Per-mood visual treatment (color, particles, gradient)
+- [x] Discovery grid with mood-filtered results
+- [x] Mood cards with emoji and description
+- [x] Smooth transitions between moods
 
 **Tier List:**
-- [ ] Visual tier display with tier-specific styling
-- [ ] Tier labels with glow/gradient effects
-- [ ] Titles within tiers (horizontal scroll per tier)
-- [ ] Tier descriptions
-- [ ] Responsive tier layout (vertical stack on mobile)
+- [x] Visual tier display with tier-specific styling
+- [x] Tier labels with glow/gradient effects
+- [x] Titles within tiers (horizontal scroll per tier)
+- [x] Tier descriptions
+- [x] Responsive tier layout (vertical stack on mobile)
 
 **Enhanced Interactions:**
-- [ ] Card hover physics (tilt, shadow)
-- [ ] Parallax sections
-- [ ] Staggered scroll reveals (GSAP batch)
-- [ ] Ambient background effects (gradient animation)
-- [ ] Custom cursor effects (desktop)
-- [ ] Improved page transitions
+- [x] Card hover physics (tilt, shadow)
+- [x] Parallax sections
+- [x] Staggered scroll reveals (GSAP batch)
+- [x] Ambient background effects (gradient animation)
+- [x] Custom cursor effects (desktop)
+- [x] Improved page transitions
 
 **Review System Enhancement:**
-- [ ] Markdown rendering
-- [ ] Spoiler toggle sections
-- [ ] "Vibe check" display
-- [ ] Quotable lines showcase
-- [ ] Editorial typography treatment
+- [x] Markdown rendering
+- [x] Spoiler toggle sections
+- [x] "Vibe check" display
+- [x] Quotable lines showcase
+- [x] Editorial typography treatment
 
 **Deliverable:** Full discovery experience with mood-based browsing and tier lists. Site feels cinematic and interactive.
 
