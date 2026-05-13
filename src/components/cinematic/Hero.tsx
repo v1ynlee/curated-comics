@@ -5,13 +5,22 @@
 // Source of truth: docs/design/UI_UX_DIRECTION.md
 //                  docs/motion/MOTION_SYSTEM.md — First Load Sequence
 //
+// Font: Morvein (local, src/fonts/Morvein/Morvien-Regular.woff2)
+//       loaded via next/font/local → CSS var --font-morvein
+//       mapped to --font-hero in @theme inline.
+//
+// Layout:
+//   Desktop (md+): hero title words sit side-by-side horizontally
+//   Mobile (<md):  hero title words stack vertically, compact spacing
+//
+// Colors:
+//   Dark theme:  soft off-white (#e8e8f0), NOT pure white
+//   Light theme: deep charcoal (#1a1a2e), NOT pure black
+//   First word:  always accent gradient (purple → pink)
+//
 // Background images:
 //   dark  → /images/background.png
 //   light → /images/background-light.png
-//
-// AtmosphericBg is NOT used here — the background image provides
-// the visual depth. Corner gradients are rendered inline so they
-// adapt to the active theme via CSS custom properties.
 // ============================================================
 
 import { useEffect, useRef } from 'react';
@@ -74,6 +83,13 @@ export function Hero() {
     : '/images/background.png';
   const bgOpacity = theme === 'light' ? 0.25 : 0.18;
 
+  /*
+    Soft text colors — avoid pure white (#fff) in dark and pure black (#000) in light.
+    Dark:  #e8e8f0 — warm off-white, easy on the eyes
+    Light: #1a1a2e — deep charcoal-navy, not harsh black
+  */
+  const heroTextColor = theme === 'light' ? '#1a1a2e' : '#e8e8f0';
+
   return (
     <section
       ref={containerRef}
@@ -99,7 +115,7 @@ export function Hero() {
           style={{ opacity: bgOpacity }}
           sizes="100vw"
         />
-        {/* Gradient overlay — uses inline style so CSS vars resolve correctly */}
+        {/* Gradient overlay — inline CSS vars resolve correctly in both themes */}
         <div
           className="absolute inset-0"
           style={{
@@ -112,7 +128,10 @@ export function Hero() {
       </motion.div>
 
       {/* ── Corner accent gradients — theme-aware ──────────── */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+      <div
+        className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
+        aria-hidden="true"
+      >
         <div
           className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full blur-[160px]"
           style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-primary) 7%, transparent)' }}
@@ -124,7 +143,8 @@ export function Hero() {
       </div>
 
       {/* ── Content ────────────────────────────────────────── */}
-      <div className="hero-content container-content flex flex-col items-center gap-6 text-center pt-16 md:pt-0">
+      <div className="hero-content container-content flex flex-col items-center gap-5 text-center pt-16 md:pt-0">
+
         {/* Section label */}
         <motion.span
           className="font-heading text-xs font-medium uppercase tracking-[0.25em] text-text-tertiary"
@@ -135,40 +155,61 @@ export function Hero() {
           Personal Reading Archive
         </motion.span>
 
-        {/* Main title */}
+        {/*
+          Hero heading — Morvein font
+          Desktop: "Comic Curated" side-by-side on one line
+          Mobile:  "Comic" and "Curated" stacked vertically, compact gap
+        */}
         <motion.h1
           id="hero-title"
-          className={cn(
-            'font-display font-black leading-none tracking-tight',
-            'text-[clamp(3rem,10vw,8rem)]',
-            'heading-glow',
-          )}
+          className="heading-glow"
+          style={{ fontFamily: 'var(--font-hero)' }}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 24, filter: prefersReduced ? 'none' : 'blur(8px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ delay: SEQUENCE.title * stagger, duration: 0.8, ease: [0.0, 0.0, 0.2, 1.0] }}
         >
-          <GradientText>Comic</GradientText>
-          <br />
-          <span className="text-text-primary">Curated</span>
+          {/*
+            Desktop: flex-row — words sit side by side
+            Mobile:  flex-col — words stack vertically
+            The gap is tight on mobile (gap-0) to keep it compact.
+          */}
+          <span className={cn(
+            'flex leading-[0.95] tracking-tight',
+            'text-[clamp(3.5rem,11vw,9rem)]',
+            // Mobile: vertical stack, compact
+            'flex-col gap-0',
+            // Desktop: horizontal, single line with a small gap
+            'md:flex-row md:gap-[0.2em] md:items-baseline',
+          )}>
+            {/* "Comic" — accent gradient, always vivid */}
+            <GradientText>Comic</GradientText>
+
+            {/* "Curated" — soft theme-aware color, NOT pure white/black */}
+            <span style={{ color: heroTextColor }}>Curated</span>
+          </span>
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
-          className="max-w-lg font-body text-lg font-light text-text-secondary md:text-xl"
+          className="max-w-lg font-body text-base font-light md:text-lg"
+          style={{ color: theme === 'light' ? '#3a3a5c' : '#b0b0c8' }}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: SEQUENCE.subtitle * stagger, duration: 0.6, ease: [0.0, 0.0, 0.2, 1.0] }}
         >
           Korean manhwa · Chinese manhua · Japanese manga
           <br />
-          <span className="text-text-tertiary text-base">
+          <span
+            className="text-sm"
+            style={{ color: theme === 'light' ? '#5a5a80' : '#7a7a98' }}
+          >
             A cinematic showcase of every title I&apos;ve read, rated, and loved.
           </span>
         </motion.p>
 
         {/* CTA */}
         <motion.div
-          className="flex flex-col sm:flex-row gap-3 mt-2"
+          className="flex flex-col sm:flex-row gap-3 mt-1"
           initial={{ opacity: 0, y: prefersReduced ? 0 : 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: SEQUENCE.cta * stagger, duration: 0.5 }}
@@ -189,11 +230,17 @@ export function Hero() {
           transition={{ delay: SEQUENCE.scroll * stagger, duration: 0.5 }}
           aria-hidden="true"
         >
-          <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
+          <span
+            className="font-heading text-[10px] uppercase tracking-[0.2em]"
+            style={{ color: theme === 'light' ? '#7a7a98' : '#6b6b80' }}
+          >
             Scroll
           </span>
           <motion.div
-            className="h-8 w-px bg-gradient-to-b from-text-tertiary to-transparent"
+            className="h-8 w-px"
+            style={{
+              background: `linear-gradient(to bottom, ${theme === 'light' ? '#7a7a98' : '#6b6b80'}, transparent)`,
+            }}
             animate={{ scaleY: [1, 0.5, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           />
