@@ -86,7 +86,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
         </div>
 
         {/* Hero content */}
-        <div className="container-content pb-12 pt-16 md:pt-20 flex flex-col md:flex-row gap-8 md:gap-12 items-end">
+        <div className="container-content pb-12 pt-4 md:pt-0 flex flex-col md:flex-row gap-8 md:gap-12 items-end">
           {/* Cover art */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
