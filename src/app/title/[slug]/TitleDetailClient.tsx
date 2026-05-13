@@ -49,7 +49,12 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
   return (
     <article aria-labelledby="title-heading">
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end">
+      {/*
+        Layout: no min-h, no items-end.
+        pt-20 md:pt-20 clears the fixed nav (h-16 = 64px) with a small buffer.
+        The backdrop is absolute/inset-0 so it fills whatever height the content needs.
+      */}
+      <div className="relative">
 
         {/* Blurred backdrop — isolated so it doesn't clip the fixed nav */}
         <div
@@ -85,8 +90,8 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           />
         </div>
 
-        {/* Hero content */}
-        <div className="container-content pb-12 pt-4 md:pt-0 flex flex-col md:flex-row gap-8 md:gap-12 items-end">
+        {/* Hero content — pt clears the fixed nav, pb gives breathing room below */}
+        <div className="container-content pt-20 md:pt-24 pb-10 flex flex-col md:flex-row gap-8 md:gap-12 items-end">
           {/* Cover art */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
