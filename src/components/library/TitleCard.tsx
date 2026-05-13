@@ -64,12 +64,15 @@ export function TitleCard({
         onFocus={() => prefetchTitle(title.slug)}
       >
         {/* Cover image */}
-        <div className="relative overflow-hidden rounded-sm">
+        <div className="relative overflow-hidden rounded-lg">
           <CoverImage
             slug={title.coverImage?.slug ?? title.slug}
             alt={`${title.titleEnglish} cover`}
             blurDataURL={title.coverImage?.blurDataURL}
             dominantColor={title.coverImage?.dominantColor}
+            origin={title.origin}
+            tier={title.tier}
+            rounded
             className={cn(
               'w-full transition-transform duration-500',
               'group-hover:scale-[1.03]',
@@ -110,21 +113,6 @@ export function TitleCard({
               ))}
             </div>
           </div>
-
-          {/* Tier badge */}
-          {tierConfig && (
-            <span
-              className="absolute top-2 right-2 font-heading text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
-              style={{
-                color: tierConfig.color,
-                backgroundColor: `${tierConfig.color}20`,
-                border: `1px solid ${tierConfig.color}40`,
-              }}
-              aria-label={`Tier ${title.tier}`}
-            >
-              {title.tier}
-            </span>
-          )}
         </div>
 
         {/* Info below image */}

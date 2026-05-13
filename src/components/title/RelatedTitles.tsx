@@ -37,18 +37,18 @@ export function RelatedTitles({ titleId, genreSlugs, className }: RelatedTitlesP
 
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory"
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory -mx-1 px-1"
         role="list"
         aria-label="Related titles"
       >
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-36 shrink-0 snap-start">
+              <div key={i} className="w-32 shrink-0 snap-start">
                 <TitleCardSkeleton />
               </div>
             ))
           : titles?.map((title, i) => (
-              <div key={title.id} className="w-36 shrink-0 snap-start" role="listitem">
+              <div key={title.id} className="w-32 shrink-0 snap-start last:pr-4" role="listitem">
                 <TitleCard title={title} index={i} />
               </div>
             ))}
