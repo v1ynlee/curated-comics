@@ -15,6 +15,7 @@ import { TimelineChart } from '@/components/stats/TimelineChart';
 import { ReadingStreak } from '@/components/stats/ReadingStreak';
 import { YearlyArc } from '@/components/stats/YearlyArc';
 import { BadgeGrid } from '@/components/achievements/BadgeGrid';
+import { PageHeading } from '@/components/ui/PageHeading';
 import { useReadingStatistics, useAchievements } from '@/hooks/useStats';
 import { BookOpen, BookMarked, Clock, Star } from 'lucide-react';
 
@@ -34,9 +35,7 @@ export default function StatsPage() {
         <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
           Reading Archive
         </span>
-        <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight heading-glow">
-          Statistics
-        </h1>
+        <PageHeading>Statistics</PageHeading>
         <p className="font-body text-text-secondary max-w-md">
           Every chapter, every hour, every title — visualized.
         </p>

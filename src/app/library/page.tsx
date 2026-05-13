@@ -5,6 +5,7 @@
 
 import type { Metadata } from 'next';
 import { LibraryGrid } from '@/components/library/LibraryGrid';
+import { PageHeading } from '@/components/ui/PageHeading';
 
 export const metadata: Metadata = {
   title: 'Library',
@@ -19,9 +20,7 @@ export default function LibraryPage() {
         <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
           Reading Archive
         </span>
-        <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight heading-glow">
-          Library
-        </h1>
+        <PageHeading>Library</PageHeading>
         <p className="font-body text-text-secondary max-w-md">
           Every title I&apos;ve read, rated, and catalogued. Filter by genre, sort by rating, explore by mood.
         </p>

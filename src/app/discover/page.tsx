@@ -12,6 +12,7 @@ import { MoodSelector } from '@/components/discover/MoodSelector';
 import { MoodAtmosphere } from '@/components/discover/MoodAtmosphere';
 import { DiscoveryGrid } from '@/components/discover/DiscoveryGrid';
 import { useMoods } from '@/hooks/useMoods';
+import { PageHeading } from '@/components/ui/PageHeading';
 import type { Mood } from '@/types/title';
 
 export default function DiscoverPage() {
@@ -40,9 +41,7 @@ export default function DiscoverPage() {
           <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
             Mood-Based Discovery
           </span>
-          <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight heading-glow">
-            Discover
-          </h1>
+          <PageHeading>Discover</PageHeading>
           <p className="font-body text-text-secondary max-w-md">
             Find your next read by vibe. Each mood is a different frequency —
             tune in and explore.

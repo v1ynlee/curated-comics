@@ -50,11 +50,18 @@ const caveat = Caveat({
 
 // ── Local fonts ─────────────────────────────────────────────
 // Morvein — cinematic display font used in the hero heading.
-// Loaded from src/fonts/ so it's bundled with the project and
-// works correctly after deployment (no OS or CDN dependency).
 const morvein = localFont({
   src: '../fonts/Morvein/Morvien-Regular.woff2',
   variable: '--font-morvein',
+  display: 'swap',
+  weight: '400',
+});
+
+// Child Hood — page section heading font (Library, Discover, Tiers, Stats).
+// Loaded from src/fonts/ so it's bundled with the project.
+const childHood = localFont({
+  src: '../fonts/Child-Hood/Child Hood.woff2',
+  variable: '--font-child-hood',
   display: 'swap',
   weight: '400',
 });
@@ -98,6 +105,7 @@ export default function RootLayout({
         jetbrainsMono.variable,
         caveat.variable,
         morvein.variable,
+        childHood.variable,
         'antialiased',
       ].join(' ')}
     >

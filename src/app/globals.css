@@ -56,7 +56,9 @@
   --font-accent:  var(--font-caveat, 'Caveat'), 'Ink Free', cursive;
   --font-data:    var(--font-jetbrains, 'JetBrains Mono'), 'Fira Code', 'Cascadia Code', monospace;
   /* Morvein — local cinematic display font for hero heading */
-  --font-hero:    var(--font-morvein, 'Playfair Display'), 'Georgia', serif;
+  --font-hero:         var(--font-morvein, 'Playfair Display'), 'Georgia', serif;
+  /* Child Hood — local page section heading font */
+  --font-page-heading: var(--font-child-hood, 'Playfair Display'), 'Georgia', serif;
 
   /* Typography — Type Scale (Major Third 1.25) */
   --text-xs:   0.75rem;
@@ -383,7 +385,9 @@ body {
 .font-accent   { font-family: var(--font-accent); }
 .font-data     { font-family: var(--font-data); }
 /* Morvein — local cinematic display font, used in hero heading */
-.font-hero     { font-family: var(--font-hero); }
+.font-hero         { font-family: var(--font-hero); }
+/* Child Hood — local page section heading font */
+.font-page-heading { font-family: var(--font-page-heading); }
 
 /* Gradient text */
 .gradient-text {

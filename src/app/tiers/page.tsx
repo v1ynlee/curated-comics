@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { TierRow } from '@/components/tiers/TierRow';
 import { useTierGroups } from '@/hooks/useTiers';
 import { TIER_CONFIG } from '@/types/title';
+import { PageHeading } from '@/components/ui/PageHeading';
 import type { TierLevel } from '@/types/title';
 
 const TIER_ORDER: TierLevel[] = ['SSS+', 'S', 'A', 'B', 'C', 'D', 'F'];
@@ -32,9 +33,7 @@ export default function TiersPage() {
         <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
           Personal Rankings
         </span>
-        <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] font-bold text-text-primary leading-tight heading-glow">
-          Tier List
-        </h1>
+          <PageHeading>Tier List</PageHeading>
         <p className="font-body text-text-secondary max-w-md">
           Every title I&apos;ve read, ranked from transcendent to trash.
           Scroll each tier to explore.
