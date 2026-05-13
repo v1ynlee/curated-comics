@@ -32,7 +32,7 @@ export default function SearchPage() {
   const hasQuery = debouncedQuery.trim().length > 0;
 
   return (
-    <div className="container-content pt-24 pb-16">
+    <div className="container-content pt-6 md:pt-24 pb-16">
       {/* Header */}
       <motion.div
         className="flex flex-col gap-2 mb-8"

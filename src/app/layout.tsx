@@ -13,6 +13,7 @@ import { Providers } from '@/components/providers/Providers';
 import { ServiceWorkerRegistration } from '@/components/providers/ServiceWorkerRegistration';
 import { Navigation } from '@/components/layout/Navigation';
 import { MobileNav } from '@/components/layout/MobileNav';
+import { MobileHeader } from '@/components/layout/MobileHeader';
 import { Footer } from '@/components/layout/Footer';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { CustomCursor } from '@/components/cinematic/CustomCursor';
@@ -120,12 +121,14 @@ export default function RootLayout({
             that was covering the fixed nav.
           */}
           <Navigation />
+          {/* Mobile-only top header — desktop nav handles md+ */}
+          <MobileHeader />
 
           <PageTransition>
             <main
               id="main-content"
               role="main"
-              className="min-h-screen pb-16 md:pb-0"
+              className="min-h-screen pt-14 pb-16 md:pt-0 md:pb-0"
             >
               {children}
             </main>

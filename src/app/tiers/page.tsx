@@ -21,7 +21,7 @@ export default function TiersPage() {
   const groupMap = new Map(groups.map((g) => [g.tier, g]));
 
   return (
-    <div className="container-content pt-24 pb-16">
+    <div className="container-content pt-6 md:pt-24 pb-16">
       {/* Page header */}
       <motion.div
         className="flex flex-col gap-2 mb-12"

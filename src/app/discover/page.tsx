@@ -29,7 +29,7 @@ export default function DiscoverPage() {
         moodKey={activeMoodSlug ?? 'default'}
       />
 
-      <div className="container-content pt-24 pb-16 relative">
+      <div className="container-content pt-6 md:pt-24 pb-16 relative">
         {/* Page header */}
         <motion.div
           className="flex flex-col gap-2 mb-12"

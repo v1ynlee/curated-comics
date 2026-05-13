@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function LibraryPage() {
   return (
-    <div className="container-content pt-24 pb-16">
+    <div className="container-content pt-6 md:pt-24 pb-16">
       {/* Page header */}
       <div className="flex flex-col gap-2 mb-10">
         <span className="font-heading text-xs uppercase tracking-[0.25em] text-text-tertiary">
