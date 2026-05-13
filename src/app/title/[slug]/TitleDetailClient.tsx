@@ -4,6 +4,16 @@
 // TitleDetailClient — immersive title detail view
 // Source of truth: docs/design/UI_UX_DIRECTION.md — Title Detail View
 //                  docs/design/MOBILE_EXPERIENCE.md
+//
+// Theme notes:
+//   - dominantColor from cover metadata is always a dark hex.
+//     In light mode we blend it heavily toward the page bg so it
+//     doesn't create a dark-purple island on a light page.
+//   - All gradient overlays use inline CSS-var styles so they
+//     resolve correctly in both themes at runtime.
+//   - Tailwind utilities that compile to static hex values
+//     (text-text-*, bg-surface-elevated, etc.) are overridden
+//     in globals.css [data-theme="light"] blocks.
 // ============================================================
 
 import Image from 'next/image';
@@ -17,6 +27,7 @@ import { ReviewSection } from '@/components/title/ReviewSection';
 import { ExternalLinks } from '@/components/title/ExternalLinks';
 import { TitleMeta } from '@/components/title/TitleMeta';
 import { RelatedTitles } from '@/components/title/RelatedTitles';
+import { useUIStore } from '@/stores/useUIStore';
 import type { Title } from '@/types/title';
 
 interface TitleDetailClientProps {
@@ -26,27 +37,52 @@ interface TitleDetailClientProps {
 export function TitleDetailClient({ title }: TitleDetailClientProps) {
   const coverSlug = title.coverImage?.slug ?? title.slug;
   const dominantColor = title.coverImage?.dominantColor ?? '#1a1a2e';
+  const theme = useUIStore((s) => s.theme);
+
+  // In light mode, blend the dominant color heavily toward the page
+  // background so the hero doesn't create a dark island.
+  // We mix the cover's dominant color at low opacity over the page bg.
+  const backdropBg = theme === 'light'
+    ? `color-mix(in srgb, ${dominantColor} 12%, var(--color-bg-deep))`
+    : dominantColor;
 
   return (
     <article aria-labelledby="title-heading">
       {/* ── Hero ─────────────────────────────────────────────── */}
       <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end">
+
         {/* Blurred backdrop — isolated so it doesn't clip the fixed nav */}
         <div
           className="absolute inset-0 -z-10 overflow-hidden"
           aria-hidden="true"
-          style={{ backgroundColor: dominantColor }}
+          style={{ backgroundColor: backdropBg }}
         >
           <Image
             src={`/images/covers/${coverSlug}-1200w.avif`}
             alt=""
             fill
-            className="object-cover opacity-20 blur-2xl scale-110"
+            className={cn(
+              'object-cover blur-2xl scale-110',
+              theme === 'light' ? 'opacity-10' : 'opacity-20',
+            )}
             priority
             sizes="100vw"
           />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-deep via-bg-deep/70 to-transparent" />
+
+          {/*
+            Gradient overlay — uses inline CSS vars so it resolves
+            correctly in both themes. Tailwind's from-bg-deep compiles
+            to a static #08080f and ignores the light-mode CSS var.
+          */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to top,
+                var(--color-bg-deep) 0%,
+                color-mix(in srgb, var(--color-bg-deep) 70%, transparent) 50%,
+                transparent 100%)`,
+            }}
+          />
         </div>
 
         {/* Hero content */}
@@ -60,7 +96,12 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           >
             <div
               className="relative"
-              style={{ aspectRatio: '2/3', backgroundColor: dominantColor }}
+              style={{
+                aspectRatio: '2/3',
+                backgroundColor: theme === 'light'
+                  ? `color-mix(in srgb, ${dominantColor} 20%, var(--color-bg-surface))`
+                  : dominantColor,
+              }}
             >
               <Image
                 src={`/images/covers/${coverSlug}-640w.avif`}
