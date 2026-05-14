@@ -1,6 +1,7 @@
 // ============================================================
 // Proxy (Next.js 16 — replaces middleware.ts)
-// Protects /admin routes: redirects unauthenticated users to /admin/login.
+// Protects /studio routes: redirects unauthenticated users to /studio/login.
+// Redirects legacy /admin routes to /studio.
 // Refreshes Supabase Auth session on every request.
 // ============================================================
 
@@ -34,19 +35,26 @@ export async function proxy(request: NextRequest) {
   // Refresh session — IMPORTANT: do not remove this call
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
-  const isLoginPage = request.nextUrl.pathname === '/admin/login';
+  // Studio route detection
+  const isStudioRoute = request.nextUrl.pathname.startsWith('/studio');
+  const isStudioLogin = request.nextUrl.pathname === '/studio/login';
 
-  // Redirect unauthenticated users away from admin (except login page)
-  if (isAdminRoute && !isLoginPage && !user) {
-    const loginUrl = new URL('/admin/login', request.url);
+  // Redirect unauthenticated users away from studio (except login page)
+  if (isStudioRoute && !isStudioLogin && !user) {
+    const loginUrl = new URL('/studio/login', request.url);
     loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+    loginUrl.searchParams.set('reason', 'session_expired');
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from login page
-  if (isLoginPage && user) {
-    return NextResponse.redirect(new URL('/admin', request.url));
+  // Redirect authenticated users away from studio login page
+  if (isStudioLogin && user) {
+    return NextResponse.redirect(new URL('/studio', request.url));
+  }
+
+  // Legacy /admin redirect to /studio
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/studio', request.url));
   }
 
   return supabaseResponse;
@@ -54,6 +62,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/studio/:path*',
     '/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|images|fonts).*)',
   ],
