@@ -183,7 +183,7 @@ function TabBar({
               'font-heading text-[11px] uppercase tracking-widest',
               'transition-colors duration-150',
               'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-              isActive ? 'text-text-primary' : 'text-text-tertiary hover:text-text-secondary',
+              isActive ? 'text-accent-primary' : 'text-text-tertiary hover:text-text-secondary',
             )}
           >
             <Icon size={12} aria-hidden="true" />
@@ -221,34 +221,33 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
 
       {/*
         ── Blurred banner ──────────────────────────────────────
-        IMPORTANT: overflow-hidden + isolation:isolate prevents
-        the blur from leaking into the fixed nav above.
-        The blur is applied ONLY to the <Image> element via
-        className="blur-2xl", NOT to the container.
-        The container sits below the nav — it does NOT overlap it.
+        Uses the same cover image as the hero content.
+        overflow:hidden + isolation:isolate prevents blur from
+        leaking into the fixed nav. The Back button is absolutely
+        positioned over the banner at the top-left.
+        The cover section uses -mt to overlap the banner by ~50%.
       */}
       <div
         className="relative overflow-hidden"
         style={{
-          height: 'clamp(160px, 28vw, 280px)',
+          height: 'clamp(180px, 32vw, 320px)',
           isolation: 'isolate',
         }}
-        aria-hidden="true"
       >
-        {/* The actual blurred image — blur is on the img, not the container */}
+        {/* Blurred cover — same src as hero cover, object-center */}
         <Image
           src={`/images/covers/${coverSlug}-1200w.avif`}
           alt=""
           fill
           priority
           className="object-cover object-center blur-2xl scale-110"
-          style={{ opacity: theme === 'light' ? 0.4 : 0.6 }}
+          style={{ opacity: theme === 'light' ? 0.45 : 0.65 }}
           sizes="100vw"
         />
         {/* Dominant color tint */}
         <div
           className="absolute inset-0"
-          style={{ backgroundColor: `${dominantColor}55` }}
+          style={{ backgroundColor: `${dominantColor}50` }}
         />
         {/* Fade to page bg at bottom */}
         <div
@@ -256,31 +255,41 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           style={{
             background: `linear-gradient(to bottom,
               transparent 0%,
-              color-mix(in srgb, var(--color-bg-deep) 50%, transparent) 65%,
+              color-mix(in srgb, var(--color-bg-deep) 40%, transparent) 60%,
               var(--color-bg-deep) 100%)`,
           }}
         />
+
+        {/* ── Back button — overlaid top-left on banner ──────── */}
+        <div className="absolute top-4 left-0 right-0 container-content z-raised">
+          <Link
+            href="/library"
+            className={cn(
+              'inline-flex items-center gap-1.5',
+              'font-heading text-xs uppercase tracking-widest',
+              'text-white/80 hover:text-white transition-colors',
+              'bg-black/20 hover:bg-black/30 backdrop-blur-sm',
+              'px-3 py-1.5 rounded-lg',
+              'focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2',
+            )}
+            aria-label="Back to Library"
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            Library
+          </Link>
+        </div>
       </div>
 
-      {/* ── Back button — top-left, overlaps banner ─────────── */}
-      <div className="container-content">
-        <Link
-          href="/library"
-          className={cn(
-            'inline-flex items-center gap-1.5 -mt-8 mb-4 relative z-raised',
-            'font-heading text-xs uppercase tracking-widest',
-            'text-text-tertiary hover:text-text-secondary transition-colors',
-            'focus-visible:outline-accent-primary rounded-sm',
-          )}
-          aria-label="Back to Library"
-        >
-          <ArrowLeft size={13} aria-hidden="true" />
-          Library
-        </Link>
-      </div>
-
-      {/* ── Cover + title info ──────────────────────────────── */}
-      <div className="container-content -mt-2 pb-6">
+      {/* ── Cover + title info — overlaps banner by ~50% ───── */}
+      {/*
+        The negative margin pulls the cover section up so it
+        overlaps the bottom half of the banner.
+        clamp(90px, 16vw, 160px) = ~50% of banner height.
+      */}
+      <div
+        className="container-content pb-6 relative z-raised"
+        style={{ marginTop: 'calc(clamp(90px, 16vw, 160px) * -1)' }}
+      >
 
         {/* ── MOBILE layout: centered stack ──────────────────── */}
         <div className="flex flex-col items-center text-center md:hidden gap-4">

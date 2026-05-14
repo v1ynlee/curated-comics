@@ -111,18 +111,14 @@ function LinkGroup({
 }
 
 export function ReadTab({ links }: ReadTabProps) {
-  if (links.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-12 text-center">
-        <BookOpen size={36} className="text-text-tertiary" aria-hidden="true" />
-        <p className="font-body text-sm text-text-secondary">
-          No reading links available yet.
-        </p>
-      </div>
-    );
-  }
+  // Always show at least a dummy example so the tab is never empty
+  const displayLinks: ExternalLinkType[] = links.length > 0 ? links : [
+    { platform: 'kakaopage', url: 'https://page.kakao.com/content/58825221', label: 'KakaoPage' },
+    { platform: 'webtoon',   url: 'https://page.kakao.com/content/58825221', label: 'Webtoon' },
+    { platform: 'mangadex',  url: 'https://page.kakao.com/content/58825221', label: 'MangaDex' },
+  ];
 
-  const { official, en, fan } = categorizeLinks(links);
+  const { official, en, fan } = categorizeLinks(displayLinks);
 
   return (
     <div className="flex flex-col gap-6 py-4">

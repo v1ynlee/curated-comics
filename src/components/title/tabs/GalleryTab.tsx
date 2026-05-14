@@ -69,7 +69,9 @@ function LazyImage({
   );
 }
 
-// ── Group card (shows 3 preview thumbnails) ───────────────────
+// ── Group card — Pinterest-style collage ─────────────────────
+// Layout: 1 tall image on the left, 2 stacked images on the right.
+// Below: group title, then item count + last updated timestamp.
 
 function GroupCard({
   category,
@@ -82,7 +84,11 @@ function GroupCard({
 }) {
   const config = CATEGORY_CONFIG[category];
   const Icon = config.icon;
-  const previews = images.slice(0, 3);
+  const [left, topRight, bottomRight] = images;
+
+  // Format a relative timestamp from the first image's sort_order
+  // (we use a static "Updated recently" since we don't have real timestamps)
+  const updatedLabel = 'Updated recently';
 
   return (
     <motion.button
@@ -90,41 +96,68 @@ function GroupCard({
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'flex flex-col gap-3 p-3 rounded-xl text-left w-full',
-        'bg-surface-elevated/30 border border-white/5',
-        'hover:border-white/10 hover:bg-surface-elevated/50',
-        'transition-colors duration-150',
-        'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+        'flex flex-col gap-2.5 text-left w-full',
+        'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2 rounded-xl',
       )}
     >
-      {/* Preview thumbnails */}
-      <div className="grid grid-cols-3 gap-1 rounded-lg overflow-hidden aspect-[3/1.4]">
-        {previews.map((img, i) => (
-          <LazyImage
-            key={img.id}
-            src={img.imageUrl}
-            alt={img.caption ?? `${config.label} ${i + 1}`}
-            className="aspect-[2/3]"
-          />
-        ))}
-        {/* Fill empty slots */}
-        {Array.from({ length: Math.max(0, 3 - previews.length) }).map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-[2/3] bg-surface-elevated/30" />
-        ))}
+      {/* Pinterest collage: 1 left tall + 2 right stacked */}
+      <div className="flex gap-1 rounded-xl overflow-hidden h-44">
+        {/* Left — tall single image */}
+        <div className="flex-1 min-w-0">
+          {left ? (
+            <LazyImage
+              src={left.imageUrl}
+              alt={left.caption ?? config.label}
+              className="w-full h-full"
+            />
+          ) : (
+            <div className="w-full h-full bg-surface-elevated/30" />
+          )}
+        </div>
+
+        {/* Right — 2 stacked images */}
+        <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <div className="flex-1 min-h-0">
+            {topRight ? (
+              <LazyImage
+                src={topRight.imageUrl}
+                alt={topRight.caption ?? config.label}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-surface-elevated/20" />
+            )}
+          </div>
+          <div className="flex-1 min-h-0">
+            {bottomRight ? (
+              <LazyImage
+                src={bottomRight.imageUrl}
+                alt={bottomRight.caption ?? config.label}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-surface-elevated/20" />
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Label row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon size={14} style={{ color: config.color }} aria-hidden="true" />
-          <span className="font-heading text-xs font-medium text-text-primary">
-            {config.label}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="font-data text-[10px] text-text-tertiary">{images.length}</span>
-          <ChevronRight size={12} className="text-text-tertiary" aria-hidden="true" />
-        </div>
+      {/* Group title */}
+      <div className="flex items-center gap-2 px-0.5">
+        <Icon size={13} style={{ color: config.color }} aria-hidden="true" />
+        <span className="font-heading text-xs font-medium text-text-primary">
+          {config.label}
+        </span>
+      </div>
+
+      {/* Item count + timestamp */}
+      <div className="flex items-center gap-2 px-0.5">
+        <span className="font-data text-[10px] text-text-tertiary">
+          {images.length} {images.length === 1 ? 'image' : 'images'}
+        </span>
+        <span className="text-text-tertiary/30 text-[10px]">·</span>
+        <span className="font-body text-[10px] text-text-tertiary">{updatedLabel}</span>
+        <ChevronRight size={11} className="text-text-tertiary ml-auto" aria-hidden="true" />
       </div>
     </motion.button>
   );

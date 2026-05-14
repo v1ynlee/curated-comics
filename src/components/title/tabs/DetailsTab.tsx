@@ -22,13 +22,18 @@ function DetailRow({
   icon,
   label,
   children,
+  noDivider = false,
 }: {
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
+  noDivider?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
+    <div className={cn(
+      'flex items-start gap-3 py-2.5',
+      !noDivider && 'border-b border-white/5 last:border-0',
+    )}>
       <span className="text-text-tertiary mt-0.5 shrink-0">{icon}</span>
       <div className="flex flex-col gap-1 min-w-0">
         <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
@@ -48,7 +53,7 @@ export function DetailsTab({ title }: DetailsTabProps) {
 
       {/* Tier */}
       {tierConfig && (
-        <DetailRow icon={<Trophy size={15} />} label="Tier">
+        <DetailRow icon={<Trophy size={15} />} label="Tier" noDivider>
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-heading text-xs font-bold uppercase tracking-widest"
             style={{
@@ -86,7 +91,7 @@ export function DetailsTab({ title }: DetailsTabProps) {
 
       {/* Genres */}
       {title.genres.length > 0 && (
-        <DetailRow icon={<TagIcon size={15} />} label="Genres">
+        <DetailRow icon={<TagIcon size={15} />} label="Genres" noDivider>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {title.genres.map((genre) => (
               <Tag key={genre.slug} label={genre.name} color={genre.color} size="sm" />
@@ -108,7 +113,7 @@ export function DetailsTab({ title }: DetailsTabProps) {
 
       {/* Vibe Check */}
       {title.vibeCheck && (
-        <DetailRow icon={<MessageSquareQuote size={15} />} label="Vibe Check">
+        <DetailRow icon={<MessageSquareQuote size={15} />} label="Vibe Check" noDivider>
           <p className="font-accent text-base text-text-accent leading-snug italic">
             &ldquo;{title.vibeCheck}&rdquo;
           </p>
@@ -116,7 +121,7 @@ export function DetailsTab({ title }: DetailsTabProps) {
       )}
 
       {/* Status info */}
-      <DetailRow icon={<Users size={15} />} label="Status">
+      <DetailRow icon={<Users size={15} />} label="Status" noDivider>
         <div className="flex flex-wrap gap-2">
           <span className="font-heading text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-sm bg-surface-elevated/50 text-text-secondary">
             {title.origin}
