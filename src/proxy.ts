@@ -64,6 +64,6 @@ export const config = {
   matcher: [
     '/studio/:path*',
     '/admin/:path*',
-    '/((?!_next/static|_next/image|favicon.ico|images|fonts).*)',
+    '/((?!_next/static|_next/image|favicon.ico|images|fonts|auth/callback).*)',
   ],
 };

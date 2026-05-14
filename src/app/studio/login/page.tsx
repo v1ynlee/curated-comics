@@ -39,8 +39,9 @@ function StudioLoginForm() {
     setLoading(true);
 
     // Build the redirect URL for after magic link verification
+    // Points to the auth callback route which exchanges the code for a session
     const origin = window.location.origin;
-    const emailRedirectTo = `${origin}${redirectTo}`;
+    const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
 
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
