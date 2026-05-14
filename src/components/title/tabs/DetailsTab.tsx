@@ -1,12 +1,14 @@
 'use client';
 
 // ============================================================
-// DetailsTab — tier, genres, author, artist, themes, vibe check
+// DetailsTab — compact inline label: value layout
+// Label on the left, value inline on the right.
+// No dividers on tier, genres, vibe check, status, author, artist.
 // ============================================================
 
 import {
-  Trophy, Star, BookOpen, Palette, Users, Tag as TagIcon,
-  MessageSquareQuote, Layers,
+  Trophy, Star, BookOpen, Palette, Tag as TagIcon,
+  MessageSquareQuote, Layers, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Tag } from '@/components/ui/Tag';
@@ -18,28 +20,40 @@ interface DetailsTabProps {
   title: Title;
 }
 
-function DetailRow({
+// ── Inline row: icon + label on left, value on right ─────────
+
+function Row({
   icon,
   label,
   children,
-  noDivider = false,
+  divider = false,
+  alignTop = false,
 }: {
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-  noDivider?: boolean;
+  divider?: boolean;
+  alignTop?: boolean;
 }) {
   return (
     <div className={cn(
-      'flex items-start gap-3 py-2.5',
-      !noDivider && 'border-b border-white/5 last:border-0',
+      'flex items-start gap-3 py-1.5',
+      divider && 'border-b border-white/5',
     )}>
-      <span className="text-text-tertiary mt-0.5 shrink-0">{icon}</span>
-      <div className="flex flex-col gap-1 min-w-0">
-        <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
+      {/* Icon + label — fixed width so values align */}
+      <div className={cn(
+        'flex items-center gap-1.5 shrink-0 w-28',
+        alignTop ? 'mt-0.5' : '',
+      )}>
+        <span className="text-text-tertiary shrink-0">{icon}</span>
+        <span className="font-heading text-[10px] uppercase tracking-[0.15em] text-text-tertiary whitespace-nowrap">
           {label}
         </span>
-        <div className="font-body text-sm text-text-secondary">{children}</div>
+      </div>
+
+      {/* Value — inline, right of label */}
+      <div className="flex-1 min-w-0 font-body text-sm text-text-secondary">
+        {children}
       </div>
     </div>
   );
@@ -49,13 +63,13 @@ export function DetailsTab({ title }: DetailsTabProps) {
   const tierConfig = title.tier ? TIER_CONFIG[title.tier] : null;
 
   return (
-    <div className="flex flex-col gap-6 py-4">
+    <div className="flex flex-col py-3">
 
       {/* Tier */}
       {tierConfig && (
-        <DetailRow icon={<Trophy size={15} />} label="Tier" noDivider>
+        <Row icon={<Trophy size={13} />} label="Tier">
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-heading text-xs font-bold uppercase tracking-widest"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-heading text-[11px] font-bold uppercase tracking-widest"
             style={{
               color: tierConfig.color,
               backgroundColor: `${tierConfig.color}18`,
@@ -64,76 +78,64 @@ export function DetailsTab({ title }: DetailsTabProps) {
           >
             {title.tier} — {tierConfig.label}
           </span>
-          <p className="text-xs text-text-tertiary mt-1">{tierConfig.description}</p>
-        </DetailRow>
+        </Row>
       )}
 
-      {/* Rating breakdown */}
+      {/* Rating */}
       {title.ratings && (
-        <DetailRow icon={<Star size={15} />} label="Ratings">
+        <Row icon={<Star size={13} />} label="Ratings" alignTop divider>
           <RatingDisplay ratings={title.ratings} />
-        </DetailRow>
+        </Row>
       )}
 
       {/* Author */}
       {title.author && (
-        <DetailRow icon={<BookOpen size={15} />} label="Author">
+        <Row icon={<BookOpen size={13} />} label="Author">
           <span className="text-text-primary font-medium">{title.author}</span>
-        </DetailRow>
+        </Row>
       )}
 
       {/* Artist */}
       {title.artist && title.artist !== title.author && (
-        <DetailRow icon={<Palette size={15} />} label="Artist">
+        <Row icon={<Palette size={13} />} label="Artist">
           <span className="text-text-primary font-medium">{title.artist}</span>
-        </DetailRow>
+        </Row>
       )}
 
-      {/* Genres */}
+      {/* Genres — comma-separated inline */}
       {title.genres.length > 0 && (
-        <DetailRow icon={<TagIcon size={15} />} label="Genres" noDivider>
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {title.genres.map((genre) => (
-              <Tag key={genre.slug} label={genre.name} color={genre.color} size="sm" />
-            ))}
-          </div>
-        </DetailRow>
+        <Row icon={<TagIcon size={13} />} label="Genres" divider>
+          <span className="text-text-secondary">
+            {title.genres.map((g) => g.name).join(', ')}
+          </span>
+        </Row>
       )}
 
-      {/* Themes / Moods */}
+      {/* Themes / Moods — comma-separated inline */}
       {title.moods.length > 0 && (
-        <DetailRow icon={<Layers size={15} />} label="Themes & Vibes">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {title.moods.map((mood) => (
-              <Tag key={mood.slug} label={mood.name} size="sm" />
-            ))}
-          </div>
-        </DetailRow>
+        <Row icon={<Layers size={13} />} label="Themes">
+          <span className="text-text-secondary">
+            {title.moods.map((m) => m.name).join(', ')}
+          </span>
+        </Row>
       )}
 
       {/* Vibe Check */}
       {title.vibeCheck && (
-        <DetailRow icon={<MessageSquareQuote size={15} />} label="Vibe Check" noDivider>
-          <p className="font-accent text-base text-text-accent leading-snug italic">
+        <Row icon={<MessageSquareQuote size={13} />} label="Vibe Check" divider>
+          <p className="font-accent text-sm text-text-accent leading-snug italic">
             &ldquo;{title.vibeCheck}&rdquo;
           </p>
-        </DetailRow>
+        </Row>
       )}
 
-      {/* Status info */}
-      <DetailRow icon={<Users size={15} />} label="Status" noDivider>
-        <div className="flex flex-wrap gap-2">
-          <span className="font-heading text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-sm bg-surface-elevated/50 text-text-secondary">
-            {title.origin}
-          </span>
-          <span className="font-heading text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-sm bg-surface-elevated/50 text-text-secondary">
-            {title.status}
-          </span>
-          <span className="font-data text-[10px] px-2 py-0.5 rounded-sm bg-surface-elevated/50 text-text-secondary">
-            {title.chaptersRead}{title.totalChapters ? `/${title.totalChapters}` : '+'} ch
-          </span>
-        </div>
-      </DetailRow>
+      {/* Status */}
+      <Row icon={<Users size={13} />} label="Status">
+        <span className="text-text-secondary">
+          {title.origin} · {title.status} · {title.chaptersRead}
+          {title.totalChapters ? `/${title.totalChapters}` : '+'} ch
+        </span>
+      </Row>
     </div>
   );
 }
