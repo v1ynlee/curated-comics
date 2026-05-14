@@ -221,58 +221,62 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
 
       {/*
         ── Blurred banner ──────────────────────────────────────
-        Uses the same cover image as the hero content cover.
-        Uses CSS background-image (not Next.js <Image>) so there
-        are no fill/position constraints. The blur is applied via
-        CSS filter on the pseudo-element approach using a div.
-        isolation:isolate prevents blur from leaking into the nav.
+        Desktop: pt-16 pushes banner below the fixed nav (h-16)
+        so the dark tint never bleeds into the nav background.
+        Mobile: layout's pt-14 already handles this.
+
+        The image uses CSS background-image with inline transform
+        scale(1.1) to hide blur edges — avoids Tailwind scale-110
+        cross-browser issues.
       */}
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden md:pt-16"
         style={{
-          height: 'clamp(180px, 32vw, 320px)',
+          height: 'clamp(220px, 36vw, 360px)',
           isolation: 'isolate',
         }}
       >
-        {/* Blurred background — CSS background-image, no Next.js constraints */}
+        {/* Blurred cover image */}
         <div
-          className="absolute inset-0 scale-110"
+          className="absolute inset-0"
           style={{
             backgroundImage: `url(/images/covers/${coverSlug}-1200w.webp)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center center',
-            filter: 'blur(24px)',
-            opacity: theme === 'light' ? 0.45 : 0.65,
+            filter: 'blur(20px)',
+            transform: 'scale(1.12)',
+            opacity: theme === 'light' ? 0.7 : 0.85,
           }}
           aria-hidden="true"
         />
-        {/* Dominant color tint */}
+        {/* Subtle dominant color tint — very light so image shows through */}
         <div
           className="absolute inset-0"
-          style={{ backgroundColor: `${dominantColor}50` }}
+          style={{ backgroundColor: `${dominantColor}30` }}
           aria-hidden="true"
         />
-        {/* Fade to page bg at bottom */}
+        {/* Gradient fade — only at the bottom 40%, not full height */}
         <div
           className="absolute inset-0"
           style={{
             background: `linear-gradient(to bottom,
               transparent 0%,
-              color-mix(in srgb, var(--color-bg-deep) 40%, transparent) 60%,
+              transparent 45%,
+              color-mix(in srgb, var(--color-bg-deep) 60%, transparent) 75%,
               var(--color-bg-deep) 100%)`,
           }}
           aria-hidden="true"
         />
 
         {/* ── Back button — overlaid top-left on banner ──────── */}
-        <div className="absolute top-4 left-0 right-0 container-content z-raised">
+        <div className="absolute top-4 md:top-[4.5rem] left-0 right-0 container-content z-raised">
           <Link
             href="/library"
             className={cn(
               'inline-flex items-center gap-1.5',
               'font-heading text-xs uppercase tracking-widest',
-              'text-white/80 hover:text-white transition-colors',
-              'bg-black/20 hover:bg-black/30 backdrop-blur-sm',
+              'text-white/90 hover:text-white transition-colors',
+              'bg-black/25 hover:bg-black/40 backdrop-blur-sm',
               'px-3 py-1.5 rounded-lg',
               'focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2',
             )}
