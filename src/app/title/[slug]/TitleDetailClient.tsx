@@ -21,8 +21,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, BookOpen, Trophy, Star, ChevronDown,
-  ExternalLink, Info, BookMarked, Images, Users2, Newspaper,
+  ArrowLeft, Trophy, Star,
+  Info, BookMarked, Images, Users2, Newspaper,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -36,7 +36,6 @@ import { CharactersTab } from '@/components/title/tabs/CharactersTab';
 import { NewsTab } from '@/components/title/tabs/NewsTab';
 import { useUIStore } from '@/stores/useUIStore';
 import { TIER_CONFIG } from '@/types/title';
-import { PLATFORM_CONFIG } from '@/lib/constants';
 import type { Title } from '@/types/title';
 
 // ── Tab config ────────────────────────────────────────────────
@@ -50,109 +49,6 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'characters', label: 'Characters', icon: Users2 },
   { id: 'news',       label: 'News',       icon: Newspaper },
 ];
-
-// ── Read Dropdown ─────────────────────────────────────────────
-
-function ReadDropdown({ links }: { links: Title['externalLinks'] }) {
-  const [open, setOpen] = useState(false);
-  if (links.length === 0) return null;
-
-  if (links.length === 1) {
-    const link = links[0];
-    const platform = (PLATFORM_CONFIG as Record<string, { name: string; color: string }>)[link.platform] ?? {
-      name: link.label ?? link.platform,
-      color: '#8b5cf6',
-    };
-    return (
-      <a
-        href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg',
-          'font-heading text-xs uppercase tracking-widest font-medium',
-          'bg-gradient-to-br from-accent-primary to-[#6d28d9] text-white',
-          'shadow-[0_2px_12px_rgba(139,92,246,0.4)]',
-          'hover:shadow-[0_4px_20px_rgba(139,92,246,0.6)] hover:brightness-110',
-          'transition-all duration-200',
-          'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-        )}
-        aria-label={`Read on ${platform.name}`}
-      >
-        <BookOpen size={13} aria-hidden="true" />
-        Read
-        <ExternalLink size={10} className="opacity-70" aria-hidden="true" />
-      </a>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg',
-          'font-heading text-xs uppercase tracking-widest font-medium',
-          'bg-gradient-to-br from-accent-primary to-[#6d28d9] text-white',
-          'shadow-[0_2px_12px_rgba(139,92,246,0.4)]',
-          'hover:shadow-[0_4px_20px_rgba(139,92,246,0.6)] hover:brightness-110',
-          'transition-all duration-200',
-          'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-        )}
-      >
-        <BookOpen size={13} aria-hidden="true" />
-        Read
-        <ChevronDown size={11} aria-hidden="true" className={cn('transition-transform duration-200', open && 'rotate-180')} />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-overlay" onClick={() => setOpen(false)} aria-hidden="true" />
-            <motion.ul
-              role="listbox"
-              aria-label="Reading platforms"
-              initial={{ opacity: 0, y: -6, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.97 }}
-              transition={{ duration: 0.15 }}
-              className={cn(
-                'absolute left-0 top-full mt-2 z-modal',
-                'min-w-[180px] rounded-lg overflow-hidden',
-                'bg-bg-surface border border-white/10',
-                'shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
-              )}
-            >
-              {links.map((link, i) => {
-                const platform = (PLATFORM_CONFIG as Record<string, { name: string; color: string }>)[link.platform] ?? {
-                  name: link.label ?? link.platform,
-                  color: '#6B7280',
-                };
-                return (
-                  <li key={i} role="option" aria-selected={false}>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 font-body text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-accent-primary"
-                    >
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: platform.color }} aria-hidden="true" />
-                      {link.label ?? platform.name}
-                      <ExternalLink size={10} className="ml-auto opacity-40" aria-hidden="true" />
-                    </a>
-                  </li>
-                );
-              })}
-            </motion.ul>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ── Tab bar ───────────────────────────────────────────────────
 
@@ -362,7 +258,6 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
             transition={{ delay: 0.2, duration: 0.4 }}
             className="flex items-center justify-center gap-3 flex-wrap"
           >
-            <ReadDropdown links={title.externalLinks} />
             {tierConfig && (
               <div
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
@@ -517,14 +412,6 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               </div>
             </motion.div>
 
-            {/* Read button */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-            >
-              <ReadDropdown links={title.externalLinks} />
-            </motion.div>
           </div>
         </div>
       </div>
