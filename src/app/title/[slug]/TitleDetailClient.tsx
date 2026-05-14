@@ -221,11 +221,11 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
 
       {/*
         ── Blurred banner ──────────────────────────────────────
-        Uses the same cover image as the hero content.
-        overflow:hidden + isolation:isolate prevents blur from
-        leaking into the fixed nav. The Back button is absolutely
-        positioned over the banner at the top-left.
-        The cover section uses -mt to overlap the banner by ~50%.
+        Uses the same cover image as the hero content cover.
+        Uses CSS background-image (not Next.js <Image>) so there
+        are no fill/position constraints. The blur is applied via
+        CSS filter on the pseudo-element approach using a div.
+        isolation:isolate prevents blur from leaking into the nav.
       */}
       <div
         className="relative overflow-hidden"
@@ -234,20 +234,23 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           isolation: 'isolate',
         }}
       >
-        {/* Blurred cover — same src as hero cover, object-center */}
-        <Image
-          src={`/images/covers/${coverSlug}-1200w.avif`}
-          alt=""
-          fill
-          priority
-          className="object-cover object-center blur-2xl scale-110"
-          style={{ opacity: theme === 'light' ? 0.45 : 0.65 }}
-          sizes="100vw"
+        {/* Blurred background — CSS background-image, no Next.js constraints */}
+        <div
+          className="absolute inset-0 scale-110"
+          style={{
+            backgroundImage: `url(/images/covers/${coverSlug}-1200w.webp)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            filter: 'blur(24px)',
+            opacity: theme === 'light' ? 0.45 : 0.65,
+          }}
+          aria-hidden="true"
         />
         {/* Dominant color tint */}
         <div
           className="absolute inset-0"
           style={{ backgroundColor: `${dominantColor}50` }}
+          aria-hidden="true"
         />
         {/* Fade to page bg at bottom */}
         <div
@@ -258,6 +261,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               color-mix(in srgb, var(--color-bg-deep) 40%, transparent) 60%,
               var(--color-bg-deep) 100%)`,
           }}
+          aria-hidden="true"
         />
 
         {/* ── Back button — overlaid top-left on banner ──────── */}
@@ -347,7 +351,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           {/* Divider */}
           <div className="w-16 h-px bg-white/10" aria-hidden="true" />
 
-          {/* Tier + Rating row */}
+          {/* Tier + Rating row — always show both pills */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -365,24 +369,25 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                 <span className="font-heading text-[10px] font-bold uppercase tracking-widest">{title.tier}</span>
               </div>
             )}
-            {title.ratings?.overall !== undefined && (
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
-                style={{
-                  color: 'var(--color-accent-secondary)',
-                  backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
-                }}
-                role="meter"
-                aria-label={`Rating: ${title.ratings.overall.toFixed(1)} out of 10`}
-                aria-valuenow={title.ratings.overall}
-                aria-valuemin={1}
-                aria-valuemax={10}
-              >
-                <Star size={12} aria-hidden="true" />
-                <span className="font-data text-[11px] font-bold">{title.ratings.overall.toFixed(1)}</span>
-              </div>
-            )}
+            {/* Star rating — always rendered; shows score or em-dash */}
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+              style={{
+                color: 'var(--color-accent-secondary)',
+                backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
+              }}
+              role="meter"
+              aria-label={title.ratings?.overall !== undefined ? `Rating: ${title.ratings.overall.toFixed(1)} out of 10` : 'Not yet rated'}
+              aria-valuenow={title.ratings?.overall}
+              aria-valuemin={1}
+              aria-valuemax={10}
+            >
+              <Star size={12} aria-hidden="true" />
+              <span className="font-data text-[11px] font-bold">
+                {title.ratings?.overall !== undefined ? title.ratings.overall.toFixed(1) : '—'}
+              </span>
+            </div>
           </motion.div>
 
           {/* Synopsis */}
@@ -440,24 +445,25 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                   <span className="font-heading text-[10px] font-bold uppercase tracking-widest">{title.tier}</span>
                 </div>
               )}
-              {title.ratings?.overall !== undefined && (
-                <div
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
-                  style={{
-                    color: 'var(--color-accent-secondary)',
-                    backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
-                    border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
-                  }}
-                  role="meter"
-                  aria-label={`Rating: ${title.ratings.overall.toFixed(1)} out of 10`}
-                  aria-valuenow={title.ratings.overall}
-                  aria-valuemin={1}
-                  aria-valuemax={10}
-                >
-                  <Star size={12} aria-hidden="true" />
-                  <span className="font-data text-[11px] font-bold">{title.ratings.overall.toFixed(1)}</span>
-                </div>
-              )}
+              {/* Star rating — always rendered */}
+              <div
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
+                style={{
+                  color: 'var(--color-accent-secondary)',
+                  backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
+                }}
+                role="meter"
+                aria-label={title.ratings?.overall !== undefined ? `Rating: ${title.ratings.overall.toFixed(1)} out of 10` : 'Not yet rated'}
+                aria-valuenow={title.ratings?.overall}
+                aria-valuemin={1}
+                aria-valuemax={10}
+              >
+                <Star size={12} aria-hidden="true" />
+                <span className="font-data text-[11px] font-bold">
+                  {title.ratings?.overall !== undefined ? title.ratings.overall.toFixed(1) : '—'}
+                </span>
+              </div>
             </div>
           </motion.div>
 
