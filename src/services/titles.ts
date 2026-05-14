@@ -32,6 +32,8 @@ interface TitleRow {
   cover_slug: string | null;
   banner_slug: string | null;
   dominant_color: string | null;
+  author: string | null;
+  artist: string | null;
   featured: boolean;
   hidden: boolean;
   created_at: string;
@@ -206,6 +208,8 @@ function mapTitle(row: TitleRow): Title {
     ratings,
     review,
     externalLinks,
+    author: row.author ?? undefined,
+    artist: row.artist ?? undefined,
     featured: row.featured,
     hidden: row.hidden,
     createdAt: row.created_at,

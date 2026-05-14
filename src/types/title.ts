@@ -136,6 +136,10 @@ export interface Title {
   vibeCheck?: string;
   quotableLines?: string[];
 
+  // Creator
+  author?: string;
+  artist?: string;
+
   // Media
   coverImage?: ImageAsset;
   bannerImage?: ImageAsset;
