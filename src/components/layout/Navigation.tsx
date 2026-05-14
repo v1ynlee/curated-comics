@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/discover', label: 'Discover' },
   { href: '/tiers',    label: 'Tiers' },
   { href: '/stats',    label: 'Stats' },
+  { href: '/news',     label: 'News' },
 ] as const;
 
 export function Navigation() {
