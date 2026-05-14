@@ -410,16 +410,16 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
         {/* ── DESKTOP layout: side-by-side ───────────────────── */}
         <div className="hidden md:flex gap-10 items-start">
 
-          {/* Cover + right-side pills */}
+          {/* Left column: cover image + synopsis below */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="shrink-0 flex items-start gap-2"
+            className="shrink-0 flex flex-col gap-4 w-44 lg:w-52"
           >
             {/* Cover image */}
             <div
-              className="relative rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-44 lg:w-52"
+              className="relative rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
               style={{
                 aspectRatio: '2/3',
                 backgroundColor: theme === 'light'
@@ -437,40 +437,20 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               />
             </div>
 
-            {/* Trophy + Star — stacked vertically to the right of the cover */}
-            <div className="flex flex-col gap-2 pt-2">
-              {tierConfig && (
-                <div
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
-                  style={{ color: tierConfig.color, backgroundColor: `${tierConfig.color}18`, border: `1px solid ${tierConfig.color}35` }}
-                  title={`Tier: ${tierConfig.label}`}
-                >
-                  <Trophy size={12} aria-hidden="true" />
-                  <span className="font-heading text-[10px] font-bold uppercase tracking-widest">{title.tier}</span>
-                </div>
-              )}
-              <div
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
-                style={{
-                  color: 'var(--color-accent-secondary)',
-                  backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
-                }}
-                role="meter"
-                aria-label={title.ratings?.overall !== undefined ? `Rating: ${title.ratings.overall.toFixed(1)} out of 10` : 'Not yet rated'}
-                aria-valuenow={title.ratings?.overall}
-                aria-valuemin={1}
-                aria-valuemax={10}
+            {/* Synopsis — below cover on desktop */}
+            {title.synopsis && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                className="font-body text-xs text-text-secondary leading-relaxed"
               >
-                <Star size={12} aria-hidden="true" />
-                <span className="font-data text-[11px] font-bold">
-                  {title.ratings?.overall !== undefined ? title.ratings.overall.toFixed(1) : '—'}
-                </span>
-              </div>
-            </div>
+                {title.synopsis}
+              </motion.p>
+            )}
           </motion.div>
 
-          {/* Title info */}
+          {/* Right column: origin → title → alt titles → pills → read */}
           <div className="flex flex-col gap-3 flex-1 min-w-0 pt-4">
             <motion.span
               initial={{ opacity: 0 }}
@@ -499,21 +479,49 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                 {[title.titleOriginal, ...(title.titleAlternative ?? [])].filter(Boolean).join(', ')}
               </motion.p>
             )}
-            {title.synopsis && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-                className="font-body text-sm text-text-secondary leading-relaxed max-w-2xl"
-              >
-                {title.synopsis}
-              </motion.p>
-            )}
-            {/* Read button — in title column on desktop */}
+
+            {/* Trophy + Star — below title text */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.45, duration: 0.4 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="flex items-center gap-2 flex-wrap"
+            >
+              {tierConfig && (
+                <div
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
+                  style={{ color: tierConfig.color, backgroundColor: `${tierConfig.color}18`, border: `1px solid ${tierConfig.color}35` }}
+                  title={`Tier: ${tierConfig.label}`}
+                >
+                  <Trophy size={12} aria-hidden="true" />
+                  <span className="font-heading text-[10px] font-bold uppercase tracking-widest">{title.tier}</span>
+                </div>
+              )}
+              <div
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
+                style={{
+                  color: 'var(--color-accent-secondary)',
+                  backgroundColor: 'color-mix(in srgb, var(--color-accent-secondary) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent-secondary) 30%, transparent)',
+                }}
+                role="meter"
+                aria-label={title.ratings?.overall !== undefined ? `Rating: ${title.ratings.overall.toFixed(1)} out of 10` : 'Not yet rated'}
+                aria-valuenow={title.ratings?.overall}
+                aria-valuemin={1}
+                aria-valuemax={10}
+              >
+                <Star size={12} aria-hidden="true" />
+                <span className="font-data text-[11px] font-bold">
+                  {title.ratings?.overall !== undefined ? title.ratings.overall.toFixed(1) : '—'}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Read button */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
             >
               <ReadDropdown links={title.externalLinks} />
             </motion.div>
