@@ -244,8 +244,8 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
             backgroundSize: 'cover',
             backgroundPosition: 'center center',
             filter: 'blur(20px)',
-            transform: 'scale(1.12)',
-            opacity: theme === 'light' ? 0.7 : 0.85,
+            transform: 'scale(1.22)',
+            opacity: theme === 'light' ? 1.7 : 0.85,
           }}
           aria-hidden="true"
         />
@@ -262,7 +262,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
             background: `linear-gradient(to bottom,
               transparent 0%,
               transparent 45%,
-              color-mix(in srgb, var(--color-bg-deep) 60%, transparent) 75%,
+              color-mix(in srgb, var(--color-bg-deep) 60%, transparent) 85%,
               var(--color-bg-deep) 100%)`,
           }}
           aria-hidden="true"
@@ -410,15 +410,16 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
         {/* ── DESKTOP layout: side-by-side ───────────────────── */}
         <div className="hidden md:flex gap-10 items-start">
 
-          {/* Cover */}
+          {/* Cover + right-side pills */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="shrink-0 w-44 lg:w-52"
+            className="shrink-0 flex items-start gap-2"
           >
+            {/* Cover image */}
             <div
-              className="relative rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+              className="relative rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-44 lg:w-52"
               style={{
                 aspectRatio: '2/3',
                 backgroundColor: theme === 'light'
@@ -436,9 +437,8 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               />
             </div>
 
-            {/* Action row below cover */}
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
-              <ReadDropdown links={title.externalLinks} />
+            {/* Trophy + Star — stacked vertically to the right of the cover */}
+            <div className="flex flex-col gap-2 pt-2">
               {tierConfig && (
                 <div
                   className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
@@ -449,7 +449,6 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                   <span className="font-heading text-[10px] font-bold uppercase tracking-widest">{title.tier}</span>
                 </div>
               )}
-              {/* Star rating — always rendered */}
               <div
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
                 style={{
@@ -510,6 +509,14 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
                 {title.synopsis}
               </motion.p>
             )}
+            {/* Read button — in title column on desktop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.4 }}
+            >
+              <ReadDropdown links={title.externalLinks} />
+            </motion.div>
           </div>
         </div>
       </div>
