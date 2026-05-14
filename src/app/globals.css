@@ -212,6 +212,14 @@
 [data-theme="light"] .bg-bg-deep\/80 { background-color: rgba(242, 242, 248, 0.80); }
 [data-theme="light"] .bg-bg-deep\/90 { background-color: rgba(242, 242, 248, 0.90); }
 /* Surface cards */
+[data-theme="light"] .bg-bg-surface\/40 { background-color: rgba(220, 220, 236, 0.50); }
+[data-theme="light"] .bg-bg-surface\/60 { background-color: rgba(220, 220, 236, 0.70); }
+[data-theme="light"] .bg-bg-surface\/90 { background-color: rgba(220, 220, 236, 0.92); }
+[data-theme="light"] .bg-bg-surface\/95 { background-color: rgba(220, 220, 236, 0.96); }
+[data-theme="light"] .bg-bg-surface\/20 { background-color: rgba(220, 220, 236, 0.30); }
+[data-theme="light"] .hover\:bg-bg-surface\/40:hover { background-color: rgba(220, 220, 236, 0.50); }
+[data-theme="light"] .hover\:bg-bg-surface\/60:hover { background-color: rgba(220, 220, 236, 0.70); }
+[data-theme="light"] .hover\:bg-bg-surface\/80:hover { background-color: rgba(220, 220, 236, 0.85); }
 [data-theme="light"] .bg-surface-elevated\/20 { background-color: rgba(206, 206, 224, 0.30); }
 [data-theme="light"] .bg-surface-elevated\/30 { background-color: rgba(206, 206, 224, 0.45); }
 [data-theme="light"] .bg-surface-elevated\/50 { background-color: rgba(206, 206, 224, 0.60); }
@@ -235,7 +243,8 @@
 /* Ring/outline overrides — FilterSheet genre button active ring */
 [data-theme="light"] .ring-white\/20 { --tw-ring-color: rgba(10, 10, 20, 0.15); }
 
-/* bg-white/10, bg-white/20 — FilterSheet drag handle, misc */
+/* bg-white/5, bg-white/10, bg-white/20 — FilterSheet drag handle, misc */
+[data-theme="light"] .bg-white\/5  { background-color: rgba(10, 10, 20, 0.04); }
 [data-theme="light"] .bg-white\/10 { background-color: rgba(10, 10, 20, 0.08); }
 [data-theme="light"] .bg-white\/20 { background-color: rgba(10, 10, 20, 0.12); }
 
