@@ -1,9 +1,17 @@
 // ============================================================
 // Auth Callback Route — /auth/callback
-// Handles Supabase magic link token exchange.
-// When a user clicks the magic link in their email, Supabase redirects
-// here with a `code` query parameter. This route exchanges the code
-// for a session (setting auth cookies) and redirects to the final destination.
+// Handles Supabase PKCE magic link code exchange.
+//
+// Flow:
+// 1. User clicks magic link in email
+// 2. Supabase verifies the token and redirects here with a `code` param
+// 3. This route exchanges the code for a session (setting auth cookies)
+// 4. Redirects to the final destination (/studio by default)
+//
+// This works because the browser client uses flowType: 'pkce' which
+// causes Supabase to send a `code` query parameter instead of hash
+// fragment tokens. The code can be read server-side and exchanged
+// for a proper cookie-based session.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,7 +23,8 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/studio';
 
   if (code) {
-    const supabaseResponse = NextResponse.redirect(new URL(next, request.url));
+    const redirectUrl = new URL(next, request.url);
+    const supabaseResponse = NextResponse.redirect(redirectUrl);
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,6 +48,9 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return supabaseResponse;
     }
+
+    // Log the error for debugging
+    console.error('[auth/callback] Code exchange failed:', error.message);
   }
 
   // If no code or exchange failed, redirect to login with error

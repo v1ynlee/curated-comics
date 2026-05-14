@@ -29,6 +29,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 /**
  * Browser-safe Supabase client.
  * Uses the anon key — subject to Row Level Security policies.
+ * Used for data fetching in client components.
+ * For auth operations (login/logout), use createSupabaseBrowserClient() from @/lib/supabase-browser.
  */
 export const supabase = createClient(
   supabaseUrl ?? 'https://placeholder.supabase.co',

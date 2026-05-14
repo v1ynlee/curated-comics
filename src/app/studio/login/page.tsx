@@ -6,10 +6,10 @@
 // Uses Supabase OTP (magic link) instead of email/password.
 // ============================================================
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { supabase } from '@/services/api';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { cn } from '@/lib/cn';
 
 /** Inner component that reads search params (must be inside Suspense) */
@@ -18,6 +18,8 @@ function StudioLoginForm() {
   const redirectTo = searchParams.get('redirectTo') || '/studio';
   const reason = searchParams.get('reason');
   const prefersReducedMotion = useReducedMotion();
+
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
