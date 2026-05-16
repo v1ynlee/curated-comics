@@ -6,7 +6,7 @@
 // image URLs — either from CDN (R2) or local filesystem fallback.
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 import type { AssetType, MediaAsset, MediaVariant } from '@/types/media';
 
 // ── Row shape returned by Supabase ────────────────────────────

@@ -2,7 +2,7 @@
 // Title Content Service — gallery, characters
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 
 export interface GalleryImage {
   id: string;

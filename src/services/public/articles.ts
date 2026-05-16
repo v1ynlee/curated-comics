@@ -6,7 +6,7 @@
 // and tags for the public News/Editorial section.
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 import type {
   Article,
   ArticleSummary,

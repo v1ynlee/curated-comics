@@ -4,8 +4,8 @@
 // Source of truth: .kiro/specs/platform-evolution-planning/design.md
 // ============================================================
 
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { toSlug } from '@/lib/utils';
+import { createSupabaseServerClient } from '@/lib/db/supabase-server';
+import { toSlug } from '@/lib/utils/utils';
 import type { ArticleFormData } from '@/types/article';
 import type { StudioArticleRow } from '@/types/studio';
 

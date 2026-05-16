@@ -3,7 +3,7 @@
 // Source of truth: docs/database/DATABASE_SCHEMA_PLANNING.md
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 import type { Mood } from '@/types/title';
 
 interface MoodRow {

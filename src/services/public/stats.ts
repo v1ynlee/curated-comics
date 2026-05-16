@@ -4,9 +4,9 @@
 //                  docs/architecture/CONTENT_STRUCTURE.md
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 import type { ReadingStatistics } from '@/types/stats';
-import { estimateReadingHours } from '@/lib/utils';
+import { estimateReadingHours } from '@/lib/utils/utils';
 
 /**
  * Fetch all reading statistics from the database views + tables.

@@ -4,7 +4,7 @@
 //                  docs/architecture/CONTENT_STRUCTURE.md
 // ============================================================
 
-import { supabase } from './api';
+import { supabase } from '../api';
 import type { Title, TitleRatings, Review, Genre, Mood, ExternalLink } from '@/types/title';
 import type { LibraryFilters, SortOption } from '@/types/library';
 

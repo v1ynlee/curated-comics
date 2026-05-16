@@ -4,8 +4,8 @@
 // Source of truth: docs/database/DATABASE_SCHEMA_PLANNING.md
 // ============================================================
 
-import { supabase } from './api';
-import { toSlug } from '@/lib/utils';
+import { supabase } from '../api';
+import { toSlug } from '@/lib/utils/utils';
 import type { TierLevel, ReadingStatus, Origin, SeriesStatus, ExternalPlatform } from '@/types/title';
 
 // ── Types ─────────────────────────────────────────────────────
