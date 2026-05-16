@@ -7,7 +7,7 @@ import {
   COVER_WIDTHS,
   BANNER_WIDTHS,
   ARTICLE_WIDTHS,
-} from '@/lib/image-processor';
+} from '@/lib/storage/image-processor';
 
 /**
  * Creates a test image buffer of the given dimensions using Sharp.

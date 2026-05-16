@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { atomicUploadVariants, UploadVariant } from '@/lib/atomic-upload';
+import { atomicUploadVariants, UploadVariant } from '@/lib/storage/atomic-upload';
 
 // Mock the r2-client module
-vi.mock('@/lib/r2-client', () => ({
+vi.mock('@/lib/storage/r2-client', () => ({
   uploadToR2: vi.fn(),
   deleteFromR2: vi.fn(),
 }));
 
-import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
+import { uploadToR2, deleteFromR2 } from '@/lib/storage/r2-client';
 
 const mockUploadToR2 = vi.mocked(uploadToR2);
 const mockDeleteFromR2 = vi.mocked(deleteFromR2);

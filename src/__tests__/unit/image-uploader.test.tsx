@@ -149,19 +149,15 @@ describe('ImageUploader', () => {
     });
   });
 
-  describe('Upload flow', () => {
-    it('calls /api/media/upload and invokes onUploadComplete on success', async () => {
-      const onUploadComplete = vi.fn();
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, asset: mockMediaAsset }),
-      });
+  describe('Deferred upload flow', () => {
+    it('does NOT call /api/media/upload on file selection', async () => {
+      const onFileSelect = vi.fn();
 
       render(
         <ImageUploader
           slug="solo-leveling"
           assetType="cover"
-          onUploadComplete={onUploadComplete}
+          onFileSelect={onFileSelect}
         />
       );
 
@@ -171,79 +167,83 @@ describe('ImageUploader', () => {
       fireEvent.change(input, { target: { files: [validFile] } });
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/media/upload', {
-          method: 'POST',
-          body: expect.any(FormData),
-        });
-      });
-
-      await waitFor(() => {
-        expect(onUploadComplete).toHaveBeenCalledWith(mockMediaAsset);
+        // Should NOT have called fetch — upload is deferred
+        expect(global.fetch).not.toHaveBeenCalled();
       });
     });
 
-    it('shows error with guidance on 413 response', async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 413,
-        json: async () => ({ error: 'File size exceeds maximum 10MB' }),
-      });
+    it('calls onFileSelect with the selected file', async () => {
+      const onFileSelect = vi.fn();
 
+      render(
+        <ImageUploader
+          slug="solo-leveling"
+          assetType="cover"
+          onFileSelect={onFileSelect}
+        />
+      );
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const validFile = createMockFile('cover.jpg', 500 * 1024, 'image/jpeg');
+
+      fireEvent.change(input, { target: { files: [validFile] } });
+
+      await waitFor(() => {
+        expect(onFileSelect).toHaveBeenCalledWith(validFile);
+      });
+    });
+
+    it('shows pending preview with blob URL after file selection', async () => {
       render(
         <ImageUploader slug="solo-leveling" assetType="cover" />
       );
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      // File passes client validation (just under 10MB) but server rejects
-      const file = createMockFile('cover.jpg', 9.9 * 1024 * 1024, 'image/jpeg');
+      const validFile = createMockFile('cover.jpg', 500 * 1024, 'image/jpeg');
 
-      fireEvent.change(input, { target: { files: [file] } });
+      fireEvent.change(input, { target: { files: [validFile] } });
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText(/Try a smaller file/)).toBeInTheDocument();
+        expect(URL.createObjectURL).toHaveBeenCalledWith(validFile);
+        const image = screen.getByTestId('next-image');
+        expect(image).toHaveAttribute('src', 'blob:http://localhost/fake-url');
       });
     });
 
-    it('shows error with guidance on 503 response', async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 503,
-        json: async () => ({ error: 'Storage service unavailable' }),
-      });
-
+    it('shows "Pending upload" badge after file selection', async () => {
       render(
         <ImageUploader slug="solo-leveling" assetType="cover" />
       );
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const file = createMockFile('cover.jpg', 1024, 'image/jpeg');
+      const validFile = createMockFile('cover.jpg', 500 * 1024, 'image/jpeg');
 
-      fireEvent.change(input, { target: { files: [file] } });
+      fireEvent.change(input, { target: { files: [validFile] } });
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText(/Check your connection/)).toBeInTheDocument();
+        expect(screen.getByText('Pending upload')).toBeInTheDocument();
       });
     });
 
-    it('shows error on network failure', async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Network error')
-      );
-
+    it('revokes previous blob URL when a new file is selected', async () => {
       render(
         <ImageUploader slug="solo-leveling" assetType="cover" />
       );
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const file = createMockFile('cover.jpg', 1024, 'image/jpeg');
+      const file1 = createMockFile('cover1.jpg', 500 * 1024, 'image/jpeg');
+      const file2 = createMockFile('cover2.jpg', 500 * 1024, 'image/jpeg');
 
-      fireEvent.change(input, { target: { files: [file] } });
+      fireEvent.change(input, { target: { files: [file1] } });
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText(/Check your internet connection/)).toBeInTheDocument();
+        expect(screen.getByText('Pending upload')).toBeInTheDocument();
+      });
+
+      fireEvent.change(input, { target: { files: [file2] } });
+
+      await waitFor(() => {
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/fake-url');
       });
     });
   });
@@ -266,14 +266,15 @@ describe('ImageUploader', () => {
       expect(screen.getByText('Drop to upload')).toBeInTheDocument();
     });
 
-    it('handles file drop', async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, asset: mockMediaAsset }),
-      });
+    it('handles file drop without uploading', async () => {
+      const onFileSelect = vi.fn();
 
       render(
-        <ImageUploader slug="solo-leveling" assetType="cover" />
+        <ImageUploader
+          slug="solo-leveling"
+          assetType="cover"
+          onFileSelect={onFileSelect}
+        />
       );
 
       const dropZone = screen.getByRole('button', {
@@ -287,10 +288,9 @@ describe('ImageUploader', () => {
       });
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/media/upload', {
-          method: 'POST',
-          body: expect.any(FormData),
-        });
+        // Should call onFileSelect, NOT fetch
+        expect(onFileSelect).toHaveBeenCalledWith(file);
+        expect(global.fetch).not.toHaveBeenCalled();
       });
     });
   });
@@ -305,12 +305,7 @@ describe('ImageUploader', () => {
       expect(input).toBeInTheDocument();
     });
 
-    it('shows processing status with role="status"', async () => {
-      // Make fetch hang to keep uploading state visible
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-        () => new Promise(() => {})
-      );
-
+    it('shows pending preview state after valid file selection', async () => {
       render(
         <ImageUploader slug="solo-leveling" assetType="cover" />
       );
@@ -321,7 +316,13 @@ describe('ImageUploader', () => {
       fireEvent.change(input, { target: { files: [file] } });
 
       await waitFor(() => {
-        expect(screen.getByRole('status')).toBeInTheDocument();
+        // Pending state shows the preview with "Pending upload" badge
+        expect(screen.getByText('Pending upload')).toBeInTheDocument();
+        const image = screen.getByTestId('next-image');
+        expect(image).toHaveAttribute(
+          'alt',
+          'cover preview for solo-leveling (pending upload)'
+        );
       });
     });
 

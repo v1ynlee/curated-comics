@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validateR2Config, getR2PublicUrl } from '@/lib/r2-client';
+import { validateR2Config, getR2PublicUrl } from '@/lib/storage/r2-client';
 
 describe('R2 Client', () => {
   const originalEnv = process.env;
