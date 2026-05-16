@@ -21,6 +21,9 @@ export interface TitleFormData {
   origin: string;
   seriesStatus: string;
   readingStatus: string;
+  author?: string;
+  artist?: string;
+  releaseDate?: string;
   chaptersRead?: number;
   totalChapters?: number;
   startedDate?: string;
@@ -31,6 +34,8 @@ export interface TitleFormData {
   vibeCheck?: string;
   quotableLines?: string[];
   review?: string;
+  reviewHtml?: string;
+  isUnreviewed?: boolean;
   featured: boolean;
   hidden: boolean;
   genres: string[];
