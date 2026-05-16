@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 const NAV_ITEMS = [
   {

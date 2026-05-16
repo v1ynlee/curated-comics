@@ -11,7 +11,7 @@
 // Disabled on reduced motion and low-performance devices.
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePerformanceTier } from '@/hooks/usePerformanceTier';
 

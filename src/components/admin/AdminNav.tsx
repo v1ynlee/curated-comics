@@ -7,7 +7,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/services/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 const NAV_ITEMS: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin', label: 'Dashboard', exact: true },

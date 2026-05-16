@@ -3,7 +3,7 @@
 // Source of truth: docs/motion/MOTION_SYSTEM.md — Category 6
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 interface SkeletonProps {
   className?: string;

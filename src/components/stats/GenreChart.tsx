@@ -6,9 +6,9 @@
 // ============================================================
 
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
-import { GENRES } from '@/lib/constants';
-import { easings, durations } from '@/lib/easings';
+import { cn } from '@/lib/utils/cn';
+import { GENRES } from '@/lib/utils/constants';
+import { easings, durations } from '@/lib/animation/easings';
 
 interface GenreChartProps {
   distribution: Record<string, number>;

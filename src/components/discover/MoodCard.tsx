@@ -27,7 +27,7 @@ import {
   Trash2,
   BookOpen,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { Mood } from '@/types/title';
 

@@ -3,9 +3,9 @@
 // ============================================================
 
 import type { Metadata } from 'next';
-import { getServerUser } from '@/lib/supabase-server';
+import { getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
-import { adminFetchFormOptions } from '@/services/admin';
+import { adminFetchFormOptions } from '@/services/studio/admin';
 import { TitleForm } from '@/components/admin/TitleForm';
 
 export const metadata: Metadata = { title: 'New Title' };

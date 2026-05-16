@@ -9,11 +9,11 @@
 import { useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { Tag } from '@/components/ui/Tag';
 import { Button } from '@/components/ui/Button';
 import { useLibraryStore } from '@/stores/useLibraryStore';
-import { GENRES } from '@/lib/constants';
+import { GENRES } from '@/lib/utils/constants';
 
 interface FilterSheetProps {
   open: boolean;

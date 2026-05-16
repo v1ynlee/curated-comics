@@ -15,7 +15,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerUser } from '@/lib/supabase-server';
+import { getServerUser } from '@/lib/db/supabase-server';
 import path from 'path';
 import fs from 'fs/promises';
 

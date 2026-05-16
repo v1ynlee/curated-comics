@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchMoods, fetchMood } from '@/services/moods';
+import { fetchMoods, fetchMood } from '@/services/public/moods';
 
 export const moodKeys = {
   all: ['moods'] as const,

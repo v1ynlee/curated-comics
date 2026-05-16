@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { KEYBOARD_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 
 export function KeyboardShortcutsHelp() {

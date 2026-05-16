@@ -10,7 +10,7 @@ import {
   fetchFeaturedArticles,
   fetchArticleCategories,
   fetchArticleTags,
-} from '@/services/articles';
+} from '@/services/public/articles';
 import { ArticleCard } from '@/components/news/ArticleCard';
 import { NewsFilters } from '@/components/news/NewsFilters';
 

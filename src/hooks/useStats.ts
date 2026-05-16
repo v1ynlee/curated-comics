@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchReadingStatistics } from '@/services/stats';
-import { fetchAchievements } from '@/services/achievements';
+import { fetchReadingStatistics } from '@/services/public/stats';
+import { fetchAchievements } from '@/services/public/achievements';
 
 export const statsKeys = {
   all: ['stats'] as const,

@@ -9,13 +9,13 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { Tag } from '@/components/ui/Tag';
 import { CoverImage } from '@/components/ui/CoverImage';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePrefetchTitle } from '@/hooks/useTitles';
 import { useCardTilt } from '@/hooks/useCardTilt';
-import { formatRating } from '@/lib/utils';
+import { formatRating } from '@/lib/utils/utils';
 import { TIER_CONFIG } from '@/types/title';
 import type { Title } from '@/types/title';
 

@@ -7,7 +7,7 @@
 
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TierLabel } from './TierLabel';
 import { TitleCard } from '@/components/library/TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';

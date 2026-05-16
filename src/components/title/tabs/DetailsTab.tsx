@@ -10,7 +10,7 @@ import {
   Trophy, Star, BookOpen, Palette, Tag as TagIcon,
   MessageSquareQuote, Layers, Users,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { Tag } from '@/components/ui/Tag';
 import { RatingDisplay } from '@/components/title/RatingDisplay';
 import { TIER_CONFIG } from '@/types/title';

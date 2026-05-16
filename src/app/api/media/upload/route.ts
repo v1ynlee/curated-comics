@@ -8,11 +8,11 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { validateUpload, processImage } from '@/lib/image-processor';
-import { atomicUploadVariants, type UploadVariant } from '@/lib/atomic-upload';
-import { buildR2Key, buildR2Prefix } from '@/lib/r2-paths';
-import { getR2PublicUrl } from '@/lib/r2-client';
+import { createSupabaseServerClient } from '@/lib/db/supabase-server';
+import { validateUpload, processImage } from '@/lib/storage/image-processor';
+import { atomicUploadVariants, type UploadVariant } from '@/lib/storage/atomic-upload';
+import { buildR2Key, buildR2Prefix } from '@/lib/storage/r2-paths';
+import { getR2PublicUrl } from '@/lib/storage/r2-client';
 import type { AssetType, MediaVariant } from '@/types/media';
 
 const VALID_ASSET_TYPES: AssetType[] = [

@@ -9,8 +9,8 @@
 import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
-import { cn } from '@/lib/cn';
+import { createSupabaseBrowserClient } from '@/lib/db/supabase-browser';
+import { cn } from '@/lib/utils/cn';
 
 /** Inner component that reads search params (must be inside Suspense) */
 function StudioLoginForm() {

@@ -7,8 +7,8 @@
 // ============================================================
 
 import { NextResponse } from 'next/server';
-import { fetchTitles } from '@/services/titles';
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/lib/constants';
+import { fetchTitles } from '@/services/public/titles';
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/lib/utils/constants';
 
 export const revalidate = 3600; // 1 hour
 

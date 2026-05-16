@@ -6,8 +6,8 @@
 // ============================================================
 
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
-import { easings, durations } from '@/lib/easings';
+import { cn } from '@/lib/utils/cn';
+import { easings, durations } from '@/lib/animation/easings';
 
 interface ProgressBarProps {
   value: number; // 0–100

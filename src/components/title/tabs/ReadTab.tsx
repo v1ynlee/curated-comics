@@ -7,8 +7,8 @@
 // ============================================================
 
 import { ExternalLink, Globe, BookOpen, Users } from 'lucide-react';
-import { cn } from '@/lib/cn';
-import { PLATFORM_CONFIG } from '@/lib/constants';
+import { cn } from '@/lib/utils/cn';
+import { PLATFORM_CONFIG } from '@/lib/utils/constants';
 import type { ExternalLink as ExternalLinkType } from '@/types/title';
 
 interface ReadTabProps {

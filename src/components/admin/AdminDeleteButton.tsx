@@ -6,8 +6,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { adminDeleteTitle } from '@/services/admin';
-import { cn } from '@/lib/cn';
+import { adminDeleteTitle } from '@/services/studio/admin';
+import { cn } from '@/lib/utils/cn';
 
 interface AdminDeleteButtonProps {
   titleId: string;

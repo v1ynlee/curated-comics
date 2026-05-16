@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchTitleGallery, fetchTitleCharacters } from '@/services/titleContent';
+import { fetchTitleGallery, fetchTitleCharacters } from '@/services/public/titleContent';
 
 export function useTitleGallery(titleId: string) {
   return useQuery({

@@ -3,7 +3,7 @@
 // Source of truth: docs/design/TYPOGRAPHY_SYSTEM.md
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 interface GradientTextProps {
   children: React.ReactNode;

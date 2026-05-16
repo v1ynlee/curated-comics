@@ -24,7 +24,7 @@ import {
   ArrowLeft, Trophy, Star,
   Info, BookMarked, Images, Users2, Newspaper,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { RatingDisplay } from '@/components/title/RatingDisplay';
 import { ReviewSection } from '@/components/title/ReviewSection';

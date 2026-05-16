@@ -10,10 +10,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { generateContentHash, processImage } from '@/lib/image-processor';
-import { atomicUploadVariants, type UploadVariant } from '@/lib/atomic-upload';
-import { buildR2Key, buildR2Prefix } from '@/lib/r2-paths';
-import { getR2PublicUrl, validateR2Config } from '@/lib/r2-client';
+import { generateContentHash, processImage } from '@/lib/storage/image-processor';
+import { atomicUploadVariants, type UploadVariant } from '@/lib/storage/atomic-upload';
+import { buildR2Key, buildR2Prefix } from '@/lib/storage/r2-paths';
+import { getR2PublicUrl, validateR2Config } from '@/lib/storage/r2-client';
 import type { AssetType, MediaVariant } from '@/types/media';
 
 // ─── Configuration ───────────────────────────────────────────

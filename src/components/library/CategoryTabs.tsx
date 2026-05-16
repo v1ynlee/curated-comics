@@ -8,9 +8,9 @@
 
 import { useId } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { useLibraryStore } from '@/stores/useLibraryStore';
-import { READING_STATUS_LABELS } from '@/lib/constants';
+import { READING_STATUS_LABELS } from '@/lib/utils/constants';
 import type { CategoryType } from '@/types/library';
 
 const CATEGORIES: { value: CategoryType; label: string }[] = [

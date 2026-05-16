@@ -26,9 +26,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { ImageUploader } from '@/components/studio/ImageUploader';
-import type { GalleryImage } from '@/services/titleContent';
+import type { GalleryImage } from '@/services/public/titleContent';
 import type { MediaAsset } from '@/types/media';
 
 // ── Types ─────────────────────────────────────────────────────

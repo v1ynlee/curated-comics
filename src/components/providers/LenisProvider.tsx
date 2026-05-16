@@ -15,7 +15,7 @@
 
 import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
-import { getGSAP } from '@/lib/gsap-setup';
+import { getGSAP } from '@/lib/animation/gsap-setup';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useUIStore } from '@/stores/useUIStore';
 

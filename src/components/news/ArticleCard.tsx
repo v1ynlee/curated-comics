@@ -8,7 +8,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { ArticleSummary } from '@/types/article';
 

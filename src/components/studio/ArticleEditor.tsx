@@ -10,7 +10,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { ImageUploader } from '@/components/studio/ImageUploader';
 import type { ArticleFormData, PublicationState } from '@/types/article';
 

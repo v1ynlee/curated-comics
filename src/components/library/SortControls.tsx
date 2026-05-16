@@ -7,7 +7,7 @@
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import type { SortOption } from '@/types/library';
 

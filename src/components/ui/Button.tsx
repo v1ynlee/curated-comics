@@ -10,7 +10,7 @@
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Slot } from '@radix-ui/react-slot';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';

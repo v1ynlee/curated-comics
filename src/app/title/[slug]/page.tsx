@@ -5,7 +5,7 @@
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchTitle } from '@/services/titles';
+import { fetchTitle } from '@/services/public/titles';
 import { TitleDetailClient } from './TitleDetailClient';
 
 interface Props {

@@ -12,7 +12,7 @@ import {
   fetchFeaturedTitles,
   fetchRelatedTitles,
   type FetchTitlesOptions,
-} from '@/services/titles';
+} from '@/services/public/titles';
 import { keepPreviousData } from '@tanstack/react-query';
 
 // ── Query keys ────────────────────────────────────────────────

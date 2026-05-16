@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, BookOpen } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TitleCard } from './TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { CategoryTabs, getCategoryLabel } from './CategoryTabs';
@@ -21,7 +21,7 @@ import { FilterSheet } from './FilterSheet';
 import { SortControls } from './SortControls';
 import { useTitles } from '@/hooks/useTitles';
 import { useLibraryStore } from '@/stores/useLibraryStore';
-import { GENRES } from '@/lib/constants';
+import { GENRES } from '@/lib/utils/constants';
 import type { Title } from '@/types/title';
 
 export function LibraryGrid() {

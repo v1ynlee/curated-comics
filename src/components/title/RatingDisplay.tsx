@@ -7,9 +7,9 @@
 // ============================================================
 
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/cn';
-import { formatRating } from '@/lib/utils';
-import { easings, durations } from '@/lib/easings';
+import { cn } from '@/lib/utils/cn';
+import { formatRating } from '@/lib/utils/utils';
+import { easings, durations } from '@/lib/animation/easings';
 import type { TitleRatings } from '@/types/title';
 
 interface RatingDisplayProps {

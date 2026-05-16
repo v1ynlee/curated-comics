@@ -5,7 +5,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Plus, BookOpen, ExternalLink } from 'lucide-react';
-import { getServerUser } from '@/lib/supabase-server';
+import { getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = { title: 'Dashboard' };

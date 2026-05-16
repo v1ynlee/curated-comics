@@ -6,7 +6,7 @@
 // ============================================================
 
 import { ImageResponse } from 'next/og';
-import { fetchTitle } from '@/services/titles';
+import { fetchTitle } from '@/services/public/titles';
 import { TIER_CONFIG } from '@/types/title';
 
 export const runtime = 'edge';

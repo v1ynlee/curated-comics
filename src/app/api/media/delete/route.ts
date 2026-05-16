@@ -15,9 +15,9 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerUser, createSupabaseServerClient } from '@/lib/supabase-server';
-import { deleteR2Prefix } from '@/lib/r2-client';
-import { buildR2Prefix } from '@/lib/r2-paths';
+import { getServerUser, createSupabaseServerClient } from '@/lib/db/supabase-server';
+import { deleteR2Prefix } from '@/lib/storage/r2-client';
+import { buildR2Prefix } from '@/lib/storage/r2-paths';
 import type { AssetType } from '@/types/media';
 
 export async function DELETE(request: NextRequest) {

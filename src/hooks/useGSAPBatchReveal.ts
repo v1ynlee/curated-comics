@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useEffect, useRef } from 'react';
-import { getGSAP } from '@/lib/gsap-setup';
+import { getGSAP } from '@/lib/animation/gsap-setup';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /**

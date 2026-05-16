@@ -9,7 +9,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { pageVariants } from '@/lib/animations';
+import { pageVariants } from '@/lib/animation/animations';
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

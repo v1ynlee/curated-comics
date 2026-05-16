@@ -7,8 +7,8 @@
 
 import { motion } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { revealVariants, fadeVariants } from '@/lib/animations';
-import { cn } from '@/lib/cn';
+import { revealVariants, fadeVariants } from '@/lib/animation/animations';
+import { cn } from '@/lib/utils/cn';
 
 interface ScrollRevealProps {
   children: React.ReactNode;

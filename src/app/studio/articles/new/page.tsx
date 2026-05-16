@@ -6,9 +6,9 @@
 
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient, getServerUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { ArticleEditor } from '@/components/studio/ArticleEditor';
-import { studioCreateArticle } from '@/services/studio-articles';
+import { studioCreateArticle } from '@/services/studio/studio-articles';
 import type { ArticleFormData } from '@/types/article';
 
 export const metadata: Metadata = {

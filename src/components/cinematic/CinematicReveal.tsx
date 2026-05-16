@@ -7,8 +7,8 @@
 
 import { motion } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { cinematicRevealVariants, fadeVariants } from '@/lib/animations';
-import { cn } from '@/lib/cn';
+import { cinematicRevealVariants, fadeVariants } from '@/lib/animation/animations';
+import { cn } from '@/lib/utils/cn';
 
 interface CinematicRevealProps {
   children: React.ReactNode;

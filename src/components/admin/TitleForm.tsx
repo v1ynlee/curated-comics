@@ -7,10 +7,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { FormField, inputClasses, selectClasses, textareaClasses } from './FormField';
 import { ImageUploader } from './ImageUploader';
-import { toSlug } from '@/lib/utils';
+import { toSlug } from '@/lib/utils/utils';
 import {
   adminCreateTitle,
   adminUpdateTitle,
@@ -18,7 +18,7 @@ import {
   type RatingFormData,
   type ReviewFormData,
   type ExternalLinkFormData,
-} from '@/services/admin';
+} from '@/services/studio/admin';
 import type { Title, TierLevel, ReadingStatus, Origin, SeriesStatus, ExternalPlatform } from '@/types/title';
 
 const ORIGINS: Origin[] = ['manhwa', 'manhua', 'manga'];

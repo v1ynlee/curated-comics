@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { supabase } from '@/services/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 export default function AdminLoginPage() {
   const router = useRouter();

@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useRef } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TitleCard } from '@/components/library/TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { useRelatedTitles } from '@/hooks/useTitles';

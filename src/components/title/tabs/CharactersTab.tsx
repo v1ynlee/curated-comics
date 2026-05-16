@@ -12,9 +12,9 @@ import {
   User, Users, Swords, UserCheck,
   ArrowLeft, ChevronRight, Loader2, Image as ImageIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { useTitleCharacters } from '@/hooks/useTitleContent';
-import type { Character } from '@/services/titleContent';
+import type { Character } from '@/services/public/titleContent';
 
 const ROLE_CONFIG = {
   main:       { label: 'Main',       icon: User,      color: '#8b5cf6' },

@@ -26,7 +26,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
 import type { AdminTitleRow, TierLevel } from '@/types/studio';
 

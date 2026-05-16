@@ -21,7 +21,7 @@ import { CustomCursor } from '@/components/cinematic/CustomCursor';
 import { EasterEgg } from '@/components/cinematic/EasterEgg';
 import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
 import { BackToTop } from '@/components/ui/BackToTop';
-import { SITE_URL } from '@/lib/constants';
+import { SITE_URL } from '@/lib/utils/constants';
 import './globals.css';
 
 const dmSans = DM_Sans({

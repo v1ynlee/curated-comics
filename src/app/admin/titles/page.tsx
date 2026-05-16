@@ -6,14 +6,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import {
   adminFetchTitles,
   adminBulkUpdateStatus,
   adminBulkDelete,
   type AdminTitleRow,
-} from '@/services/admin';
-import { READING_STATUS_LABELS } from '@/lib/constants';
+} from '@/services/studio/admin';
+import { READING_STATUS_LABELS } from '@/lib/utils/constants';
 import type { ReadingStatus } from '@/types/title';
 
 export default function AdminTitlesPage() {

@@ -4,7 +4,7 @@
 //                  docs/architecture/CONTENT_STRUCTURE.md — Tier System
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
 import type { TierLevel } from '@/types/title';
 

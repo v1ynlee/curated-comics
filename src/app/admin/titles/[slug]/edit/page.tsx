@@ -4,9 +4,9 @@
 
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { getServerUser } from '@/lib/supabase-server';
-import { fetchTitle } from '@/services/titles';
-import { adminFetchFormOptions } from '@/services/admin';
+import { getServerUser } from '@/lib/db/supabase-server';
+import { fetchTitle } from '@/services/public/titles';
+import { adminFetchFormOptions } from '@/services/studio/admin';
 import { TitleForm } from '@/components/admin/TitleForm';
 import { AdminDeleteButton } from '@/components/admin/AdminDeleteButton';
 

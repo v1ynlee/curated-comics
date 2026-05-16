@@ -6,7 +6,7 @@
 
 import { useRef } from 'react';
 import { useInView } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { useCountUp } from '@/hooks/useCountUp';
 
 interface ReadingStreakProps {

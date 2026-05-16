@@ -2,7 +2,7 @@
 // FormField — labeled input wrapper for admin forms
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 interface FormFieldProps {
   label: string;

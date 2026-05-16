@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 export function BackToTop() {

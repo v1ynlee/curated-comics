@@ -25,7 +25,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 // ── Types ─────────────────────────────────────────────────────
 

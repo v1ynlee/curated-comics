@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { ProgressRing } from './ProgressRing';
 import type { Achievement } from '@/types/achievements';
 

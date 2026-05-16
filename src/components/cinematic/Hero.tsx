@@ -31,8 +31,8 @@ import { GradientText } from '@/components/ui/GradientText';
 import { Button } from '@/components/ui/Button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useUIStore } from '@/stores/useUIStore';
-import { getGSAP } from '@/lib/gsap-setup';
-import { cn } from '@/lib/cn';
+import { getGSAP } from '@/lib/animation/gsap-setup';
+import { cn } from '@/lib/utils/cn';
 
 const SEQUENCE = {
   label: 0.2,

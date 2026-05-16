@@ -15,7 +15,7 @@ import { TitleCard } from '@/components/library/TitleCard';
 import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { useTitles } from '@/hooks/useTitles';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');

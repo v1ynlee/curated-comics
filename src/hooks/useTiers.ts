@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchTierGroups } from '@/services/tiers';
+import { fetchTierGroups } from '@/services/public/tiers';
 
 export const tierKeys = {
   all: ['tiers'] as const,

@@ -5,7 +5,7 @@
 // Source of truth: docs/design/UI_UX_DIRECTION.md — Achievement Gallery
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { BadgeCard } from './BadgeCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Trophy } from 'lucide-react';

@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Search, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { GradientText } from '@/components/ui/GradientText';
 import { useUIStore } from '@/stores/useUIStore';
 

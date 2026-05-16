@@ -3,8 +3,8 @@
 // Source of truth: docs/architecture/CONTENT_STRUCTURE.md
 // ============================================================
 
-import { cn } from '@/lib/cn';
-import { PLATFORM_CONFIG } from '@/lib/constants';
+import { cn } from '@/lib/utils/cn';
+import { PLATFORM_CONFIG } from '@/lib/utils/constants';
 import type { ExternalLink } from '@/types/title';
 
 interface ExternalLinksProps {

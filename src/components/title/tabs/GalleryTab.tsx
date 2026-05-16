@@ -12,9 +12,9 @@ import {
   Sparkles, Heart, Laugh, Image as ImageIcon,
   ArrowLeft, ChevronRight, Loader2,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { useTitleGallery } from '@/hooks/useTitleContent';
-import type { GalleryImage } from '@/services/titleContent';
+import type { GalleryImage } from '@/services/public/titleContent';
 
 const CATEGORY_CONFIG = {
   'best-scene':     { label: 'Best Scenes',     icon: Sparkles, color: '#8b5cf6' },

@@ -10,7 +10,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import type { MediaVariant } from '@/types/media';
 import type { Components } from 'react-markdown';
 

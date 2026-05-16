@@ -7,8 +7,8 @@
 // ============================================================
 
 import { useEffect, useRef } from 'react';
-import { cn } from '@/lib/cn';
-import { getGSAP } from '@/lib/gsap-setup';
+import { cn } from '@/lib/utils/cn';
+import { getGSAP } from '@/lib/animation/gsap-setup';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePerformanceTier } from '@/hooks/usePerformanceTier';
 

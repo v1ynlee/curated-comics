@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import NextImage from 'next/image';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
 import type { Origin, TierLevel } from '@/types/title';
 import type { MediaAsset } from '@/types/media';

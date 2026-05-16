@@ -8,9 +8,9 @@
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchArticleBySlug } from '@/services/articles';
+import { fetchArticleBySlug } from '@/services/public/articles';
 import { MarkdownRenderer } from '@/components/news/MarkdownRenderer';
-import { SITE_URL } from '@/lib/constants';
+import { SITE_URL } from '@/lib/utils/constants';
 import type { Article } from '@/types/article';
 import type { MediaVariant } from '@/types/media';
 

@@ -7,10 +7,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Plus, FileText, Pencil, Archive, Trash2, Star } from 'lucide-react';
-import { getServerUser } from '@/lib/supabase-server';
+import { getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
-import { cn } from '@/lib/cn';
-import { studioFetchAllArticles, studioArchiveArticle, studioDeleteArticle } from '@/services/studio-articles';
+import { cn } from '@/lib/utils/cn';
+import { studioFetchAllArticles, studioArchiveArticle, studioDeleteArticle } from '@/services/studio/studio-articles';
 import type { StudioArticleRow } from '@/types/studio';
 import type { PublicationState } from '@/types/article';
 

@@ -2,9 +2,9 @@
 // TitleMeta — genre tags, status, chapters, origin
 // ============================================================
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { Tag } from '@/components/ui/Tag';
-import { READING_STATUS_LABELS } from '@/lib/constants';
+import { READING_STATUS_LABELS } from '@/lib/utils/constants';
 import { TIER_CONFIG } from '@/types/title';
 import type { Title } from '@/types/title';
 

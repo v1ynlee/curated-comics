@@ -15,7 +15,7 @@
 // ============================================================
 
 import { useUIStore } from '@/stores/useUIStore';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 
 interface PageHeadingProps {
   children: React.ReactNode;

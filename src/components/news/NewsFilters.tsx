@@ -7,7 +7,7 @@
 // ============================================================
 
 import { useRouter, usePathname } from 'next/navigation';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import type { ArticleCategory, ArticleTag } from '@/types/article';
 
 interface NewsFiltersProps {
