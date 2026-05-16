@@ -7,9 +7,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
-import { createSupabaseServerClient, getServerUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
 import type { TierLevel, Origin, SeriesStatus, ReadingStatus } from '@/types/title';
 import { CoverImage } from '@/components/ui/CoverImage';

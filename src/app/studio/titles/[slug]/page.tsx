@@ -6,7 +6,7 @@
 
 import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
-import { createSupabaseServerClient, getServerUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { TitleEditor } from '@/components/studio/TitleEditor';
 import type { TitleFormData } from '@/types/studio';
 
@@ -112,6 +112,9 @@ function createUpdateAction(titleId: string) {
         origin: formData.origin,
         series_status: formData.seriesStatus,
         reading_status: formData.readingStatus,
+        author: formData.author || null,
+        artist: formData.artist || null,
+        release_date: formData.releaseDate || null,
         chapters_read: formData.chaptersRead ?? 0,
         total_chapters: formData.totalChapters ?? null,
         started_date: formData.startedDate || null,
@@ -224,6 +227,9 @@ export default async function StudioTitleEditPage({
     origin: title.origin,
     seriesStatus: title.series_status,
     readingStatus: title.reading_status,
+    author: title.author ?? '',
+    artist: title.artist ?? '',
+    releaseDate: title.release_date ?? '',
     chaptersRead: title.chapters_read ?? undefined,
     totalChapters: title.total_chapters ?? undefined,
     startedDate: title.started_date ?? '',
@@ -236,12 +242,13 @@ export default async function StudioTitleEditPage({
     vibeCheck: title.vibe_check ?? '',
     quotableLines: title.quotable_lines ?? [],
     review,
+    reviewHtml: '',
+    isUnreviewed: false,
     featured: title.featured,
     hidden: title.hidden,
     genres: titleGenres,
     moods: titleMoods,
-    coverImageId: undefined,
-    bannerImageId: undefined,
+    coverImageId: title.cover_slug ? title.cover_slug : undefined,
   };
 
   // Create the update action bound to this title's ID

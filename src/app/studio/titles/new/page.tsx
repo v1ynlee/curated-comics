@@ -6,7 +6,7 @@
 
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient, getServerUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { TitleEditor } from '@/components/studio/TitleEditor';
 import type { TitleFormData } from '@/types/studio';
 
