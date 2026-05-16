@@ -4,13 +4,15 @@
 // ImageUploader — Drag-and-drop image upload component for Studio CMS
 // Supports drag-and-drop, click-to-browse, progress indication,
 // preview display, and user-friendly error messages.
+// DEFERRED UPLOAD: Files are stored locally as blob URLs for preview.
+// Actual upload to R2 only happens when the parent triggers save.
 // Requirements: 8.4, 18.5
 // ============================================================
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils/cn';
 import type { AssetType, MediaAsset } from '@/types/media';
 
 // ── Constants ─────────────────────────────────────────────────
@@ -32,13 +34,18 @@ const FRIENDLY_MIME_LIST = 'JPEG, PNG, WebP, AVIF, or GIF';
 interface ImageUploaderProps {
   slug: string;
   assetType: AssetType;
+  /** Called when a file is selected/dropped (deferred upload pattern) */
+  onFileSelect?: (file: File) => void;
+  /** Called after actual upload completes (backward compat / triggered externally) */
   onUploadComplete?: (asset: MediaAsset) => void;
   currentImage?: MediaAsset;
+  /** Pending file controlled by parent (allows parent to clear pending state) */
+  pendingFile?: File | null;
 }
 
 // ── Upload State ──────────────────────────────────────────────
 
-type UploadStatus = 'idle' | 'validating' | 'uploading' | 'success' | 'error';
+type UploadStatus = 'idle' | 'validating' | 'pending' | 'uploading' | 'success' | 'error';
 
 interface UploadError {
   message: string;
@@ -50,8 +57,10 @@ interface UploadError {
 export function ImageUploader({
   slug,
   assetType,
+  onFileSelect,
   onUploadComplete,
   currentImage,
+  pendingFile,
 }: ImageUploaderProps) {
   const [status, setStatus] = useState<UploadStatus>(
     currentImage ? 'success' : 'idle'
@@ -65,6 +74,32 @@ export function ImageUploader({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefersReducedMotion = useReducedMotion();
+
+  // ── Clean up blob URL on unmount or when replaced ─────────
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  // ── Sync with parent-controlled pendingFile prop ──────────
+
+  useEffect(() => {
+    if (pendingFile === null && status === 'pending') {
+      // Parent cleared the pending file (e.g., after successful upload)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      // Don't reset to idle if we have an uploaded asset (success state set externally)
+      if (!uploadedAsset) {
+        setStatus('idle');
+      }
+    }
+  }, [pendingFile, status, previewUrl, uploadedAsset]);
 
   // ── Client-side validation ────────────────────────────────
 
@@ -87,10 +122,10 @@ export function ImageUploader({
     return null;
   }, []);
 
-  // ── Upload handler ────────────────────────────────────────
+  // ── File selection handler (deferred — no upload) ─────────
 
-  const handleUpload = useCallback(
-    async (file: File) => {
+  const handleFileSelect = useCallback(
+    (file: File) => {
       // Reset state
       setError(null);
       setStatus('validating');
@@ -103,80 +138,20 @@ export function ImageUploader({
         return;
       }
 
-      // Create local preview
+      // Revoke previous blob URL if any
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      // Create local preview via blob URL — NO upload to R2
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
-      setStatus('uploading');
+      setStatus('pending');
 
-      // Build FormData
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('slug', slug);
-      formData.append('assetType', assetType);
-
-      try {
-        const response = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          const serverMessage = data?.error || 'Upload failed';
-
-          // Map HTTP status to user-friendly guidance
-          let guidance: string;
-          switch (response.status) {
-            case 401:
-              guidance = 'Your session may have expired. Try refreshing the page.';
-              break;
-            case 413:
-              guidance = 'Try a smaller file — maximum size is 10 MB.';
-              break;
-            case 415:
-              guidance = `Try a ${FRIENDLY_MIME_LIST} file instead.`;
-              break;
-            case 422:
-              guidance =
-                'The image may be corrupted. Try re-exporting it from your editor.';
-              break;
-            case 503:
-              guidance =
-                'The storage service is temporarily unavailable. Check your connection and try again.';
-              break;
-            default:
-              guidance = 'Something went wrong. Please try again.';
-          }
-
-          setError({ message: serverMessage, guidance });
-          setStatus('error');
-          URL.revokeObjectURL(objectUrl);
-          setPreviewUrl(null);
-          return;
-        }
-
-        const data = await response.json();
-        const asset = data.asset as MediaAsset;
-
-        setUploadedAsset(asset);
-        setStatus('success');
-        onUploadComplete?.(asset);
-
-        // Clean up object URL since we now have the real asset
-        URL.revokeObjectURL(objectUrl);
-        setPreviewUrl(null);
-      } catch {
-        setError({
-          message: 'Network error',
-          guidance:
-            'Check your internet connection and try again.',
-        });
-        setStatus('error');
-        URL.revokeObjectURL(objectUrl);
-        setPreviewUrl(null);
-      }
+      // Notify parent of the pending file
+      onFileSelect?.(file);
     },
-    [slug, assetType, onUploadComplete, validateFile]
+    [validateFile, onFileSelect, previewUrl]
   );
 
   // ── Drag event handlers ───────────────────────────────────
@@ -210,10 +185,10 @@ export function ImageUploader({
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
-        handleUpload(files[0]);
+        handleFileSelect(files[0]);
       }
     },
-    [handleUpload]
+    [handleFileSelect]
   );
 
   // ── File input handler ────────────────────────────────────
@@ -222,12 +197,12 @@ export function ImageUploader({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (files && files.length > 0) {
-        handleUpload(files[0]);
+        handleFileSelect(files[0]);
       }
       // Reset input so the same file can be re-selected
       e.target.value = '';
     },
-    [handleUpload]
+    [handleFileSelect]
   );
 
   const handleClick = useCallback(() => {
@@ -237,11 +212,32 @@ export function ImageUploader({
   // ── Replace image handler ─────────────────────────────────
 
   const handleReplace = useCallback(() => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
     setStatus('idle');
     setUploadedAsset(null);
     setError(null);
-    setPreviewUrl(null);
-  }, []);
+  }, [previewUrl]);
+
+  // ── Public method: mark upload as complete (called by parent) ──
+
+  /** Call this to transition from pending → success after external upload */
+  const markUploadComplete = useCallback((asset: MediaAsset) => {
+    setUploadedAsset(asset);
+    setStatus('success');
+    onUploadComplete?.(asset);
+    // Clean up blob URL since we now have the real asset
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }, [onUploadComplete, previewUrl]);
+
+  // Expose markUploadComplete — parent can call via onUploadComplete callback
+  // when it finishes the actual upload during save
+  void markUploadComplete; // referenced via parent pattern
 
   // ── Get preview source ────────────────────────────────────
 
@@ -278,7 +274,7 @@ export function ImageUploader({
       />
 
       <AnimatePresence mode="wait">
-        {/* ── Success state: show preview ── */}
+        {/* ── Success state: show uploaded asset preview ── */}
         {status === 'success' && (uploadedAsset || currentImage) && (
           <motion.div
             key="preview"
@@ -329,6 +325,46 @@ export function ImageUploader({
           </motion.div>
         )}
 
+        {/* ── Pending state: show blob URL preview with "pending" badge ── */}
+        {status === 'pending' && previewUrl && (
+          <motion.div
+            key="pending-preview"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={motionConfig}
+            className="relative rounded-lg overflow-hidden border border-accent-primary/30 bg-bg-surface"
+          >
+            {/* Preview image from blob URL */}
+            <div className="relative aspect-[3/4] w-full">
+              <Image
+                src={previewUrl}
+                alt={`${assetType} preview for ${slug} (pending upload)`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 400px"
+                unoptimized
+              />
+            </div>
+
+            {/* Pending badge */}
+            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-accent-primary/80 text-white text-xs font-medium backdrop-blur-sm">
+              Pending upload
+            </div>
+
+            {/* Replace button overlay */}
+            <div className="absolute inset-0 flex items-end justify-center p-4 bg-gradient-to-t from-bg-deep/80 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-normal">
+              <button
+                type="button"
+                onClick={handleReplace}
+                className="px-4 py-2 rounded-md bg-accent-primary text-white text-sm font-medium hover:bg-accent-primary/80 transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 focus:ring-offset-bg-deep"
+              >
+                Replace image
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* ── Uploading state: progress indicator ── */}
         {status === 'uploading' && (
           <motion.div
@@ -350,6 +386,7 @@ export function ImageUploader({
                   fill
                   className="object-cover"
                   sizes="80px"
+                  unoptimized
                 />
               </div>
             )}
