@@ -15,8 +15,8 @@ import { ServiceWorkerRegistration } from '@/components/providers/ServiceWorkerR
 import { Navigation } from '@/components/layout/Navigation';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { MobileHeader } from '@/components/layout/MobileHeader';
-import { Footer } from '@/components/layout/Footer';
 import { PageTransition } from '@/components/layout/PageTransition';
+import { MainContent } from '@/components/layout/MainContent';
 import { CustomCursor } from '@/components/cinematic/CustomCursor';
 import { EasterEgg } from '@/components/cinematic/EasterEgg';
 import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
@@ -146,14 +146,9 @@ export default function RootLayout({
           <MobileHeader />
 
           <PageTransition>
-            <main
-              id="main-content"
-              role="main"
-              className="min-h-screen pt-14 pb-16 md:pt-0 md:pb-0"
-            >
+            <MainContent>
               {children}
-            </main>
-            <Footer />
+            </MainContent>
           </PageTransition>
 
           <MobileNav />

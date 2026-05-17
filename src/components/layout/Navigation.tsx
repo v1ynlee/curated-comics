@@ -2,6 +2,7 @@
 
 // ============================================================
 // Navigation — floating desktop nav
+// Hidden on /studio/* routes (StudioHeader takes over there).
 // ============================================================
 
 import { useEffect, useRef, useState } from 'react';
@@ -28,6 +29,10 @@ export function Navigation() {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const { theme, toggleTheme } = useUIStore();
+
+  // Studio has its own header — suppress the global nav there
+  const isStudio = pathname.startsWith('/studio');
+  if (isStudio) return null;
 
   useEffect(() => {
     const handleScroll = () => {

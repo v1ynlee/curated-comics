@@ -4,21 +4,27 @@
 // MobileHeader — top bar for mobile (< md breakpoint)
 // Contains: logo, search icon, theme toggle.
 // Desktop nav handles everything at md+, so this is md:hidden.
+// Hidden on /studio/* routes (StudioHeader takes over there).
 // ============================================================
 
 import Link from 'next/link';
 import { Search, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { GradientText } from '@/components/ui/GradientText';
 import { useUIStore } from '@/stores/useUIStore';
 
 export function MobileHeader() {
+  const pathname = usePathname();
   const { theme, toggleTheme } = useUIStore();
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  // Studio has its own header — suppress the global mobile header there
+  const isStudio = pathname.startsWith('/studio');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,6 +43,8 @@ export function MobileHeader() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  if (isStudio) return null;
 
   return (
     <AnimatePresence>

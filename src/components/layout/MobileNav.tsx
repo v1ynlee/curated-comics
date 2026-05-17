@@ -84,6 +84,9 @@ export function MobileNav() {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
+  // Studio has its own navigation — suppress the public bottom nav there
+  const isStudio = pathname.startsWith('/studio');
+
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
@@ -102,6 +105,8 @@ export function MobileNav() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  if (isStudio) return null;
 
   return (
     <AnimatePresence>
