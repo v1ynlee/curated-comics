@@ -1,7 +1,7 @@
 // ============================================================
-// Studio Dashboard — Cinematic overview and quick actions
+// Studio Dashboard — Professional overview with compact stats,
+// quick actions, and recent activity feed.
 // Server component that queries Supabase for counts and recent activity.
-// Requirements: 7.4, 9.3, 15.1, 15.2, 15.3
 // ============================================================
 
 import type { Metadata } from 'next';
@@ -10,29 +10,23 @@ import {
   Plus,
   FileText,
   Upload,
-  BookOpen,
-  Newspaper,
-  Image as ImageIcon,
-  Palette,
-  User,
-  Tag,
 } from 'lucide-react';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { ActivityFeed, type ActivityEntry } from '@/components/studio/ActivityFeed';
-import { OverviewCard } from '@/components/studio/OverviewCard';
+import { SummaryBar } from '@/components/studio/SummaryBar';
 
 export const metadata: Metadata = {
   title: 'Studio Dashboard',
   description: 'Comic Curated creative workspace — overview and quick actions.',
 };
 
-/** Fetch overview counts from Supabase */
+// ── Data Fetching ───────────────────────────────────────────────
+
 async function fetchDashboardData() {
   const supabase = await createSupabaseServerClient();
 
-  // Fetch counts in parallel
   const [titlesResult, articlesResult, mediaResult, artistsResult, authorsResult, genresResult] = await Promise.all([
     supabase.from('titles').select('id', { count: 'exact', head: true }),
     supabase
@@ -40,15 +34,11 @@ async function fetchDashboardData() {
       .select('id', { count: 'exact', head: true })
       .eq('publication_state', 'published'),
     supabase.from('media_assets').select('id', { count: 'exact', head: true }),
-    // Distinct non-null artists from titles
     supabase.from('titles').select('artist').not('artist', 'is', null).not('artist', 'eq', ''),
-    // Distinct non-null authors from titles
     supabase.from('titles').select('author').not('author', 'is', null).not('author', 'eq', ''),
-    // Count of rows in genres table
     supabase.from('genres').select('id', { count: 'exact', head: true }),
   ]);
 
-  // Compute distinct artist and author counts
   const distinctArtists = new Set(
     (artistsResult.data ?? []).map((row: { artist: string }) => row.artist)
   ).size;
@@ -56,7 +46,6 @@ async function fetchDashboardData() {
     (authorsResult.data ?? []).map((row: { author: string }) => row.author)
   ).size;
 
-  // Fetch recent activity across all 4 types: titles, articles, media, genres
   const [recentTitlesResult, recentArticlesResult, recentMediaResult, recentGenresResult] = await Promise.all([
     supabase
       .from('titles')
@@ -96,13 +85,15 @@ async function fetchDashboardData() {
   };
 }
 
+// ── Page Component ──────────────────────────────────────────────
+
 export default async function StudioDashboardPage() {
   const user = await getServerUser();
   if (!user) redirect('/studio/login');
 
   const { counts, recentTitles, recentArticles, recentMedia, recentGenres } = await fetchDashboardData();
 
-  // Merge and sort recent activity by created_at across all 4 types, take top 8
+  // Merge and sort recent activity by created_at across all types, take top 8
   const recentActivity: ActivityEntry[] = [
     ...recentTitles.map((t) => ({
       id: t.id,
@@ -144,155 +135,190 @@ export default async function StudioDashboardPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 8);
 
+  // Summary stats for the compact bar
+  const summaryStats = [
+    { label: 'Titles', value: counts.titles, href: '/studio/titles' },
+    { label: 'Articles', value: counts.publishedArticles, href: '/studio/articles' },
+    { label: 'Media', value: counts.mediaAssets, href: '/studio/media' },
+    { label: 'Artists', value: counts.totalArtists, href: '/studio/titles' },
+    { label: 'Authors', value: counts.totalAuthors, href: '/studio/titles' },
+    { label: 'Genres', value: counts.totalGenres, href: '/studio/curation' },
+  ];
+
   return (
-    <div className="container-content py-10 max-w-5xl">
-      {/* Header */}
-      <div className="flex flex-col gap-2 mb-10">
-        <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
-          Comic Curated
-        </span>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
-          Studio
-        </h1>
-        <p className="font-body text-sm text-text-secondary">
-          Welcome back,{' '}
-          <span className="text-text-primary">{user.email}</span>
-        </p>
+    <div className="container-content py-8 max-w-6xl">
+      {/* Header + Quick Actions row */}
+      <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-heading text-2xl md:text-3xl font-bold text-text-primary">
+            Studio
+          </h1>
+          <p className="font-body text-sm text-text-secondary">
+            {user.email}
+          </p>
+        </div>
+
+        {/* Quick Actions — simple button row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href="/studio/titles/new"
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg min-h-[44px]',
+              'bg-accent-primary text-white font-heading text-xs font-bold',
+              'hover:bg-accent-primary/90 transition-colors duration-150',
+              'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+            )}
+          >
+            <Plus size={14} aria-hidden="true" />
+            New Title
+          </Link>
+          <Link
+            href="/studio/articles/new"
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg min-h-[44px]',
+              'bg-white/5 border border-white/10 text-text-secondary font-heading text-xs font-bold',
+              'hover:bg-white/10 hover:text-text-primary transition-colors duration-150',
+              'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+            )}
+          >
+            <FileText size={14} aria-hidden="true" />
+            New Article
+          </Link>
+          <Link
+            href="/studio/media"
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg min-h-[44px]',
+              'bg-white/5 border border-white/10 text-text-secondary font-heading text-xs font-bold',
+              'hover:bg-white/10 hover:text-text-primary transition-colors duration-150',
+              'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+            )}
+          >
+            <Upload size={14} aria-hidden="true" />
+            Upload
+          </Link>
+        </div>
       </div>
 
-      {/* Overview Cards */}
-      <section aria-labelledby="overview-heading" className="mb-12">
-        <h2 id="overview-heading" className="sr-only">
-          Overview
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <OverviewCard
-            icon={<BookOpen size={22} aria-hidden="true" />}
-            label="Total Titles"
-            value={counts.titles}
-            accentClass="text-accent-primary bg-accent-primary/10"
-          />
-          <OverviewCard
-            icon={<Newspaper size={22} aria-hidden="true" />}
-            label="Published Articles"
-            value={counts.publishedArticles}
-            accentClass="text-accent-tertiary bg-accent-tertiary/10"
-          />
-          <OverviewCard
-            icon={<ImageIcon size={22} aria-hidden="true" />}
-            label="Media Assets"
-            value={counts.mediaAssets}
-            accentClass="text-accent-quaternary bg-accent-quaternary/10"
-          />
-          <OverviewCard
-            icon={<Palette size={22} aria-hidden="true" />}
-            label="Total Artists"
-            value={counts.totalArtists}
-            accentClass="text-pink-400 bg-pink-400/10"
-          />
-          <OverviewCard
-            icon={<User size={22} aria-hidden="true" />}
-            label="Total Authors"
-            value={counts.totalAuthors}
-            accentClass="text-sky-400 bg-sky-400/10"
-          />
-          <OverviewCard
-            icon={<Tag size={22} aria-hidden="true" />}
-            label="Total Genres"
-            value={counts.totalGenres}
-            accentClass="text-amber-400 bg-amber-400/10"
-          />
-        </div>
+      {/* Summary Bar — compact inline stats */}
+      <section aria-label="Content overview" className="mb-8">
+        <SummaryBar stats={summaryStats} />
       </section>
 
-      {/* Quick Actions */}
-      <section aria-labelledby="actions-heading" className="mb-12">
-        <h2
-          id="actions-heading"
-          className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary mb-4"
-        >
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <QuickActionCard
-            href="/studio/titles/new"
-            icon={<Plus size={20} aria-hidden="true" />}
-            title="New Title"
-            description="Add a new manhwa, manhua, or manga to the library."
-          />
-          <QuickActionCard
-            href="/studio/articles/new"
-            icon={<FileText size={20} aria-hidden="true" />}
-            title="New Article"
-            description="Write a news piece, editorial, or recommendation."
-          />
-          <QuickActionCard
-            href="/studio/media"
-            icon={<Upload size={20} aria-hidden="true" />}
-            title="Upload Media"
-            description="Upload and process images for covers, banners, or articles."
-          />
-        </div>
-      </section>
+      {/* Main content: two-column on desktop */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+        {/* Left: Recent Activity */}
+        <section aria-labelledby="activity-heading">
+          <h2
+            id="activity-heading"
+            className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary mb-4"
+          >
+            Recent Activity
+          </h2>
+          <ActivityFeed entries={recentActivity} />
+        </section>
 
-      {/* Recent Activity Feed */}
-      <section aria-labelledby="activity-heading">
-        <h2
-          id="activity-heading"
-          className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary mb-4"
-        >
-          Recent Activity
-        </h2>
-        <ActivityFeed entries={recentActivity} />
-      </section>
+        {/* Right: At a Glance sidebar */}
+        <aside aria-labelledby="glance-heading" className="flex flex-col gap-4">
+          <h2
+            id="glance-heading"
+            className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary"
+          >
+            At a Glance
+          </h2>
+
+          {/* Draft articles needing attention */}
+          <AtAGlanceSection
+            label="Draft Articles"
+            count={recentArticles.filter(a => a.publication_state === 'draft').length}
+            href="/studio/articles"
+            emptyText="No drafts pending"
+          />
+
+          {/* Scheduled articles */}
+          <AtAGlanceSection
+            label="Scheduled"
+            count={recentArticles.filter(a => a.publication_state === 'scheduled').length}
+            href="/studio/articles"
+            emptyText="Nothing scheduled"
+          />
+
+          {/* Quick links */}
+          <div className="flex flex-col gap-1 pt-2 border-t border-white/5">
+            <QuickLink href="/studio/titles" label="Browse all titles" />
+            <QuickLink href="/studio/curation" label="Manage collections" />
+            <QuickLink href="/" label="View public site" external />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
 
 // ── Sub-components ──────────────────────────────────────────────
 
-function QuickActionCard({
+function AtAGlanceSection({
+  label,
+  count,
   href,
-  icon,
-  title,
-  description,
+  emptyText,
 }: {
+  label: string;
+  count: number;
   href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+  emptyText: string;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        'group flex flex-col gap-3 p-5 rounded-lg',
-        'bg-surface-elevated/30 border border-white/5',
-        'hover:border-accent-primary/30 hover:bg-surface-elevated/50',
-        'transition-all duration-normal',
+        'flex items-center justify-between px-3 py-2.5 rounded-lg',
+        'bg-bg-surface/40 border border-white/5',
+        'hover:border-white/10 hover:bg-bg-surface/60',
+        'transition-all duration-150',
         'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
       )}
     >
-      <span
-        className={cn(
-          'flex items-center justify-center w-9 h-9 rounded-lg',
-          'bg-accent-primary/10 text-accent-primary',
-          'group-hover:bg-accent-primary/20 transition-colors duration-normal',
-        )}
-        aria-hidden="true"
-      >
-        {icon}
-      </span>
-      <div className="flex flex-col gap-1">
-        <span className="font-heading text-sm font-bold text-text-primary">
-          {title}
+      <span className="font-body text-sm text-text-secondary">{label}</span>
+      {count > 0 ? (
+        <span className="font-data text-sm font-bold text-text-primary">
+          {count}
         </span>
-        <span className="font-body text-xs text-text-secondary">
-          {description}
-        </span>
-      </div>
+      ) : (
+        <span className="font-body text-xs text-text-tertiary">{emptyText}</span>
+      )}
     </Link>
   );
 }
 
-
+function QuickLink({
+  href,
+  label,
+  external = false,
+}: {
+  href: string;
+  label: string;
+  external?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex items-center gap-2 px-3 py-1.5 rounded-sm',
+        'font-body text-xs text-text-tertiary',
+        'hover:text-text-secondary transition-colors duration-150',
+        'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+      )}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+    >
+      <span className="w-1 h-1 rounded-full bg-text-tertiary/50" aria-hidden="true" />
+      {label}
+      {external && (
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="opacity-50">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      )}
+    </Link>
+  );
+}
