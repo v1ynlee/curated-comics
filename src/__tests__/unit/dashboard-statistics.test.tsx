@@ -18,78 +18,63 @@ vi.mock('next/image', () => ({
 
 // ── Imports (after mocks) ─────────────────────────────────────
 
-import { OverviewCard } from '@/components/studio/OverviewCard';
+import { SummaryBar } from '@/components/studio/SummaryBar';
 import { ActivityFeed, type ActivityEntry } from '@/components/studio/ActivityFeed';
 
-// ── Req 14.1, 14.2, 14.3: Dashboard shows artist/author/genre stat cards ──
+// ── Req 14.1, 14.2, 14.3: Dashboard shows stats (SummaryBar) ──
 
-describe('OverviewCard (Req 14.1, 14.2, 14.3)', () => {
-  it('renders "Total Artists" label with correct value', () => {
-    render(
-      <OverviewCard
-        icon={<span>icon</span>}
-        label="Total Artists"
-        value={42}
-        accentClass="text-pink-400 bg-pink-400/10"
-      />
-    );
+describe('SummaryBar (Req 14.1, 14.2, 14.3)', () => {
+  const mockStats = [
+    { label: 'Titles', value: 97, href: '/studio/titles' },
+    { label: 'Articles', value: 12, href: '/studio/articles' },
+    { label: 'Media', value: 340, href: '/studio/media' },
+    { label: 'Artists', value: 42, href: '/studio/titles' },
+    { label: 'Authors', value: 18, href: '/studio/titles' },
+    { label: 'Genres', value: 7, href: '/studio/curation' },
+  ];
 
-    expect(screen.getByText('Total Artists')).toBeInTheDocument();
+  it('renders all stat labels', () => {
+    render(<SummaryBar stats={mockStats} />);
+
+    expect(screen.getByText('Titles')).toBeInTheDocument();
+    expect(screen.getByText('Articles')).toBeInTheDocument();
+    expect(screen.getByText('Media')).toBeInTheDocument();
+    expect(screen.getByText('Artists')).toBeInTheDocument();
+    expect(screen.getByText('Authors')).toBeInTheDocument();
+    expect(screen.getByText('Genres')).toBeInTheDocument();
+  });
+
+  it('renders stat values correctly', () => {
+    render(<SummaryBar stats={mockStats} />);
+
+    expect(screen.getByText('97')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('340')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();
-  });
-
-  it('renders "Total Authors" label with correct value', () => {
-    render(
-      <OverviewCard
-        icon={<span>icon</span>}
-        label="Total Authors"
-        value={18}
-        accentClass="text-sky-400 bg-sky-400/10"
-      />
-    );
-
-    expect(screen.getByText('Total Authors')).toBeInTheDocument();
     expect(screen.getByText('18')).toBeInTheDocument();
-  });
-
-  it('renders "Total Genres" label with correct value', () => {
-    render(
-      <OverviewCard
-        icon={<span>icon</span>}
-        label="Total Genres"
-        value={7}
-        accentClass="text-amber-400 bg-amber-400/10"
-      />
-    );
-
-    expect(screen.getByText('Total Genres')).toBeInTheDocument();
     expect(screen.getByText('7')).toBeInTheDocument();
   });
 
   it('formats large values with locale string (e.g., 1,234)', () => {
-    render(
-      <OverviewCard
-        icon={<span>icon</span>}
-        label="Total Artists"
-        value={1234}
-        accentClass="text-pink-400 bg-pink-400/10"
-      />
-    );
+    const stats = [{ label: 'Titles', value: 1234, href: '/studio/titles' }];
+    render(<SummaryBar stats={stats} />);
 
     expect(screen.getByText('1,234')).toBeInTheDocument();
   });
 
-  it('renders the icon within the card', () => {
-    render(
-      <OverviewCard
-        icon={<span data-testid="stat-icon">🎨</span>}
-        label="Total Artists"
-        value={5}
-        accentClass="text-pink-400 bg-pink-400/10"
-      />
-    );
+  it('renders each stat as a link to its section', () => {
+    render(<SummaryBar stats={mockStats} />);
 
-    expect(screen.getByTestId('stat-icon')).toBeInTheDocument();
+    const links = screen.getAllByRole('listitem');
+    expect(links[0].closest('a')).toHaveAttribute('href', '/studio/titles');
+    expect(links[1].closest('a')).toHaveAttribute('href', '/studio/articles');
+    expect(links[2].closest('a')).toHaveAttribute('href', '/studio/media');
+  });
+
+  it('renders with role="list" for accessibility', () => {
+    render(<SummaryBar stats={mockStats} />);
+
+    expect(screen.getByRole('list', { name: 'Content overview' })).toBeInTheDocument();
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 // ── Mocks ─────────────────────────────────────────────────────
@@ -11,190 +11,66 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-// Mock next/navigation
-vi.mock('next/navigation', () => ({
-  usePathname: () => '/studio',
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-}));
+// Track the pathname for different test scenarios
+let mockPathname = '/studio';
 
-// Mock supabase browser client
-vi.mock('@/lib/db/supabase-browser', () => ({
-  createSupabaseBrowserClient: () => ({
-    auth: {
-      getUser: () => Promise.resolve({ data: { user: null } }),
-    },
-  }),
+vi.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => (
-      <div className={className} {...props}>{children}</div>
+    header: ({ children, className, ...props }: any) => (
+      <header className={className} {...props}>{children}</header>
+    ),
+    nav: ({ children, className, ...props }: any) => (
+      <nav className={className} {...props}>{children}</nav>
+    ),
+    span: ({ children, className, ...props }: any) => (
+      <span className={className} {...props}>{children}</span>
     ),
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
   useReducedMotion: () => false,
 }));
 
-// Mock StudioPageTransition
-vi.mock('@/components/studio/StudioPageTransition', () => ({
-  StudioPageTransition: ({ children }: any) => <div>{children}</div>,
+// Mock supabase browser client
+vi.mock('@/lib/db/supabase-browser', () => ({
+  createSupabaseBrowserClient: () => ({
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: { email: 'test@example.com' } } }),
+      signOut: () => Promise.resolve(),
+    },
+  }),
 }));
 
-// Mock @radix-ui/react-dropdown-menu with a context-based approach
-vi.mock('@radix-ui/react-dropdown-menu', () => {
-  const React = require('react');
+// Mock UI store
+vi.mock('@/stores/useUIStore', () => ({
+  useUIStore: () => ({ theme: 'dark', toggleTheme: vi.fn() }),
+}));
 
-  const DropdownContext = React.createContext({ open: false, setOpen: (_: boolean) => {} });
-
-  function Root({ children }: any) {
-    const [open, setOpen] = React.useState(false);
-    return (
-      <DropdownContext.Provider value={{ open, setOpen }}>
-        <div data-testid="dropdown-root" data-state={open ? 'open' : 'closed'}>
-          {children}
-        </div>
-      </DropdownContext.Provider>
-    );
-  }
-
-  function Trigger({ children, asChild, ...props }: any) {
-    const { open, setOpen } = React.useContext(DropdownContext);
-    if (asChild) {
-      const child = React.Children.only(children);
-      return React.cloneElement(child, {
-        ...props,
-        onClick: (e: any) => {
-          setOpen(!open);
-          child.props.onClick?.(e);
-        },
-        'aria-expanded': open ? 'true' : 'false',
-      });
-    }
-    return (
-      <button {...props} onClick={() => setOpen(!open)}>
-        {children}
-      </button>
-    );
-  }
-
-  function Portal({ children }: any) {
-    return <>{children}</>;
-  }
-
-  function Content({ children, ...props }: any) {
-    const { open } = React.useContext(DropdownContext);
-    if (!open) return null;
-    return (
-      <div role="menu" {...props}>
-        {children}
-      </div>
-    );
-  }
-
-  function Label({ children, className }: any) {
-    return <div className={className} role="note">{children}</div>;
-  }
-
-  function Item({ children, asChild, ...props }: any) {
-    if (asChild) {
-      return <>{children}</>;
-    }
-    return <div role="menuitem" {...props}>{children}</div>;
-  }
-
-  return {
-    Root,
-    Trigger,
-    Portal,
-    Content,
-    Label,
-    Item,
-  };
-});
+// Mock GradientText
+vi.mock('@/components/ui/GradientText', () => ({
+  GradientText: ({ children }: any) => <span data-testid="gradient-text">{children}</span>,
+}));
 
 // ── Imports (after mocks) ─────────────────────────────────────
 
-import { StudioHeader } from '@/components/studio/StudioHeader';
-import { StudioShell } from '@/components/studio/StudioShell';
+import { Navigation } from '@/components/layout/Navigation';
+import { MobileNav } from '@/components/layout/MobileNav';
 
-// ── StudioHeader Tests ────────────────────────────────────────
+// ── Navigation Tests — Studio Mode ───────────────────────────
 
-describe('StudioHeader', () => {
-  describe('Req 1.1 - No search icon in header', () => {
-    it('does not render a search icon or search button', () => {
-      const { container } = render(<StudioHeader user={null} />);
-
-      // No element with aria-label containing "search"
-      const searchByLabel = container.querySelector('[aria-label*="earch"]');
-      expect(searchByLabel).toBeNull();
-
-      // No Search icon from lucide-react (would have class lucide-search)
-      const searchIcon = container.querySelector('.lucide-search');
-      expect(searchIcon).toBeNull();
-
-      // No text content "Search"
-      expect(screen.queryByText(/search/i)).toBeNull();
-    });
-
-    it('renders a user profile icon button instead of search', () => {
-      render(<StudioHeader user={null} />);
-
-      const userButton = screen.getByLabelText('User menu');
-      expect(userButton).toBeInTheDocument();
-    });
+describe('Navigation — Studio adaptation', () => {
+  beforeEach(() => {
+    mockPathname = '/studio';
   });
 
-  describe('Req 2.2, 2.3 - UserProfileDropdown unauthenticated state', () => {
-    it('shows only "Sign In" when user is not authenticated', () => {
-      render(<StudioHeader user={null} />);
-
-      // Open the dropdown
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
-
-      // Should show Sign In
-      expect(screen.getByText('Sign In')).toBeInTheDocument();
-
-      // Should NOT show navigation items
-      expect(screen.queryByText('Dashboard')).toBeNull();
-      expect(screen.queryByText('Titles')).toBeNull();
-      expect(screen.queryByText('Articles')).toBeNull();
-      expect(screen.queryByText('Media')).toBeNull();
-      expect(screen.queryByText('Curation')).toBeNull();
-    });
-
-    it('Sign In links to /studio/login', () => {
-      render(<StudioHeader user={null} />);
-
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
-
-      const signInLink = screen.getByText('Sign In').closest('a');
-      expect(signInLink).toHaveAttribute('href', '/studio/login');
-    });
-  });
-
-  describe('Req 2.2, 2.5 - UserProfileDropdown authenticated state', () => {
-    const mockUser = { email: 'admin@example.com' };
-
-    it('shows "Signed in as {email}" when authenticated', () => {
-      render(<StudioHeader user={mockUser} />);
-
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
-
-      expect(
-        screen.getByText(`Signed in as ${mockUser.email}`)
-      ).toBeInTheDocument();
-    });
-
-    it('shows Dashboard, Titles, Articles, Media, Curation links when authenticated', () => {
-      render(<StudioHeader user={mockUser} />);
-
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
+  describe('Studio nav items are shown on /studio/* routes', () => {
+    it('renders Studio navigation items when on /studio', () => {
+      render(<Navigation />);
 
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Titles')).toBeInTheDocument();
@@ -203,11 +79,49 @@ describe('StudioHeader', () => {
       expect(screen.getByText('Curation')).toBeInTheDocument();
     });
 
-    it('navigation links have correct hrefs', () => {
-      render(<StudioHeader user={mockUser} />);
+    it('does NOT render public nav items when on /studio', () => {
+      render(<Navigation />);
 
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
+      expect(screen.queryByText('Home')).toBeNull();
+      expect(screen.queryByText('Library')).toBeNull();
+      expect(screen.queryByText('Discover')).toBeNull();
+      expect(screen.queryByText('Tiers')).toBeNull();
+      expect(screen.queryByText('Stats')).toBeNull();
+      expect(screen.queryByText('News')).toBeNull();
+    });
+
+    it('renders "CC Studio" branding instead of "CC"', () => {
+      render(<Navigation />);
+
+      const gradientTexts = screen.getAllByTestId('gradient-text');
+      const studioText = gradientTexts.find(el => el.textContent === 'CC Studio');
+      expect(studioText).toBeInTheDocument();
+    });
+
+    it('renders a "Back to Site" link', () => {
+      render(<Navigation />);
+
+      const backLink = screen.getByLabelText('Back to public site');
+      expect(backLink).toBeInTheDocument();
+      expect(backLink).toHaveAttribute('href', '/');
+    });
+
+    it('does NOT render search icon on Studio routes', () => {
+      const { container } = render(<Navigation />);
+
+      const searchLink = container.querySelector('[aria-label="Search titles"]');
+      expect(searchLink).toBeNull();
+    });
+
+    it('renders theme toggle on Studio routes', () => {
+      render(<Navigation />);
+
+      const themeButton = screen.getByLabelText(/switch to/i);
+      expect(themeButton).toBeInTheDocument();
+    });
+
+    it('Studio nav links have correct hrefs', () => {
+      render(<Navigation />);
 
       expect(screen.getByText('Dashboard').closest('a')).toHaveAttribute('href', '/studio');
       expect(screen.getByText('Titles').closest('a')).toHaveAttribute('href', '/studio/titles');
@@ -215,92 +129,84 @@ describe('StudioHeader', () => {
       expect(screen.getByText('Media').closest('a')).toHaveAttribute('href', '/studio/media');
       expect(screen.getByText('Curation').closest('a')).toHaveAttribute('href', '/studio/curation');
     });
+  });
 
-    it('does not show "Sign In" when authenticated', () => {
-      render(<StudioHeader user={mockUser} />);
+  describe('Public nav items are shown on non-studio routes', () => {
+    beforeEach(() => {
+      mockPathname = '/library';
+    });
 
-      const trigger = screen.getByLabelText('User menu');
-      fireEvent.click(trigger);
+    it('renders public navigation items when NOT on /studio', () => {
+      render(<Navigation />);
 
-      // Verify menu is open by checking for Dashboard
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
-      // Sign In should not be present
-      expect(screen.queryByText('Sign In')).toBeNull();
+      expect(screen.getByText('Home')).toBeInTheDocument();
+      expect(screen.getByText('Library')).toBeInTheDocument();
+      expect(screen.getByText('Discover')).toBeInTheDocument();
+    });
+
+    it('does NOT render Studio nav items when NOT on /studio', () => {
+      render(<Navigation />);
+
+      expect(screen.queryByText('Dashboard')).toBeNull();
+      expect(screen.queryByText('Curation')).toBeNull();
+    });
+
+    it('renders "CC" branding (not "CC Studio")', () => {
+      render(<Navigation />);
+
+      const gradientTexts = screen.getAllByTestId('gradient-text');
+      const ccText = gradientTexts.find(el => el.textContent === 'CC');
+      expect(ccText).toBeInTheDocument();
+    });
+
+    it('renders search icon on public routes', () => {
+      const { container } = render(<Navigation />);
+
+      const searchLink = container.querySelector('[aria-label="Search titles"]');
+      expect(searchLink).toBeInTheDocument();
     });
   });
 });
 
-// ── StudioShell Layout Tests ──────────────────────────────────
+// ── MobileNav Tests — Studio Mode ────────────────────────────
 
-describe('StudioShell', () => {
-  describe('Req 3.1, 3.2 - No sidebar in studio layout', () => {
-    it('does not render StudioNav sidebar', () => {
-      const { container } = render(
-        <StudioShell>
-          <div>Page content</div>
-        </StudioShell>
-      );
-
-      // StudioNav renders a <nav> element — verify none exists
-      const navElements = container.querySelectorAll('nav');
-      expect(navElements.length).toBe(0);
+describe('MobileNav — Studio adaptation', () => {
+  describe('Studio nav items on /studio/* routes', () => {
+    beforeEach(() => {
+      mockPathname = '/studio';
     });
 
-    it('does not display "Creative Workspace" branding text', () => {
-      render(
-        <StudioShell>
-          <div>Page content</div>
-        </StudioShell>
-      );
+    it('renders Studio mobile nav items', () => {
+      render(<MobileNav />);
 
-      expect(screen.queryByText(/Creative Workspace/i)).toBeNull();
+      // Studio items use different labels
+      expect(screen.getByText('Home')).toBeInTheDocument(); // Dashboard label on mobile
+      expect(screen.getByText('Titles')).toBeInTheDocument();
+      expect(screen.getByText('Articles')).toBeInTheDocument();
+      expect(screen.getByText('Media')).toBeInTheDocument();
+      expect(screen.getByText('Curation')).toBeInTheDocument();
     });
 
-    it('renders the StudioHeader at the top', () => {
-      render(
-        <StudioShell>
-          <div>Page content</div>
-        </StudioShell>
-      );
+    it('Studio nav links have correct hrefs', () => {
+      render(<MobileNav />);
 
-      // Header should be present with the user menu button
-      expect(screen.getByLabelText('User menu')).toBeInTheDocument();
+      // The "Home" item in studio context links to /studio
+      const homeLink = screen.getByText('Home').closest('a');
+      expect(homeLink).toHaveAttribute('href', '/studio');
+    });
+  });
+
+  describe('Public nav items on non-studio routes', () => {
+    beforeEach(() => {
+      mockPathname = '/';
     });
 
-    it('renders main content area with full width', () => {
-      const { container } = render(
-        <StudioShell>
-          <div>Page content</div>
-        </StudioShell>
-      );
+    it('renders public mobile nav items', () => {
+      render(<MobileNav />);
 
-      const main = container.querySelector('main');
-      expect(main).toBeInTheDocument();
-      expect(main?.className).toContain('w-full');
-    });
-
-    it('renders children inside the main content area', () => {
-      render(
-        <StudioShell>
-          <div data-testid="child-content">Hello Studio</div>
-        </StudioShell>
-      );
-
-      expect(screen.getByTestId('child-content')).toBeInTheDocument();
-      expect(screen.getByText('Hello Studio')).toBeInTheDocument();
-    });
-
-    it('uses a vertical flex layout (no sidebar flex row)', () => {
-      const { container } = render(
-        <StudioShell>
-          <div>Page content</div>
-        </StudioShell>
-      );
-
-      // The root wrapper should be flex-col (vertical), not flex-row (sidebar layout)
-      const wrapper = container.firstElementChild;
-      expect(wrapper?.className).toContain('flex-col');
-      expect(wrapper?.className).not.toContain('flex-row');
+      expect(screen.getByText('Home')).toBeInTheDocument();
+      expect(screen.getByText('Library')).toBeInTheDocument();
+      expect(screen.getByText('Discover')).toBeInTheDocument();
     });
   });
 });
