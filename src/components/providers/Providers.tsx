@@ -10,6 +10,7 @@ import { QueryProvider } from './QueryProvider';
 import { LenisProvider } from './LenisProvider';
 import { KeyboardShortcutsProvider } from './KeyboardShortcutsProvider';
 import { ThemeProvider } from './ThemeProvider';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <LenisProvider>
           <KeyboardShortcutsProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </KeyboardShortcutsProvider>
         </LenisProvider>
       </ThemeProvider>
