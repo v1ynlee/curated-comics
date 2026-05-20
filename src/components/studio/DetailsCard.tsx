@@ -9,16 +9,19 @@
 // ============================================================
 
 import { useCallback } from 'react';
-import { FileText } from 'lucide-react';
+import Image from 'next/image';
+import { FileText, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { CardWrapper } from '@/components/studio/CardWrapper';
 import { CustomDropdown } from '@/components/studio/CustomDropdown';
 import { CustomDatepicker } from '@/components/studio/CustomDatepicker';
 import { GenreMoodSelector } from '@/components/studio/GenreMoodSelector';
+import { ImageUploader } from '@/components/studio/ImageUploader';
 import { TIER_CONFIG } from '@/types/title';
 import type { TierLevel, Origin, SeriesStatus, ReadingStatus } from '@/types/title';
 import type { TitleFormData } from '@/types/studio';
 import type { DropdownOption } from '@/components/studio/CustomDropdown';
+import type { MediaAsset } from '@/types/media';
 
 // ── Props ─────────────────────────────────────────────────────
 
@@ -33,6 +36,13 @@ interface DetailsCardProps {
   onAddGenre?: (name: string) => void;
   onAddMood?: (name: string) => void;
   disabled?: boolean;
+  // Media props (cover image merged into Details)
+  slug: string;
+  coverImageId?: string;
+  pendingCoverFile?: File | null;
+  previewSrc?: string | null;
+  onCoverFileSelect?: (file: File | null) => void;
+  onCoverUpload?: (asset: MediaAsset) => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────
@@ -96,6 +106,12 @@ export function DetailsCard({
   onAddGenre,
   onAddMood,
   disabled = false,
+  slug,
+  coverImageId,
+  pendingCoverFile,
+  previewSrc,
+  onCoverFileSelect,
+  onCoverUpload,
 }: DetailsCardProps) {
   // ── Alternative titles management ─────────────────────────
 
@@ -133,6 +149,117 @@ export function DetailsCard({
       onSave={onSave}
       disabled={disabled}
     >
+      {/* ── Cover Image + Banner Preview ── */}
+      <div className="mb-6 pb-6 border-b border-white/5">
+        {/* Banner + Cover composite layout */}
+        <div className="relative mb-4">
+          {/* Blurred banner preview (cropped from center) */}
+          {previewSrc ? (
+            <div className="group/banner relative w-full rounded-lg overflow-hidden border border-white/10 bg-bg-deep/60" style={{ aspectRatio: '16 / 5' }}>
+              <Image
+                src={previewSrc}
+                alt=""
+                fill
+                className="object-cover object-center blur-[6px] scale-105"
+                sizes="(max-width: 640px) 100vw, 700px"
+                unoptimized={!!pendingCoverFile}
+                aria-hidden="true"
+              />
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-bg-deep/30" />
+              {/* Replace overlay on hover */}
+              <label className="absolute inset-0 flex items-center justify-center bg-bg-deep/60 opacity-0 group-hover/banner:opacity-100 transition-opacity duration-200 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onCoverFileSelect?.(file);
+                    e.target.value = '';
+                  }}
+                />
+                <span className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 backdrop-blur-sm text-text-primary text-xs font-medium border border-white/20">
+                  <ImageIcon size={14} aria-hidden="true" />
+                  Replace
+                </span>
+              </label>
+              <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-bg-deep/70 text-text-tertiary text-[10px] pointer-events-none">
+                Banner preview
+              </div>
+            </div>
+          ) : (
+            <div
+              className="flex items-center justify-center rounded-lg border-2 border-dashed border-white/10 bg-bg-deep/40 text-text-tertiary"
+              style={{ aspectRatio: '16 / 5' }}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <ImageIcon className="w-5 h-5 opacity-40" aria-hidden="true" />
+                <span className="text-[11px]">Upload a cover to see the banner preview</span>
+              </div>
+            </div>
+          )}
+
+          {/* Cover thumbnail overlapping bottom-left of banner */}
+          {previewSrc && (
+            <div className="group/cover absolute -bottom-10 left-5 w-32 h-44 rounded-lg overflow-hidden border-[3px] border-bg-deep shadow-xl shadow-black/40">
+              <Image
+                src={previewSrc}
+                alt={`Cover for ${slug}`}
+                fill
+                className="object-cover"
+                sizes="128px"
+                unoptimized={!!pendingCoverFile}
+              />
+              {/* Replace overlay on hover */}
+              <label className="absolute inset-0 flex items-center justify-center bg-bg-deep/70 opacity-0 group-hover/cover:opacity-100 transition-opacity duration-200 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onCoverFileSelect?.(file);
+                    e.target.value = '';
+                  }}
+                />
+                <span className="flex items-center gap-1 px-2 py-1 rounded bg-white/10 backdrop-blur-sm text-text-primary text-[10px] font-medium border border-white/20">
+                  <ImageIcon size={12} aria-hidden="true" />
+                  Replace
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Spacer for the overlapping cover thumbnail */}
+        {previewSrc && <div className="h-8" />}
+
+        {/* Upload form: only shown when NO image is present */}
+        {!previewSrc && (
+          <div className="flex flex-col gap-2 mt-2">
+            <span className="block font-heading text-xs uppercase tracking-wider text-text-secondary">
+              Cover Image
+            </span>
+            <ImageUploader
+              slug={slug}
+              assetType="cover"
+              onFileSelect={(file) => onCoverFileSelect?.(file)}
+              onUploadComplete={(asset) => onCoverUpload?.(asset)}
+              pendingFile={pendingCoverFile ?? null}
+            />
+          </div>
+        )}
+
+        {/* Pending upload indicator (shown below preview when image selected but not yet saved) */}
+        {previewSrc && pendingCoverFile && !coverImageId && (
+          <p className="text-accent-primary text-xs mt-2">
+            Image selected; will upload on save
+          </p>
+        )}
+      </div>
+
+      {/* ── Form Fields ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* English Title */}
         <div className="md:col-span-2">

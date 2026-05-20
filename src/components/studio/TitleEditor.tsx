@@ -12,7 +12,6 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { MediaCard } from '@/components/studio/MediaCard';
 import { DetailsCard } from '@/components/studio/DetailsCard';
 import { ProgressCard } from '@/components/studio/ProgressCard';
 import { ReviewsCard } from '@/components/studio/ReviewsCard';
@@ -92,6 +91,32 @@ export function TitleEditor({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'untitled';
   }, [formData.englishTitle]);
+
+  // ── Cover preview URL (blob for pending, or existing cover path) ──
+
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+
+  const handleCoverFileSelectWithPreview = useCallback((file: File | null) => {
+    // Revoke previous blob URL
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    if (file) {
+      const blobUrl = URL.createObjectURL(file);
+      setCoverPreviewUrl(blobUrl);
+    } else {
+      setCoverPreviewUrl(null);
+    }
+    setPendingCoverFile(file);
+  }, [coverPreviewUrl]);
+
+  // Derive preview src: pending blob > existing cover image path
+  const previewSrc = useMemo(() => {
+    if (coverPreviewUrl) return coverPreviewUrl;
+    // If there's an existing cover, use the public path
+    if (formData.coverImageId || slug !== 'untitled') {
+      return `/images/covers/${slug}-640w.webp`;
+    }
+    return null;
+  }, [coverPreviewUrl, formData.coverImageId, slug]);
 
   // ── Field update helpers ──────────────────────────────────
 
@@ -223,7 +248,7 @@ export function TitleEditor({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* ═══════════════════════════════════════════════════════
-          Section: Details (formerly "Basic Info" + "Classification")
+          Section: Details (with integrated cover image upload)
           ═══════════════════════════════════════════════════════ */}
       <DetailsCard
         formData={formData}
@@ -233,17 +258,12 @@ export function TitleEditor({
         moods={moods}
         onToggleGenre={toggleGenre}
         onToggleMood={toggleMood}
-      />
-
-      {/* ═══════════════════════════════════════════════════════
-          Section: Media (unified cover/banner)
-          ═══════════════════════════════════════════════════════ */}
-      <MediaCard
         slug={slug}
         coverImageId={formData.coverImageId}
-        onCoverFileSelect={handleCoverFileSelect}
+        pendingCoverFile={pendingCoverFile}
+        previewSrc={previewSrc}
+        onCoverFileSelect={handleCoverFileSelectWithPreview}
         onCoverUpload={handleCoverUpload}
-        onSave={async () => { await onSave(formData); }}
       />
 
       {/* ═══════════════════════════════════════════════════════
