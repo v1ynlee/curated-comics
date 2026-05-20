@@ -1,15 +1,16 @@
 // ============================================================
 // Studio Layout — Isolated layout for the /studio route group
-// No public nav/footer. Dark theme by default. Full-width content.
-// Login page gets a standalone view (no header chrome).
-// Requirements: 4.1, 4.2, 4.3, 9.1, 9.2, 9.5, 17.7
+// Uses the global header/footer (via root layout) but applies
+// Studio-specific font and page transition.
+// Login page gets a standalone view (no chrome) via its own layout.
 // ============================================================
 
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { StudioShell } from '@/components/studio/StudioShell';
+import { StudioPageTransition } from '@/components/studio/StudioPageTransition';
+import { StudioKeyboardShortcuts } from '@/components/studio/StudioKeyboardShortcuts';
 
-// Inter — primary body typeface for the Studio area (Requirement 4.3)
+// Inter — primary body typeface for the Studio area
 const inter = localFont({
   src: '../../fonts/Inter/Inter_28pt-Medium.woff2',
   variable: '--font-inter',
@@ -36,10 +37,23 @@ export default function StudioLayout({
 }) {
   return (
     <div
-      className={`min-h-screen bg-bg-deep text-text-primary ${inter.variable}`}
+      className={`${inter.variable}`}
       style={{ fontFamily: 'var(--font-inter)' }}
     >
-      <StudioShell>{children}</StudioShell>
+      {/* Skip navigation for accessibility */}
+      <a
+        href="#studio-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-toast focus:px-4 focus:py-2 focus:bg-accent-primary focus:text-white focus:rounded-md"
+      >
+        Skip to studio content
+      </a>
+
+      <div id="studio-content" className="pt-6">
+        <StudioKeyboardShortcuts />
+        <StudioPageTransition>
+          {children}
+        </StudioPageTransition>
+      </div>
     </div>
   );
 }
