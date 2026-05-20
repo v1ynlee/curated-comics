@@ -1425,7 +1425,7 @@ function LivePreview({ titles }: { titles: CurationTitle[] }) {
           <span className="font-heading text-[9px] uppercase tracking-[0.25em] text-text-tertiary">
             Handpicked
           </span>
-          <h4 className="font-display text-xl font-bold text-text-primary">
+          <h4 className="font-heading text-xl font-bold text-text-primary">
             Featured Titles
           </h4>
           <p className="font-body text-xs text-text-secondary">

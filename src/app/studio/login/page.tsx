@@ -95,7 +95,7 @@ function StudioLoginForm() {
             >
               Comic Curated
             </motion.span>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+            <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary">
               Studio
             </h1>
             <p className="font-body text-sm text-text-secondary mt-1">
@@ -170,7 +170,7 @@ function StudioLoginForm() {
                     </svg>
                   </div>
                 </div>
-                <h2 className="font-display text-xl font-semibold text-text-primary mb-2">
+                <h2 className="font-heading text-xl font-semibold text-text-primary mb-2">
                   Check your inbox
                 </h2>
                 <p className="font-body text-sm text-text-secondary mb-6 max-w-xs mx-auto">

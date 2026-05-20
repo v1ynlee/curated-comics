@@ -175,13 +175,13 @@ export default async function StudioCurationPage() {
   ]);
 
   return (
-    <div className="container-content py-10 max-w-6xl">
+    <div className="container-content py-8 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8">
         <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
           Content Management
         </span>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+        <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary">
           Curation
         </h1>
         <p className="font-body text-sm text-text-secondary">

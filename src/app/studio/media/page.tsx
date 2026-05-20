@@ -121,14 +121,14 @@ export default async function StudioMediaPage() {
   const totalAssets = allAssets.length;
 
   return (
-    <div className="container-content py-10 max-w-5xl">
+    <div className="container-content py-8 max-w-7xl">
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
             Assets
           </span>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+          <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary">
             Media
           </h1>
           <p className="font-body text-sm text-text-secondary">
