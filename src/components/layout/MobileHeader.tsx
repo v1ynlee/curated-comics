@@ -4,7 +4,7 @@
 // MobileHeader — top bar for mobile (< md breakpoint)
 // Contains: logo, search icon, theme toggle.
 // Desktop nav handles everything at md+, so this is md:hidden.
-// Hidden on /studio/* routes (StudioHeader takes over there).
+// Adapts for /studio/* routes with Studio branding.
 // ============================================================
 
 import Link from 'next/link';
@@ -23,7 +23,6 @@ export function MobileHeader() {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
-  // Studio has its own header — suppress the global mobile header there
   const isStudio = pathname.startsWith('/studio');
 
   useEffect(() => {
@@ -31,7 +30,6 @@ export function MobileHeader() {
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
       setScrolled(currentY > 20);
-      // Hide on scroll-down past 60px, reveal on scroll-up
       if (currentY > 60) {
         if (delta > 8) setVisible(false);
         else if (delta < -8) setVisible(true);
@@ -44,8 +42,6 @@ export function MobileHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (isStudio) return null;
-
   return (
     <AnimatePresence>
       {visible && (
@@ -57,42 +53,44 @@ export function MobileHeader() {
           exit={{ y: -64, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className={cn(
-            // Only visible on mobile — desktop nav takes over at md
             'fixed top-0 inset-x-0 z-nav',
             'flex md:hidden items-center justify-between',
             'px-4 h-14',
-            'transition-all duration-300',
+            'transition-all duration-500',
             scrolled
-              ? 'bg-bg-mid/95 backdrop-blur-md border-b border-white/5 shadow-[0_1px_16px_rgba(0,0,0,0.12)]'
-              : 'bg-bg-deep/80 backdrop-blur-sm',
+              ? 'bg-bg-deep/60 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)]'
+              : isStudio
+                ? 'bg-bg-mid/50 backdrop-blur-sm border-b border-white/5'
+                : 'bg-transparent backdrop-blur-none',
           )}
         >
           {/* Logo */}
           <Link
-            href="/"
+            href={isStudio ? '/studio' : '/'}
             className="font-heading font-bold text-base tracking-wide focus-visible:outline-accent-primary rounded-sm"
-            aria-label="Comic Curated — Home"
+            aria-label={isStudio ? 'Studio Dashboard' : 'Comic Curated — Home'}
           >
-            <GradientText>Comic Curated</GradientText>
+            <GradientText>{isStudio ? 'CC Studio' : 'Comic Curated'}</GradientText>
           </Link>
 
           {/* Right actions */}
           <div className="flex items-center gap-0.5">
-            {/* Search */}
-            <Link
-              href="/search"
-              className={cn(
-                'p-2.5 rounded-sm',
-                'text-text-tertiary hover:text-text-primary',
-                'transition-colors duration-150',
-                'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-                // Minimum touch target
-                'min-h-[44px] min-w-[44px] flex items-center justify-center',
-              )}
-              aria-label="Search titles"
-            >
-              <Search size={18} aria-hidden="true" />
-            </Link>
+            {/* Search (public only) */}
+            {!isStudio && (
+              <Link
+                href="/search"
+                className={cn(
+                  'p-2.5 rounded-sm',
+                  'text-text-tertiary hover:text-text-primary',
+                  'transition-colors duration-150',
+                  'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+                  'min-h-[44px] min-w-[44px] flex items-center justify-center',
+                )}
+                aria-label="Search titles"
+              >
+                <Search size={18} aria-hidden="true" />
+              </Link>
+            )}
 
             {/* Theme toggle */}
             <button
