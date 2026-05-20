@@ -52,7 +52,7 @@
   /* Typography — Font Families */
   --font-display: var(--font-playfair, 'Playfair Display'), 'Georgia', serif;
   --font-heading: 'Datatype', 'Oswald', 'Arial Narrow', sans-serif;
-  --font-body:    var(--font-dm-sans, 'DM Sans'), 'Inter', system-ui, sans-serif;
+  --font-body:    var(--font-inter, 'Inter'), system-ui, sans-serif;
   --font-accent:  var(--font-caveat, 'Caveat'), 'Ink Free', cursive;
   --font-data:    var(--font-jetbrains, 'JetBrains Mono'), 'Fira Code', 'Cascadia Code', monospace;
   /* Morvein — local cinematic display font for hero heading */
@@ -201,10 +201,11 @@
 [data-theme="light"] .hover\:border-white\/20:hover { border-color: rgba(10, 10, 20, 0.18); }
 [data-theme="light"] .hover\:border-white\/30:hover { border-color: rgba(10, 10, 20, 0.25); }
 
-/* Nav background when scrolled */
+/* Nav background when scrolled — glassmorphism */
 [data-theme="light"] .bg-bg-mid\/90  { background-color: rgba(232, 232, 242, 0.94); }
 [data-theme="light"] .bg-bg-mid\/95  { background-color: rgba(232, 232, 242, 0.97); }
 [data-theme="light"] .bg-bg-mid\/50  { background-color: rgba(232, 232, 242, 0.60); }
+[data-theme="light"] .bg-bg-deep\/60 { background-color: rgba(242, 242, 248, 0.60); }
 
 /* Hero gradient overlays */
 [data-theme="light"] .bg-bg-deep\/60 { background-color: rgba(242, 242, 248, 0.60); }
@@ -248,11 +249,11 @@
 [data-theme="light"] .bg-white\/10 { background-color: rgba(10, 10, 20, 0.08); }
 [data-theme="light"] .bg-white\/20 { background-color: rgba(10, 10, 20, 0.12); }
 
-/* Nav — themed shadow, no black */
+/* Nav — themed shadow, glassmorphism in light mode */
 [data-theme="light"] header[role="banner"] {
   box-shadow:
-    0 1px 0 rgba(10, 10, 20, 0.08),
-    0 2px 16px rgba(109, 40, 217, 0.10);
+    0 1px 0 rgba(10, 10, 20, 0.06),
+    0 4px 30px rgba(109, 40, 217, 0.08);
 }
 
 /* Footer */
@@ -398,7 +399,7 @@ body {
 /* Child Hood — local page section heading font */
 .font-page-heading { font-family: var(--font-page-heading); }
 
-/* Gradient text */
+/* Gradient text — DEPRECATED: kept for backward compat but no longer used */
 .gradient-text {
   background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-quaternary));
   -webkit-background-clip: text;
@@ -428,23 +429,18 @@ body {
     0 0 40px rgba(255, 215, 0, 0.5);
 }
 
-/* Heading glow — pulsing soft glow on major page headings */
-.heading-glow {
-  animation: heading-glow-pulse 3s ease-in-out infinite;
+/* Heading glow — static subtle glow on hero title (no infinite animation) */
+.hero-title-glow {
+  text-shadow:
+    0 0 12px color-mix(in srgb, var(--color-accent-primary) 35%, transparent),
+    0 0 30px color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
 }
 
-@keyframes heading-glow-pulse {
-  0%, 100% {
-    text-shadow:
-      0 0 8px color-mix(in srgb, var(--color-accent-primary) 40%, transparent),
-      0 0 20px color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
-  }
-  50% {
-    text-shadow:
-      0 0 16px color-mix(in srgb, var(--color-accent-primary) 60%, transparent),
-      0 0 40px color-mix(in srgb, var(--color-accent-primary) 30%, transparent),
-      0 0 60px color-mix(in srgb, var(--color-accent-primary) 10%, transparent);
-  }
+/* Legacy heading-glow kept for non-hero uses but no longer pulses */
+.heading-glow {
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--color-accent-primary) 30%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
 }
 
 /* Vertical text */
@@ -596,8 +592,8 @@ body {
     display: none !important;
   }
 
-  .heading-glow {
-    animation: none !important;
+  .heading-glow,
+  .hero-title-glow {
     text-shadow: none !important;
   }
 }

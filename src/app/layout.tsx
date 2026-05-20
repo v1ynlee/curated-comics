@@ -4,7 +4,6 @@
 
 import type { Metadata } from 'next';
 import {
-  DM_Sans,
   Playfair_Display,
   JetBrains_Mono,
   Caveat,
@@ -24,12 +23,6 @@ import { BackToTop } from '@/components/ui/BackToTop';
 import { SITE_URL } from '@/lib/utils/constants';
 import './globals.css';
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-});
-
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
@@ -46,6 +39,15 @@ const caveat = Caveat({
   subsets: ['latin'],
   variable: '--font-caveat',
   display: 'optional',
+});
+
+// ── Local fonts ─────────────────────────────────────────────
+// Inter — body font, loaded locally for performance.
+const inter = localFont({
+  src: '../fonts/Inter/Inter_28pt-Medium.woff2',
+  variable: '--font-inter',
+  display: 'swap',
+  weight: '500',
 });
 
 // ── Local fonts ─────────────────────────────────────────────
@@ -100,7 +102,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={[
-        dmSans.variable,
+        inter.variable,
         playfairDisplay.variable,
         jetbrainsMono.variable,
         caveat.variable,
