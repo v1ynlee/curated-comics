@@ -35,11 +35,11 @@ import { getGSAP } from '@/lib/animation/gsap-setup';
 import { cn } from '@/lib/utils/cn';
 
 const SEQUENCE = {
-  label: 0.2,
-  title: 0.5,
-  subtitle: 0.8,
-  cta: 1.0,
-  scroll: 1.5,
+  label: 0.3,
+  title: 0.6,
+  subtitle: 1.0,
+  cta: 1.3,
+  scroll: 2.0,
 };
 
 export function Hero() {
@@ -148,9 +148,9 @@ export function Hero() {
         {/* Section label */}
         <motion.span
           className="font-heading text-xs font-medium uppercase tracking-[0.25em] text-text-tertiary"
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: SEQUENCE.label * stagger, duration: 0.6 }}
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 16, filter: prefersReduced ? 'none' : 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: SEQUENCE.label * stagger, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           Personal Reading Archive
         </motion.span>
@@ -162,11 +162,11 @@ export function Hero() {
         */}
         <motion.h1
           id="hero-title"
-          className="heading-glow"
+          className="hero-title-glow"
           style={{ fontFamily: 'var(--font-hero)' }}
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 24, filter: prefersReduced ? 'none' : 'blur(8px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ delay: SEQUENCE.title * stagger, duration: 0.8, ease: [0.0, 0.0, 0.2, 1.0] }}
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 32, filter: prefersReduced ? 'none' : 'blur(12px)', scale: prefersReduced ? 1 : 0.95 }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+          transition={{ delay: SEQUENCE.title * stagger, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
         >
           {/*
             Desktop: flex-row — words sit side by side
@@ -193,9 +193,9 @@ export function Hero() {
         <motion.p
           className="max-w-lg font-body text-base font-light md:text-lg"
           style={{ color: theme === 'light' ? '#3a3a5c' : '#b0b0c8' }}
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: SEQUENCE.subtitle * stagger, duration: 0.6, ease: [0.0, 0.0, 0.2, 1.0] }}
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 20, filter: prefersReduced ? 'none' : 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: SEQUENCE.subtitle * stagger, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           Korean manhwa · Chinese manhua · Japanese manga
           <br />
@@ -210,9 +210,9 @@ export function Hero() {
         {/* CTA */}
         <motion.div
           className="flex flex-col sm:flex-row gap-3 mt-1"
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: SEQUENCE.cta * stagger, duration: 0.5 }}
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 16, filter: prefersReduced ? 'none' : 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: SEQUENCE.cta * stagger, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           <Button size="lg" asChild>
             <Link href="/library">Browse Library</Link>
@@ -242,7 +242,7 @@ export function Hero() {
               background: `linear-gradient(to bottom, ${theme === 'light' ? '#7a7a98' : '#6b6b80'}, transparent)`,
             }}
             animate={{ scaleY: [1, 0.5, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
           />
         </motion.div>
       </div>
