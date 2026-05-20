@@ -1,9 +1,9 @@
 'use client';
 
 // ============================================================
-// StudioPageTransition — AnimatePresence wrapper for Studio routes
-// Provides cinematic page transitions between Studio pages.
-// Respects prefers-reduced-motion per Requirement 17.7.
+// StudioPageTransition — Lightweight page transition for Studio
+// Product-appropriate: 150ms opacity only, no decorative blur/slide.
+// Respects prefers-reduced-motion.
 // ============================================================
 
 import { AnimatePresence, motion } from 'framer-motion';
@@ -12,28 +12,14 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { Variants } from 'framer-motion';
 
 const studioPageVariants: Variants = {
-  initial: {
-    opacity: 0,
-    x: 12,
-    filter: 'blur(4px)',
-  },
+  initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    x: 0,
-    filter: 'blur(0px)',
-    transition: {
-      duration: 0.4,
-      ease: [0.0, 0.0, 0.2, 1.0],
-    },
+    transition: { duration: 0.15, ease: [0.0, 0.0, 0.2, 1.0] },
   },
   exit: {
     opacity: 0,
-    x: -12,
-    filter: 'blur(4px)',
-    transition: {
-      duration: 0.25,
-      ease: [0.4, 0.0, 1.0, 1.0],
-    },
+    transition: { duration: 0.1, ease: [0.4, 0.0, 1.0, 1.0] },
   },
 };
 

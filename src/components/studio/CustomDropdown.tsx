@@ -257,7 +257,7 @@ export function CustomDropdown<T extends string = string>({
           role="listbox"
           aria-labelledby={`${id}-label`}
           className={cn(
-            'absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-lg',
+            'absolute z-50 mt-1 w-full max-h-60 overflow-y-auto overscroll-contain rounded-lg',
             'bg-bg-surface border border-white/10 shadow-lg shadow-black/20',
             'py-1',
           )}
