@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { ArticleEditor } from '@/components/studio/ArticleEditor';
+import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
 import { studioCreateArticle } from '@/services/studio/studio-articles';
 import type { ArticleFormData } from '@/types/article';
 
@@ -114,13 +115,19 @@ export default async function StudioArticleNewPage() {
   const [categories, tags] = await Promise.all([fetchCategories(), fetchTags()]);
 
   return (
-    <div className="container-content py-10 max-w-5xl">
+    <div className="container-content py-8 max-w-4xl">
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        items={[
+          { label: 'Studio', href: '/studio' },
+          { label: 'Articles', href: '/studio/articles' },
+          { label: 'New Article' },
+        ]}
+      />
+
       {/* Header */}
       <div className="flex flex-col gap-1 mb-8">
-        <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
-          Editorial
-        </span>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+        <h1 className="font-heading text-2xl md:text-3xl font-bold text-text-primary">
           New Article
         </h1>
         <p className="font-body text-sm text-text-secondary">

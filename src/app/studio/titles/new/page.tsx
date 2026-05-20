@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { TitleEditor } from '@/components/studio/TitleEditor';
+import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
 import type { TitleFormData } from '@/types/studio';
 
 export const metadata: Metadata = {
@@ -142,13 +143,19 @@ export default async function StudioTitleNewPage() {
   const [genres, moods] = await Promise.all([fetchGenres(), fetchMoods()]);
 
   return (
-    <div className="container-content py-10 max-w-4xl">
+    <div className="container-content py-8 max-w-4xl">
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        items={[
+          { label: 'Studio', href: '/studio' },
+          { label: 'Titles', href: '/studio/titles' },
+          { label: 'New Title' },
+        ]}
+      />
+
       {/* Header */}
       <div className="flex flex-col gap-1 mb-8">
-        <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
-          Titles
-        </span>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+        <h1 className="font-heading text-2xl md:text-3xl font-bold text-text-primary">
           New Title
         </h1>
         <p className="font-body text-sm text-text-secondary">
