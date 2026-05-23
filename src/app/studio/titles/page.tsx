@@ -9,10 +9,12 @@ import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
 import type { TierLevel, Origin, SeriesStatus, ReadingStatus } from '@/types/title';
 import { CoverImage } from '@/components/ui/CoverImage';
+import { TitleFilters } from '@/components/studio/TitleFilters';
 
 export const metadata: Metadata = {
   title: 'Titles',
@@ -101,14 +103,14 @@ export default async function StudioTitlesPage({ searchParams }: PageProps) {
   const titles = await fetchTitles(params);
 
   return (
-    <div className="container-content py-10 max-w-6xl">
+    <div className="container-content py-8 max-w-7xl">
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
             Library
           </span>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+          <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary">
             Titles
           </h1>
           <p className="font-body text-sm text-text-secondary">
@@ -132,13 +134,9 @@ export default async function StudioTitlesPage({ searchParams }: PageProps) {
       </div>
 
       {/* Search & Filters */}
-      <TitleFilters
-        currentQuery={params.q}
-        currentTier={params.tier}
-        currentStatus={params.status}
-        currentReading={params.reading}
-        currentOrigin={params.origin}
-      />
+      <Suspense fallback={<div className="h-32 mb-8 rounded-lg bg-bg-surface/40 border border-white/5 animate-pulse" />}>
+        <TitleFilters />
+      </Suspense>
 
       {/* Title Grid */}
       {titles.length === 0 ? (
@@ -168,184 +166,6 @@ export default async function StudioTitlesPage({ searchParams }: PageProps) {
         </div>
       )}
     </div>
-  );
-}
-
-// ── Filter Controls ─────────────────────────────────────────────
-
-const TIER_OPTIONS: TierLevel[] = ['SSS+', 'S', 'A', 'B', 'C', 'D', 'F'];
-const STATUS_OPTIONS: SeriesStatus[] = ['ongoing', 'completed', 'hiatus', 'cancelled'];
-const READING_OPTIONS: ReadingStatus[] = [
-  'reading', 'completed', 'dropped', 'paused', 'wishlist',
-  'hidden-gem', 'guilty-pleasure', 'top-favorite', 'most-reread',
-];
-const ORIGIN_OPTIONS: { value: Origin; label: string }[] = [
-  { value: 'manhwa', label: 'Manhwa' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'manhua', label: 'Manhua' },
-];
-
-function TitleFilters({
-  currentQuery,
-  currentTier,
-  currentStatus,
-  currentReading,
-  currentOrigin,
-}: {
-  currentQuery?: string;
-  currentTier?: string;
-  currentStatus?: string;
-  currentReading?: string;
-  currentOrigin?: string;
-}) {
-  return (
-    <form
-      method="GET"
-      className={cn(
-        'flex flex-col gap-3 mb-8 p-4 rounded-lg',
-        'bg-bg-surface/40 border border-white/5',
-      )}
-    >
-      {/* Search input */}
-      <div className="relative">
-        <Search
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          name="q"
-          placeholder="Search titles..."
-          defaultValue={currentQuery}
-          className={cn(
-            'w-full pl-9 pr-4 py-2.5 rounded-lg',
-            'bg-bg-deep/60 border border-white/10',
-            'font-body text-sm text-text-primary placeholder:text-text-tertiary',
-            'focus:outline-none focus:border-accent-primary/50 focus:ring-1 focus:ring-accent-primary/30',
-            'transition-colors duration-150',
-          )}
-          aria-label="Search titles by name"
-        />
-      </div>
-
-      {/* Filter row */}
-      <div className="flex flex-wrap gap-3">
-        {/* Tier filter */}
-        <select
-          name="tier"
-          defaultValue={currentTier ?? ''}
-          className={cn(
-            'px-3 py-2 rounded-lg',
-            'bg-bg-deep/60 border border-white/10',
-            'font-body text-sm text-text-primary',
-            'focus:outline-none focus:border-accent-primary/50',
-            'transition-colors duration-150',
-          )}
-          aria-label="Filter by tier"
-        >
-          <option value="">All Tiers</option>
-          {TIER_OPTIONS.map((tier) => (
-            <option key={tier} value={tier}>
-              {tier} — {TIER_CONFIG[tier].label}
-            </option>
-          ))}
-        </select>
-
-        {/* Series status filter */}
-        <select
-          name="status"
-          defaultValue={currentStatus ?? ''}
-          className={cn(
-            'px-3 py-2 rounded-lg',
-            'bg-bg-deep/60 border border-white/10',
-            'font-body text-sm text-text-primary',
-            'focus:outline-none focus:border-accent-primary/50',
-            'transition-colors duration-150',
-          )}
-          aria-label="Filter by series status"
-        >
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
-
-        {/* Reading status filter */}
-        <select
-          name="reading"
-          defaultValue={currentReading ?? ''}
-          className={cn(
-            'px-3 py-2 rounded-lg',
-            'bg-bg-deep/60 border border-white/10',
-            'font-body text-sm text-text-primary',
-            'focus:outline-none focus:border-accent-primary/50',
-            'transition-colors duration-150',
-          )}
-          aria-label="Filter by reading status"
-        >
-          <option value="">All Reading</option>
-          {READING_OPTIONS.map((reading) => (
-            <option key={reading} value={reading}>
-              {reading
-                .split('-')
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(' ')}
-            </option>
-          ))}
-        </select>
-
-        {/* Origin filter */}
-        <select
-          name="origin"
-          defaultValue={currentOrigin ?? ''}
-          className={cn(
-            'px-3 py-2 rounded-lg',
-            'bg-bg-deep/60 border border-white/10',
-            'font-body text-sm text-text-primary',
-            'focus:outline-none focus:border-accent-primary/50',
-            'transition-colors duration-150',
-          )}
-          aria-label="Filter by origin"
-        >
-          <option value="">All Origins</option>
-          {ORIGIN_OPTIONS.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-
-        {/* Submit button */}
-        <button
-          type="submit"
-          className={cn(
-            'px-4 py-2 rounded-lg',
-            'bg-accent-primary/20 text-accent-primary font-heading text-sm font-bold',
-            'hover:bg-accent-primary/30 transition-colors duration-150',
-            'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-          )}
-        >
-          Apply
-        </button>
-
-        {/* Clear filters link */}
-        {(currentQuery || currentTier || currentStatus || currentReading || currentOrigin) && (
-          <Link
-            href="/studio/titles"
-            className={cn(
-              'px-4 py-2 rounded-lg',
-              'bg-white/5 text-text-secondary font-heading text-sm',
-              'hover:bg-white/10 hover:text-text-primary transition-colors duration-150',
-            )}
-          >
-            Clear
-          </Link>
-        )}
-      </div>
-    </form>
   );
 }
 
