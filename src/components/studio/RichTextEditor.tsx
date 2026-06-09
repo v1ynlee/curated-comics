@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils/cn';
 import {
   Bold,
   Italic,
-  Image,
+  Image as ImageIcon,
   AlertTriangle,
   AlertCircle,
   Undo2,
@@ -143,7 +143,7 @@ export function RichTextEditor({
       .chain()
       .focus()
       .toggleBlockquote()
-      .insertContent('<p><strong>⚠️ Spoiler:</strong> </p>')
+      .insertContent('<p><strong>Spoiler:</strong> </p>')
       .run();
   };
 
@@ -153,7 +153,7 @@ export function RichTextEditor({
       .chain()
       .focus()
       .toggleBlockquote()
-      .insertContent('<p><strong>⚠ Warning:</strong> </p>')
+      .insertContent('<p><strong>Warning:</strong> </p>')
       .run();
   };
 
@@ -198,7 +198,7 @@ export function RichTextEditor({
           disabled={disabled}
           title="Embed image"
         >
-          <Image className="w-4 h-4" />
+          <ImageIcon className="w-4 h-4" />
         </ToolbarButton>
 
         <ToolbarButton
