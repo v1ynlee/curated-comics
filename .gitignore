@@ -49,6 +49,8 @@ next-env.d.ts
 # Generated placeholder images (run scripts/generate-placeholders.js to recreate)
 /public/images/covers/
 /public/images/banners/
+/public/images/articles/
+/public/images/artists/
 
 .vscode
 
