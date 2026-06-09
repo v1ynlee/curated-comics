@@ -7,8 +7,8 @@
 import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
-import { ArticleEditor } from '@/components/studio/ArticleEditor';
-import { studioUpdateArticle } from '@/services/studio/studio-articles';
+import { ArticleEditor } from '@/components/studio/articles/ArticleEditor';
+import { studioCreateArticleCategory, studioCreateArticleTag } from '@/services/studio/studio-articles';
 import type { ArticleFormData } from '@/types/article';
 
 // ── Metadata ────────────────────────────────────────────────────
@@ -56,7 +56,8 @@ async function fetchArticle(slug: string) {
       word_count,
       reading_time_minutes,
       created_at,
-      updated_at
+      updated_at,
+      media_assets:featured_image_id ( id, variants, dominant_color )
     `)
     .eq('slug', slug)
     .single();
@@ -179,6 +180,20 @@ function createUpdateAction(articleId: string, currentSlug: string) {
   };
 }
 
+async function createCategoryAction(name: string) {
+  'use server';
+  const user = await getServerUser();
+  if (!user) redirect('/studio/login');
+  return studioCreateArticleCategory(name);
+}
+
+async function createTagAction(name: string) {
+  'use server';
+  const user = await getServerUser();
+  if (!user) redirect('/studio/login');
+  return studioCreateArticleTag(name);
+}
+
 // ── Page component ──────────────────────────────────────────────
 
 export default async function StudioArticleEditPage({
@@ -218,21 +233,36 @@ export default async function StudioArticleEditPage({
     seoDescription: article.seo_description ?? undefined,
   };
 
+  const rawMediaAsset = article.media_assets as unknown;
+  const mediaAsset = (Array.isArray(rawMediaAsset) ? rawMediaAsset[0] : rawMediaAsset) as {
+    id: string;
+    variants?: { url?: string; width?: number; format?: string }[];
+    dominant_color?: string | null;
+  } | null;
+  const featuredVariant = mediaAsset?.variants
+    ?.filter((variant) => variant.format === 'webp' && variant.url)
+    .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]
+    ?? mediaAsset?.variants?.find((variant) => variant.url);
+  const initialFeaturedImage = mediaAsset
+    ? {
+        id: mediaAsset.id,
+        url: featuredVariant?.url ?? null,
+        dominantColor: mediaAsset.dominant_color ?? null,
+      }
+    : null;
+
   // Create the update action bound to this article's ID
   const updateArticle = createUpdateAction(article.id, article.slug);
 
   return (
-    <div className="container-content py-10 max-w-5xl">
+    <div className="container-content max-w-7xl py-8 md:py-10">
       {/* Header */}
-      <div className="flex flex-col gap-1 mb-8">
-        <span className="font-heading text-[10px] uppercase tracking-[0.25em] text-accent-primary">
-          Editorial
-        </span>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
+      <div className="mb-8 flex flex-col gap-2">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">
           Edit: {article.title}
         </h1>
-        <p className="font-body text-sm text-text-secondary">
-          Update article content, metadata, and publication settings.
+        <p className="max-w-2xl text-sm leading-6 text-text-secondary">
+          Update article content, metadata, thumbnail, tags, and publication settings.
         </p>
       </div>
 
@@ -240,7 +270,11 @@ export default async function StudioArticleEditPage({
       <ArticleEditor
         mode="edit"
         initialData={initialData}
-        onSave={updateArticle}
+        initialFeaturedImage={initialFeaturedImage}
+        articleSlug={article.slug}
+        saveAction={updateArticle}
+        createCategoryAction={createCategoryAction}
+        createTagAction={createTagAction}
         categories={categories}
         tags={tags}
       />
