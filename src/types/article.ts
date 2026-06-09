@@ -37,6 +37,7 @@ export interface ArticleSummary {
   excerpt: string | null;
   featuredImage: { url: string; blurDataUri: string; dominantColor: string } | null;
   category: { name: string; slug: string; color: string } | null;
+  tags: ArticleTag[];
   publishDate: string;
   readingTimeMinutes: number;
   featured: boolean;
