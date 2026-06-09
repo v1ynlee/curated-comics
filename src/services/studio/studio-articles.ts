@@ -44,6 +44,8 @@ export async function studioFetchAllArticles(): Promise<StudioArticleRow[]> {
       id,
       slug,
       title,
+      subtitle,
+      excerpt,
       publication_state,
       publish_date,
       scheduled_date,
@@ -52,26 +54,58 @@ export async function studioFetchAllArticles(): Promise<StudioArticleRow[]> {
       featured,
       created_at,
       updated_at,
-      article_categories ( name )
+      article_categories ( id, name, slug ),
+      media_assets:featured_image_id ( variants, dominant_color ),
+      article_tag_assignments ( article_tags ( name, slug ) )
     `)
     .order('updated_at', { ascending: false });
 
   if (error) throw new Error(`studioFetchAllArticles: ${error.message}`);
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    id: row.id as string,
-    slug: row.slug as string,
-    title: row.title as string,
-    publicationState: row.publication_state as StudioArticleRow['publicationState'],
-    publishDate: (row.publish_date as string) ?? null,
-    scheduledDate: (row.scheduled_date as string) ?? null,
-    categoryName: (row.article_categories as { name: string } | null)?.name ?? null,
-    wordCount: row.word_count as number,
-    readingTimeMinutes: row.reading_time_minutes as number,
-    featured: row.featured as boolean,
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
-  }));
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const category = row.article_categories as {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
+    const media = row.media_assets as {
+      variants?: { url?: string; width?: number; format?: string }[];
+      dominant_color?: string | null;
+    } | null;
+    const assignments = row.article_tag_assignments as {
+      article_tags: { name: string; slug: string } | null;
+    }[] | null;
+    const imageVariant = media?.variants
+      ?.filter((variant) => variant.format === 'webp' && variant.url)
+      .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]
+      ?? media?.variants?.find((variant) => variant.url);
+    const tags = (assignments ?? [])
+      .map((assignment) => assignment.article_tags)
+      .filter((tag): tag is { name: string; slug: string } => Boolean(tag));
+
+    return {
+      id: row.id as string,
+      slug: row.slug as string,
+      title: row.title as string,
+      subtitle: (row.subtitle as string) ?? null,
+      excerpt: (row.excerpt as string) ?? null,
+      publicationState: row.publication_state as StudioArticleRow['publicationState'],
+      publishDate: (row.publish_date as string) ?? null,
+      scheduledDate: (row.scheduled_date as string) ?? null,
+      categoryId: category?.id ?? null,
+      categoryName: category?.name ?? null,
+      categorySlug: category?.slug ?? null,
+      tagNames: tags.map((tag) => tag.name),
+      tagSlugs: tags.map((tag) => tag.slug),
+      featuredImageUrl: imageVariant?.url ?? null,
+      featuredImageColor: media?.dominant_color ?? null,
+      wordCount: row.word_count as number,
+      readingTimeMinutes: row.reading_time_minutes as number,
+      featured: row.featured as boolean,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string,
+    };
+  });
 }
 
 /**
@@ -121,6 +155,52 @@ export async function studioCreateArticle(data: ArticleFormData): Promise<string
   }
 
   return articleId;
+}
+
+export async function studioCreateArticleCategory(name: string): Promise<{
+  id: string;
+  name: string;
+  slug: string;
+  color: string | null;
+}> {
+  const supabase = await createSupabaseServerClient();
+  const normalizedName = name.trim();
+  const slug = toSlug(normalizedName);
+
+  if (!normalizedName || !slug) throw new Error('Category name is required.');
+
+  const { data, error } = await supabase
+    .from('article_categories')
+    .upsert(
+      { name: normalizedName, slug, color: null, sort_order: 100 },
+      { onConflict: 'slug' },
+    )
+    .select('id, name, slug, color')
+    .single();
+
+  if (error) throw new Error(`studioCreateArticleCategory: ${error.message}`);
+  return data;
+}
+
+export async function studioCreateArticleTag(name: string): Promise<{
+  id: string;
+  name: string;
+  slug: string;
+}> {
+  const supabase = await createSupabaseServerClient();
+  const normalizedName = name.trim();
+  const slug = toSlug(normalizedName);
+
+  if (!normalizedName || !slug) throw new Error('Tag name is required.');
+
+  const { data, error } = await supabase
+    .from('article_tags')
+    .upsert({ name: normalizedName, slug }, { onConflict: 'slug' })
+    .select('id, name, slug')
+    .single();
+
+  if (error) throw new Error(`studioCreateArticleTag: ${error.message}`);
+  return data;
 }
 
 /**
@@ -195,6 +275,86 @@ export async function studioArchiveArticle(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) throw new Error(`studioArchiveArticle: ${error.message}`);
+}
+
+export async function studioSetArticlePublicationState(
+  id: string,
+  publicationState: StudioArticleRow['publicationState'],
+): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const payload: Record<string, unknown> = {
+    publication_state: publicationState,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (publicationState === 'published') {
+    payload.publish_date = new Date().toISOString();
+    payload.scheduled_date = null;
+  } else if (publicationState !== 'scheduled') {
+    payload.scheduled_date = null;
+  }
+
+  const { error } = await supabase
+    .from('articles')
+    .update(payload)
+    .eq('id', id);
+
+  if (error) throw new Error(`studioSetArticlePublicationState: ${error.message}`);
+}
+
+export async function studioSetArticleFeatured(id: string, featured: boolean): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from('articles')
+    .update({ featured, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw new Error(`studioSetArticleFeatured: ${error.message}`);
+}
+
+export async function studioBulkUpdateArticles(
+  ids: string[],
+  operation: 'draft' | 'published' | 'archived' | 'delete',
+): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+
+  if (uniqueIds.length === 0) return;
+
+  if (operation === 'delete') {
+    const { error: tagError } = await supabase
+      .from('article_tag_assignments')
+      .delete()
+      .in('article_id', uniqueIds);
+    if (tagError) throw new Error(`studioBulkUpdateArticles (tags): ${tagError.message}`);
+
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .in('id', uniqueIds);
+    if (error) throw new Error(`studioBulkUpdateArticles (delete): ${error.message}`);
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    publication_state: operation,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (operation === 'published') {
+    payload.publish_date = new Date().toISOString();
+    payload.scheduled_date = null;
+  } else {
+    payload.scheduled_date = null;
+  }
+
+  const { error } = await supabase
+    .from('articles')
+    .update(payload)
+    .in('id', uniqueIds);
+
+  if (error) throw new Error(`studioBulkUpdateArticles: ${error.message}`);
 }
 
 /**
