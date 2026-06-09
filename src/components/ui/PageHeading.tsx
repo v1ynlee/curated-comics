@@ -5,47 +5,51 @@
 //
 // Font: Child Hood (local, src/fonts/Child-Hood/Child Hood.woff2)
 //       loaded via next/font/local → CSS var --font-child-hood
-//       mapped to --font-page-heading in @theme inline.
+//       mapped to --font-page-heading in global.css.
 //
-// Colors — soft, balanced, never pure black or pure white:
-//   Dark theme:  #dcdcf0  — soft lavender-white
-//   Light theme: #2a2a40  — deep charcoal-navy, not harsh black
-//
-// The heading-glow animation is preserved from globals.css.
+// Styling:
+//   Uses semantic variables for perfect light/dark theme sync.
+//   Applies a subtle text gradient masking for a cinematic, 
+//   metallic sheen rather than a flat, boring color.
 // ============================================================
 
-import { useUIStore } from '@/stores/useUIStore';
 import { cn } from '@/lib/utils/cn';
 
 interface PageHeadingProps {
   children: React.ReactNode;
   className?: string;
-  /** Override the soft color with a custom value */
-  color?: string;
 }
 
-// Soft heading colors — theme-aware, never pure black/white
-const HEADING_COLOR = {
-  dark:  '#dcdcf0',  // soft lavender-white — warm, not harsh
-  light: '#2a2a40',  // deep charcoal-navy — readable, not pure black
-} as const;
-
-export function PageHeading({ children, className, color }: PageHeadingProps) {
-  const theme = useUIStore((s) => s.theme);
-  const headingColor = color ?? HEADING_COLOR[theme];
-
+export function PageHeading({ children, className }: PageHeadingProps) {
   return (
-    <h1
-      className={cn('heading-glow leading-tight', className)}
-      style={{
-        fontFamily: 'var(--font-page-heading)',
-        fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-        fontWeight: 400,   // Child Hood is a display face — 400 is its natural weight
-        color: headingColor,
-        lineHeight: 1.1,
-      }}
-    >
-      {children}
-    </h1>
+    <div className="relative inline-block">
+      {/* Subtle under-glow. 
+        Uses text-primary color but blurred, adapting automatically to light/dark.
+      */}
+      <div 
+        className="absolute inset-0 blur-[24px] opacity-20 -z-10 bg-text-primary pointer-events-none" 
+        aria-hidden="true"
+      />
+      
+      <h1
+        className={cn(
+          'relative z-10 leading-[1.05] tracking-[-0.02em]',
+          // The text color is transparent because we are using a background clip below
+          'text-transparent bg-clip-text',
+          // A subtle gradient that adapts to light/dark. 
+          // In dark mode: white -> off-white -> gray. 
+          // In light mode: black -> dark-gray -> gray.
+          'bg-gradient-to-br from-text-primary via-text-primary to-text-tertiary',
+          className
+        )}
+        style={{
+          fontFamily: 'var(--font-page-heading)',
+          fontSize: 'clamp(3rem, 7vw, 4.5rem)',
+          fontWeight: 400, // Child Hood's natural weight
+        }}
+      >
+        {children}
+      </h1>
+    </div>
   );
 }
