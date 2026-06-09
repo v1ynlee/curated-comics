@@ -1,15 +1,15 @@
 'use client';
 
 // ============================================================
-// RelatedTitles — horizontal scroll carousel of related titles
-// Source of truth: docs/design/UI_UX_DIRECTION.md
+// RelatedTitles — immersive, curated recommendation list
 // ============================================================
 
-import { useRef } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { TitleCard } from '@/components/library/TitleCard';
-import { TitleCardSkeleton } from '@/components/ui/Skeleton';
 import { useRelatedTitles } from '@/hooks/useTitles';
+import { TIER_CONFIG } from '@/types/title';
+import type { Title } from '@/types/title';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface RelatedTitlesProps {
   titleId: string;
@@ -17,8 +17,69 @@ interface RelatedTitlesProps {
   className?: string;
 }
 
+function RelatedTitleRow({ title }: { title: Title }) {
+  const coverSlug = title.coverImage?.slug ?? title.slug;
+
+  return (
+    <Link 
+      href={`/title/${title.slug}`}
+      className="group relative flex overflow-hidden rounded-xl bg-surface-elevated/10 border border-white/5 transition-all duration-500 hover:border-white/10 hover:bg-surface-elevated/20"
+      role="listitem"
+    >
+      {/* Background Blur Overlay */}
+      <div 
+        className="absolute inset-0 opacity-10 group-hover:opacity-30 transition-opacity duration-700"
+        style={{
+          backgroundImage: `url(/images/covers/${coverSlug}-640w.avif)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(30px)',
+        }}
+      />
+      
+      {/* Gradient to smooth out the background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-bg-surface via-bg-surface/90 to-bg-surface/40" />
+
+      <div className="relative flex items-center gap-6 p-4 w-full">
+        {/* Thumbnail */}
+        <div className="relative w-16 md:w-20 aspect-[2/3] rounded-md overflow-hidden shrink-0 shadow-lg group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-500">
+          <Image
+            src={`/images/covers/${coverSlug}-640w.avif`}
+            alt={title.titleEnglish}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 64px, 80px"
+          />
+        </div>
+
+        {/* Info */}
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0 pr-4">
+          <div className="flex items-center gap-3">
+            <span className="font-heading text-[9px] uppercase tracking-widest text-text-tertiary">
+              {title.origin}
+            </span>
+            {title.tier && TIER_CONFIG[title.tier] && (
+               <span 
+                 className="font-heading text-[9px] uppercase tracking-widest font-bold opacity-80" 
+                 style={{ color: TIER_CONFIG[title.tier].color }}
+               >
+                 {title.tier} Tier
+               </span>
+            )}
+          </div>
+          <h3 className="font-display text-lg md:text-xl font-bold text-text-secondary group-hover:text-text-primary transition-colors truncate">
+            {title.titleEnglish}
+          </h3>
+          <p className="font-body text-xs text-text-tertiary line-clamp-1 md:line-clamp-2 mt-1">
+            {title.synopsis || title.genres.map(g => g.name).join(', ')}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export function RelatedTitles({ titleId, genreSlugs, className }: RelatedTitlesProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const { data: titles, isLoading } = useRelatedTitles(titleId, genreSlugs);
 
   if (!isLoading && (!titles || titles.length === 0)) return null;
@@ -26,31 +87,29 @@ export function RelatedTitles({ titleId, genreSlugs, className }: RelatedTitlesP
   return (
     <section
       aria-labelledby="related-heading"
-      className={cn('flex flex-col gap-4', className)}
+      className={cn('flex flex-col gap-6', className)}
     >
-      <h2
-        id="related-heading"
-        className="font-heading text-sm uppercase tracking-[0.2em] text-text-tertiary"
-      >
-        You Might Also Like
-      </h2>
+      <div className="flex items-center gap-3 mb-2">
+        <h2
+          id="related-heading"
+          className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary"
+        >
+          Curated For You
+        </h2>
+        <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+      </div>
 
       <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory -mx-1 px-1"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         role="list"
         aria-label="Related titles"
       >
         {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-32 shrink-0 snap-start">
-                <TitleCardSkeleton />
-              </div>
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-xl bg-surface-elevated/20 animate-pulse border border-white/5" />
             ))
-          : titles?.map((title, i) => (
-              <div key={title.id} className="w-32 shrink-0 snap-start last:pr-4" role="listitem">
-                <TitleCard title={title} index={i} />
-              </div>
+          : titles?.slice(0, 4).map((title) => (
+              <RelatedTitleRow key={title.id} title={title} />
             ))}
       </div>
     </section>
