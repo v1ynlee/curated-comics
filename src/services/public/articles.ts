@@ -53,6 +53,7 @@ interface ArticleSummaryRow {
   featured: boolean;
   article_categories: CategoryRow | null;
   media_assets: MediaAssetRow | null;
+  article_tag_assignments: { article_tags: TagRow }[];
 }
 
 interface CategoryRow {
@@ -162,6 +163,12 @@ function mapArticleSummary(row: ArticleSummaryRow): ArticleSummary {
       }
     : null;
 
+  const tags: ArticleTag[] = (row.article_tag_assignments ?? []).map((ta) => ({
+    id: ta.article_tags.id,
+    name: ta.article_tags.name,
+    slug: ta.article_tags.slug,
+  }));
+
   const featuredImage = row.media_assets
     ? {
         url: row.media_assets.variants?.[0]?.url ?? '',
@@ -178,10 +185,30 @@ function mapArticleSummary(row: ArticleSummaryRow): ArticleSummary {
     excerpt: row.excerpt,
     featuredImage,
     category,
+    tags,
     publishDate: row.publish_date,
     readingTimeMinutes: row.reading_time_minutes,
     featured: row.featured,
   };
+}
+
+function normalizeSearchQuery(search?: string): string | null {
+  const normalized = search
+    ?.replace(/[%_,()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+
+  return normalized || null;
+}
+
+function buildSearchFilter(searchTerm: string): string {
+  return [
+    `title.ilike.%${searchTerm}%`,
+    `subtitle.ilike.%${searchTerm}%`,
+    `excerpt.ilike.%${searchTerm}%`,
+    `body.ilike.%${searchTerm}%`,
+  ].join(',');
 }
 
 // ── Select fragments ─────────────────────────────────────────
@@ -196,7 +223,8 @@ const ARTICLE_SUMMARY_SELECT = `
   reading_time_minutes,
   featured,
   article_categories ( id, name, slug, color ),
-  media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at )
+  media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at ),
+  article_tag_assignments ( article_tags ( id, name, slug ) )
 `;
 
 const ARTICLE_FULL_SELECT = `
@@ -208,9 +236,19 @@ const ARTICLE_FULL_SELECT = `
 
 // ── Public API ───────────────────────────────────────────────
 
+export const NEWS_PAGE_SIZE = 9;
+
+export type ArticleSort = 'latest' | 'newest' | 'popular';
+
+export function normalizeArticleSort(sort?: string | null): ArticleSort {
+  return sort === 'newest' || sort === 'popular' ? sort : 'latest';
+}
+
 export interface FetchPublishedArticlesOptions {
   category?: string;
   tag?: string;
+  search?: string;
+  sort?: ArticleSort;
   limit?: number;
   offset?: number;
 }
@@ -223,19 +261,19 @@ export interface FetchPublishedArticlesOptions {
 export async function fetchPublishedArticles(
   options: FetchPublishedArticlesOptions = {},
 ): Promise<ArticleSummary[]> {
-  const { category, tag, limit = 20, offset = 0 } = options;
+  const { category, tag, search, sort = 'latest', limit = 20, offset = 0 } = options;
+  const searchTerm = normalizeSearchQuery(search);
+  const articleSort = normalizeArticleSort(sort);
 
   // If filtering by tag, we need a different query approach
   if (tag) {
-    return fetchPublishedArticlesByTag(tag, { category, limit, offset });
+    return fetchPublishedArticlesByTag(tag, { category, search, sort: articleSort, limit, offset });
   }
 
   let query = supabase
     .from('articles')
     .select(ARTICLE_SUMMARY_SELECT)
-    .eq('publication_state', 'published')
-    .order('publish_date', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq('publication_state', 'published');
 
   // Category filter: join article_categories and filter by slug
   if (category) {
@@ -253,13 +291,29 @@ export async function fetchPublishedArticles(
         reading_time_minutes,
         featured,
         article_categories!inner ( id, name, slug, color ),
-        media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at )
+        media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at ),
+        article_tag_assignments ( article_tags ( id, name, slug ) )
       `)
       .eq('publication_state', 'published')
-      .eq('article_categories.slug', category)
-      .order('publish_date', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq('article_categories.slug', category);
   }
+
+  if (searchTerm) {
+    query = query.or(buildSearchFilter(searchTerm));
+  }
+
+  if (articleSort === 'newest') {
+    query = query.order('created_at', { ascending: false }).order('publish_date', { ascending: false });
+  } else if (articleSort === 'popular') {
+    query = query
+      .order('featured', { ascending: false })
+      .order('reading_time_minutes', { ascending: false })
+      .order('publish_date', { ascending: false });
+  } else {
+    query = query.order('publish_date', { ascending: false });
+  }
+
+  query = query.range(offset, offset + limit - 1);
 
   const { data, error } = await query;
 
@@ -276,9 +330,10 @@ export async function fetchPublishedArticles(
  */
 async function fetchPublishedArticlesByTag(
   tagSlug: string,
-  options: { category?: string; limit: number; offset: number },
+  options: { category?: string; search?: string; sort: ArticleSort; limit: number; offset: number },
 ): Promise<ArticleSummary[]> {
-  const { category, limit, offset } = options;
+  const { category, search, sort, limit, offset } = options;
+  const searchTerm = normalizeSearchQuery(search);
 
   // First, get article IDs that have the specified tag
   const { data: tagData, error: tagError } = await supabase
@@ -301,9 +356,7 @@ async function fetchPublishedArticlesByTag(
     .from('articles')
     .select(ARTICLE_SUMMARY_SELECT)
     .eq('publication_state', 'published')
-    .in('id', articleIds)
-    .order('publish_date', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .in('id', articleIds);
 
   if (category) {
     query = supabase
@@ -318,14 +371,30 @@ async function fetchPublishedArticlesByTag(
         reading_time_minutes,
         featured,
         article_categories!inner ( id, name, slug, color ),
-        media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at )
+        media_assets:featured_image_id ( id, slug, asset_type, content_hash, original_width, original_height, aspect_ratio, mime_type, dominant_color, blur_data_uri, variants, r2_base_path, created_at, updated_at ),
+        article_tag_assignments ( article_tags ( id, name, slug ) )
       `)
       .eq('publication_state', 'published')
       .in('id', articleIds)
-      .eq('article_categories.slug', category)
-      .order('publish_date', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq('article_categories.slug', category);
   }
+
+  if (searchTerm) {
+    query = query.or(buildSearchFilter(searchTerm));
+  }
+
+  if (sort === 'newest') {
+    query = query.order('created_at', { ascending: false }).order('publish_date', { ascending: false });
+  } else if (sort === 'popular') {
+    query = query
+      .order('featured', { ascending: false })
+      .order('reading_time_minutes', { ascending: false })
+      .order('publish_date', { ascending: false });
+  } else {
+    query = query.order('publish_date', { ascending: false });
+  }
+
+  query = query.range(offset, offset + limit - 1);
 
   const { data, error } = await query;
 
@@ -361,13 +430,14 @@ export async function fetchArticleBySlug(slug: string): Promise<Article | null> 
  * Fetch featured articles (featured = true AND publication_state = 'published').
  * Sorted by publish_date DESC.
  */
-export async function fetchFeaturedArticles(): Promise<ArticleSummary[]> {
+export async function fetchFeaturedArticles(limit = 2): Promise<ArticleSummary[]> {
   const { data, error } = await supabase
     .from('articles')
     .select(ARTICLE_SUMMARY_SELECT)
     .eq('publication_state', 'published')
     .eq('featured', true)
-    .order('publish_date', { ascending: false });
+    .order('publish_date', { ascending: false })
+    .limit(limit);
 
   if (error) {
     throw new Error(`fetchFeaturedArticles: ${error.message}`);
@@ -397,6 +467,68 @@ export async function fetchArticleCategories(): Promise<ArticleCategory[]> {
     color: row.color,
     sortOrder: row.sort_order,
   }));
+}
+
+/**
+ * Count published articles (for pagination).
+ * Returns the total number of published articles optionally filtered by category.
+ */
+export async function countPublishedArticles(
+  options: { category?: string; tag?: string; search?: string } = {},
+): Promise<number> {
+  const { category, tag, search } = options;
+  const searchTerm = normalizeSearchQuery(search);
+
+  if (tag) {
+    const { data: tagData } = await supabase
+      .from('article_tag_assignments')
+      .select('article_id, article_tags!inner ( slug )')
+      .eq('article_tags.slug', tag);
+    if (!tagData || tagData.length === 0) return 0;
+    const ids = (tagData as unknown as { article_id: string }[]).map((r) => r.article_id);
+
+    let q = supabase
+      .from('articles')
+      .select('id', { count: 'exact', head: true })
+      .eq('publication_state', 'published')
+      .in('id', ids);
+
+    if (category) {
+      q = (supabase
+        .from('articles')
+        .select('id, article_categories!inner ( slug )', { count: 'exact', head: true })
+        .eq('publication_state', 'published')
+        .in('id', ids)
+        .eq('article_categories.slug', category)) as unknown as typeof q;
+    }
+
+    if (searchTerm) {
+      q = q.or(buildSearchFilter(searchTerm));
+    }
+
+    const { count } = await q;
+    return count ?? 0;
+  }
+
+  let q = supabase
+    .from('articles')
+    .select('id', { count: 'exact', head: true })
+    .eq('publication_state', 'published');
+
+  if (category) {
+    q = (supabase
+      .from('articles')
+      .select('id, article_categories!inner ( slug )', { count: 'exact', head: true })
+      .eq('publication_state', 'published')
+      .eq('article_categories.slug', category)) as unknown as typeof q;
+  }
+
+  if (searchTerm) {
+    q = q.or(buildSearchFilter(searchTerm));
+  }
+
+  const { count } = await q;
+  return count ?? 0;
 }
 
 /**
