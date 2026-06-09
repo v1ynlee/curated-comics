@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
@@ -22,14 +22,17 @@ vi.mock('next/navigation', () => ({
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    header: ({ children, className, ...props }: any) => (
+    header: ({ children, className, initial: _initial, animate: _animate, exit: _exit, transition: _transition, layoutId: _layoutId, ...props }: any) => (
       <header className={className} {...props}>{children}</header>
     ),
-    nav: ({ children, className, ...props }: any) => (
+    nav: ({ children, className, initial: _initial, animate: _animate, exit: _exit, transition: _transition, layoutId: _layoutId, ...props }: any) => (
       <nav className={className} {...props}>{children}</nav>
     ),
-    span: ({ children, className, ...props }: any) => (
+    span: ({ children, className, initial: _initial, animate: _animate, exit: _exit, transition: _transition, layoutId: _layoutId, ...props }: any) => (
       <span className={className} {...props}>{children}</span>
+    ),
+    div: ({ children, className, initial: _initial, animate: _animate, exit: _exit, transition: _transition, layoutId: _layoutId, ...props }: any) => (
+      <div className={className} {...props}>{children}</div>
     ),
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
@@ -40,7 +43,7 @@ vi.mock('framer-motion', () => ({
 vi.mock('@/lib/db/supabase-browser', () => ({
   createSupabaseBrowserClient: () => ({
     auth: {
-      getUser: () => Promise.resolve({ data: { user: { email: 'test@example.com' } } }),
+      getUser: () => Promise.resolve({ data: { user: null } }),
       signOut: () => Promise.resolve(),
     },
   }),
@@ -179,8 +182,7 @@ describe('MobileNav — Studio adaptation', () => {
     it('renders Studio mobile nav items', () => {
       render(<MobileNav />);
 
-      // Studio items use different labels
-      expect(screen.getByText('Home')).toBeInTheDocument(); // Dashboard label on mobile
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Titles')).toBeInTheDocument();
       expect(screen.getByText('Articles')).toBeInTheDocument();
       expect(screen.getByText('Media')).toBeInTheDocument();
@@ -190,8 +192,7 @@ describe('MobileNav — Studio adaptation', () => {
     it('Studio nav links have correct hrefs', () => {
       render(<MobileNav />);
 
-      // The "Home" item in studio context links to /studio
-      const homeLink = screen.getByText('Home').closest('a');
+      const homeLink = screen.getByText('Dashboard').closest('a');
       expect(homeLink).toHaveAttribute('href', '/studio');
     });
   });
