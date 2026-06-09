@@ -7,6 +7,7 @@
 // ============================================================
 
 import { NarrativeSection } from './NarrativeSection';
+import { useHomepageNarratives } from '@/hooks/useNarratives';
 
 /**
  * Default narrative sections for the landing page.
@@ -59,13 +60,27 @@ const NARRATIVE_SECTIONS = [
 ] as const;
 
 export function NarrativeFlow() {
+  const { data: curatedNarratives = [] } = useHomepageNarratives();
+  const sections = curatedNarratives.length > 0
+    ? curatedNarratives.map((item) => ({
+        heading: item.title,
+        subtitle: item.subtitle ?? item.description ?? '',
+        description: item.subtitle ? item.description : undefined,
+        ctaText: item.ctaText ?? 'Explore',
+        ctaHref: item.ctaHref ?? '/discover',
+        coverSlugs: item.coverSlugs.length > 0 ? item.coverSlugs : ['solo-leveling', 'tower-of-god', 'omniscient-reader', 'return-mount-hua'],
+        accentColor: item.accentColor,
+      }))
+    : NARRATIVE_SECTIONS;
+
   return (
     <div className="relative" aria-label="Discovery sections">
-      {NARRATIVE_SECTIONS.map((section, i) => (
+      {sections.map((section, i) => (
         <NarrativeSection
           key={section.ctaHref}
           heading={section.heading}
           subtitle={section.subtitle}
+          description={'description' in section ? section.description : undefined}
           ctaText={section.ctaText}
           ctaHref={section.ctaHref}
           coverSlugs={[...section.coverSlugs]}
