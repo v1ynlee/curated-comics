@@ -11,6 +11,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
 import type { AssetType, MediaAsset } from '@/types/media';
@@ -89,15 +90,19 @@ export function ImageUploader({
 
   useEffect(() => {
     if (pendingFile === null && status === 'pending') {
-      // Parent cleared the pending file (e.g., after successful upload)
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
-      }
-      // Don't reset to idle if we have an uploaded asset (success state set externally)
-      if (!uploadedAsset) {
-        setStatus('idle');
-      }
+      const timeoutId = window.setTimeout(() => {
+        // Parent cleared the pending file (e.g., after successful upload)
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+        }
+        // Don't reset to idle if we have an uploaded asset (success state set externally)
+        if (!uploadedAsset) {
+          setStatus('idle');
+        }
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [pendingFile, status, previewUrl, uploadedAsset]);
 
@@ -135,6 +140,7 @@ export function ImageUploader({
       if (validationError) {
         setError(validationError);
         setStatus('error');
+        toast.warning(validationError.message, { description: validationError.guidance });
         return;
       }
 
@@ -147,6 +153,7 @@ export function ImageUploader({
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setStatus('pending');
+      toast.info('Image selected.', { description: 'It will upload when you save.' });
 
       // Notify parent of the pending file
       onFileSelect?.(file);
@@ -219,6 +226,7 @@ export function ImageUploader({
     setStatus('idle');
     setUploadedAsset(null);
     setError(null);
+    toast.info('Image selection cleared.');
   }, [previewUrl]);
 
   // ── Public method: mark upload as complete (called by parent) ──
@@ -228,6 +236,7 @@ export function ImageUploader({
     setUploadedAsset(asset);
     setStatus('success');
     onUploadComplete?.(asset);
+    toast.success('Image uploaded.');
     // Clean up blob URL since we now have the real asset
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
