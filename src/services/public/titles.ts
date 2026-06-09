@@ -10,7 +10,7 @@ import type { LibraryFilters, SortOption } from '@/types/library';
 
 // ── Row shape returned by Supabase ────────────────────────────
 
-interface TitleRow {
+export interface TitleRow {
   id: string;
   slug: string;
   title_english: string;
@@ -35,6 +35,7 @@ interface TitleRow {
   author: string | null;
   artist: string | null;
   featured: boolean;
+  featured_weight: number | null;
   hidden: boolean;
   created_at: string;
   updated_at: string;
@@ -101,7 +102,7 @@ interface ExternalLinkRow {
 
 // ── Mapper ────────────────────────────────────────────────────
 
-function mapTitle(row: TitleRow): Title {
+export function mapTitle(row: TitleRow): Title {
   const ratings: TitleRatings | undefined = row.ratings
     ? {
         overall: row.ratings.overall,
@@ -219,7 +220,7 @@ function mapTitle(row: TitleRow): Title {
 
 // ── Select fragment (reused across queries) ───────────────────
 
-const TITLE_SELECT = `
+export const TITLE_SELECT = `
   *,
   ratings ( overall, emotional, art, story, pacing, ending ),
   reviews ( id, body, tldr, what_i_loved, what_i_hated, emotional_damage, would_recommend_to, has_spoilers, spoiler_sections, word_count, written_date, last_edited ),
@@ -352,17 +353,41 @@ export async function fetchTitle(slug: string): Promise<Title | null> {
  * Fetch featured titles for the landing page.
  */
 export async function fetchFeaturedTitles(limit = 6): Promise<Title[]> {
+  const { data: settingData } = await supabase
+    .from('curation_settings')
+    .select('value')
+    .eq('key', 'featured_titles_random')
+    .single();
+
+  const randomEnabled = Boolean((settingData?.value as { enabled?: boolean } | null)?.enabled);
+
   const { data, error } = await supabase
     .from('titles')
     .select(TITLE_SELECT)
     .eq('hidden', false)
     .eq('featured', true)
+    .order(randomEnabled ? 'featured_weight' : 'featured_order', { ascending: randomEnabled ? false : true })
     .order('last_read_date', { ascending: false })
-    .limit(limit);
+    .limit(randomEnabled ? Math.max(limit * 4, limit) : limit);
 
   if (error) throw new Error(`fetchFeaturedTitles: ${error.message}`);
 
-  return (data as unknown as TitleRow[]).map(mapTitle);
+  const rows = (data as unknown as TitleRow[]) ?? [];
+  if (!randomEnabled) return rows.map(mapTitle);
+
+  const pool = [...rows];
+  const selected: TitleRow[] = [];
+  while (pool.length > 0 && selected.length < limit) {
+    const total = pool.reduce((sum, row) => sum + (row.featured_weight ?? 50), 0);
+    let cursor = Math.random() * total;
+    const index = pool.findIndex((row) => {
+      cursor -= row.featured_weight ?? 50;
+      return cursor <= 0;
+    });
+    selected.push(...pool.splice(index < 0 ? 0 : index, 1));
+  }
+
+  return selected.map(mapTitle);
 }
 
 /**
