@@ -13,7 +13,7 @@ export function Footer() {
   return (
     <footer
       role="contentinfo"
-      className="border-t border-white/5 bg-bg-mid/50 py-8 mt-24"
+      className="border-t border-white/5 bg-bg-mid/50 py-6 mt-16"
     >
       <div className="container-content flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
         {/* Brand */}
