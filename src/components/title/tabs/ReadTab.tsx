@@ -1,9 +1,8 @@
 'use client';
 
 // ============================================================
-// ReadTab — grouped reading platform links
-// URLs are displayed as plain text (not clickable links).
-// An icon button beside each URL opens it.
+// ReadTab — lightweight, scalable reading platform links
+// URLs are displayed in an elegant list with favicons.
 // ============================================================
 
 import { ExternalLink, Globe, BookOpen, Users } from 'lucide-react';
@@ -18,7 +17,6 @@ interface ReadTabProps {
 // Categorize platforms
 const OFFICIAL_KR_JP_CN = ['kakaopage', 'naver', 'official'];
 const OFFICIAL_EN = ['webtoon', 'tapas', 'tappytoon', 'lezhin'];
-const SCANLATION = ['mangadex', 'other'];
 
 function categorizeLinks(links: ExternalLinkType[]) {
   const official: ExternalLinkType[] = [];
@@ -34,6 +32,16 @@ function categorizeLinks(links: ExternalLinkType[]) {
   return { official, en, fan };
 }
 
+// Helper to extract domain from URL for favicon
+function getDomainFromUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname;
+  } catch {
+    return 'google.com';
+  }
+}
+
 function LinkGroup({
   icon,
   label,
@@ -46,66 +54,74 @@ function LinkGroup({
   if (links.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="flex flex-col mb-8">
+      <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
         <span className="text-text-tertiary">{icon}</span>
-        <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
+        <span className="font-heading text-xs uppercase tracking-[0.2em] text-text-tertiary">
           {label}
         </span>
       </div>
 
-      {links.map((link, i) => {
-        const platform = (PLATFORM_CONFIG as Record<string, { name: string; color: string }>)[link.platform] ?? {
-          name: link.label ?? link.platform,
-          color: '#6B7280',
-        };
+      <div className="flex flex-col">
+        {links.map((link, i) => {
+          const platform = (PLATFORM_CONFIG as Record<string, { name: string; color: string }>)[link.platform] ?? {
+            name: link.label ?? link.platform,
+            color: '#6B7280',
+          };
 
-        return (
-          <div
-            key={i}
-            className={cn(
-              'flex items-center gap-3 px-3 py-3 rounded-lg',
-              'bg-surface-elevated/30 border border-white/5',
-            )}
-          >
-            {/* Platform color dot */}
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: platform.color }}
-              aria-hidden="true"
-            />
+          const domain = getDomainFromUrl(link.url);
+          const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 
-            {/* Platform name */}
-            <span className="font-heading text-xs font-medium text-text-primary shrink-0 w-24">
-              {link.label ?? platform.name}
-            </span>
-
-            {/* URL — plain text, NOT a link, NOT browser-colored */}
-            <span
-              className="font-data text-[11px] text-text-tertiary truncate flex-1 select-all"
-              title={link.url}
-            >
-              {link.url}
-            </span>
-
-            {/* Open button */}
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
+          return (
+            <div
+              key={i}
               className={cn(
-                'shrink-0 p-1.5 rounded-md',
-                'text-text-tertiary hover:text-text-primary',
-                'hover:bg-white/10 transition-colors duration-150',
-                'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+                'group flex items-center gap-4 py-3 border-b border-white/5 last:border-0',
+                'hover:bg-white/5 transition-colors duration-200 px-2 -mx-2 rounded-lg'
               )}
-              aria-label={`Open ${link.label ?? platform.name}`}
             >
-              <ExternalLink size={13} aria-hidden="true" />
-            </a>
-          </div>
-        );
-      })}
+              {/* Favicon */}
+              <div className="relative w-5 h-5 shrink-0 rounded-sm overflow-hidden bg-white/10">
+                <img
+                  src={faviconUrl}
+                  alt={`${platform.name} icon`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Platform name */}
+              <span className="font-heading text-sm font-medium text-text-primary shrink-0 w-28">
+                {link.label ?? platform.name}
+              </span>
+
+              {/* URL — plain text */}
+              <span
+                className="font-data text-xs text-text-tertiary truncate flex-1 select-all transition-colors group-hover:text-text-secondary"
+                title={link.url}
+              >
+                {link.url}
+              </span>
+
+              {/* Open button */}
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  'shrink-0 p-2 rounded-full',
+                  'text-text-tertiary group-hover:text-accent-primary group-hover:bg-accent-primary/10',
+                  'transition-all duration-200',
+                  'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+                )}
+                aria-label={`Open ${link.label ?? platform.name}`}
+              >
+                <ExternalLink size={16} aria-hidden="true" />
+              </a>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -114,17 +130,20 @@ export function ReadTab({ links }: ReadTabProps) {
   // Always show at least a dummy example so the tab is never empty
   const displayLinks: ExternalLinkType[] = links.length > 0 ? links : [
     { platform: 'kakaopage', url: 'https://page.kakao.com/content/58825221', label: 'KakaoPage' },
-    { platform: 'webtoon',   url: 'https://page.kakao.com/content/58825221', label: 'Webtoon' },
-    { platform: 'mangadex',  url: 'https://page.kakao.com/content/58825221', label: 'MangaDex' },
+    { platform: 'webtoon',   url: 'https://www.webtoons.com/en/', label: 'Webtoon' },
+    { platform: 'mangadex',  url: 'https://mangadex.org/', label: 'MangaDex' },
   ];
 
   const { official, en, fan } = categorizeLinks(displayLinks);
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <LinkGroup icon={<Globe size={14} />} label="Official KR / JP / CN" links={official} />
-      <LinkGroup icon={<BookOpen size={14} />} label="Official EN" links={en} />
-      <LinkGroup icon={<Users size={14} />} label="Scanlations / Fan" links={fan} />
+    <div className="flex flex-col py-2 max-w-4xl">
+      <p className="font-body text-sm text-text-tertiary mb-6">
+        Select a source to begin reading. Official sources are recommended to support the creators.
+      </p>
+      <LinkGroup icon={<Globe size={16} />} label="Official KR / JP / CN" links={official} />
+      <LinkGroup icon={<BookOpen size={16} />} label="Official EN" links={en} />
+      <LinkGroup icon={<Users size={16} />} label="Scanlations / Fan" links={fan} />
     </div>
   );
 }
