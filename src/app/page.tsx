@@ -7,6 +7,7 @@
 import type { Metadata } from 'next';
 import { Hero } from '@/components/cinematic/Hero';
 import { NarrativeFlow } from '@/components/cinematic/NarrativeFlow';
+import { FeaturedCreatorsSection } from '@/components/creators/FeaturedCreatorsSection';
 import { FeaturedSection } from '@/components/cinematic/FeaturedSection';
 
 export const metadata: Metadata = {
@@ -23,6 +24,9 @@ export default function HomePage() {
 
       {/* Scroll-driven discovery narrative */}
       <NarrativeFlow />
+
+      {/* Featured creator showcase */}
+      <FeaturedCreatorsSection />
 
       {/* Featured titles showcase */}
       <FeaturedSection />
