@@ -1,7 +1,6 @@
 // ============================================================
 // Proxy (Next.js 16 — replaces middleware.ts)
 // Protects /studio routes: redirects unauthenticated users to /studio/login.
-// Redirects legacy /admin routes to /studio.
 // Refreshes Supabase Auth session on every request.
 // ============================================================
 
@@ -52,18 +51,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/studio', request.url));
   }
 
-  // Legacy /admin redirect to /studio
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/studio', request.url));
-  }
-
   return supabaseResponse;
 }
 
 export const config = {
   matcher: [
     '/studio/:path*',
-    '/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|images|fonts|auth/callback).*)',
   ],
 };
