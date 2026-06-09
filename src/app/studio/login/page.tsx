@@ -6,11 +6,12 @@
 // Uses Supabase OTP (magic link) instead of email/password.
 // ============================================================
 
-import { useState, Suspense, useMemo } from 'react';
+import { useState, Suspense, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createSupabaseBrowserClient } from '@/lib/db/supabase-browser';
 import { cn } from '@/lib/utils/cn';
+import { getErrorMessage, toast } from '@/lib/utils/toast';
 
 /** Inner component that reads search params (must be inside Suspense) */
 function StudioLoginForm() {
@@ -26,6 +27,10 @@ function StudioLoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
+  useEffect(() => {
+    if (reason === 'session_expired') toast.warning('Session expired. Please sign in again.');
+  }, [reason]);
+
   // Motion config: instant transitions when reduced motion is preferred
   const motionConfig = prefersReducedMotion
     ? { duration: 0 }
@@ -39,27 +44,35 @@ function StudioLoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const toastId = toast.loading('Sending magic link...');
 
-    // Build the redirect URL for after magic link verification
-    // Points to the auth callback route which exchanges the code for a session
-    const origin = window.location.origin;
-    const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+    try {
+      // Build the redirect URL for after magic link verification.
+      const origin = window.location.origin;
+      const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
 
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo,
-      },
-    });
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo,
+        },
+      });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) {
+        setError(authError.message);
+        toast.error(authError.message, { id: toastId });
+        return;
+      }
+
+      setSent(true);
+      toast.success('Magic link sent.', { id: toastId });
+    } catch (submitError) {
+      const message = getErrorMessage(submitError, 'Unable to send magic link.');
+      setError(message);
+      toast.error(message, { id: toastId });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSent(true);
-    setLoading(false);
   };
 
   return (
