@@ -108,6 +108,7 @@ describe('DetailsCard (Req 5.1)', () => {
   it('renders with heading "Details"', () => {
     render(
       <DetailsCard
+        slug="test-title"
         formData={defaultFormData}
         onFieldChange={vi.fn()}
         onSave={vi.fn().mockResolvedValue(undefined)}
@@ -122,6 +123,7 @@ describe('DetailsCard (Req 5.1)', () => {
   it('does NOT render "Basic Info" heading', () => {
     render(
       <DetailsCard
+        slug="test-title"
         formData={defaultFormData}
         onFieldChange={vi.fn()}
         onSave={vi.fn().mockResolvedValue(undefined)}
@@ -136,6 +138,7 @@ describe('DetailsCard (Req 5.1)', () => {
   it('renders the heading inside a <legend> element within a <fieldset>', () => {
     const { container } = render(
       <DetailsCard
+        slug="test-title"
         formData={defaultFormData}
         onFieldChange={vi.fn()}
         onSave={vi.fn().mockResolvedValue(undefined)}
