@@ -9,6 +9,7 @@
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { toSlug } from '@/lib/utils/utils';
+import { fetchMoodThemesData, fetchTiersData } from './data';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -293,5 +294,516 @@ export async function removeTitleFromMoodCuration(curationId: string, titleId: s
   }
 
   revalidatePath('/studio/curation');
+  return { success: true };
+}
+
+// ── Editorial Curation System ───────────────────────────────────
+
+export type CurationSettingKey =
+  | 'featured_narratives_random'
+  | 'featured_titles_random'
+  | 'featured_creators_random';
+
+export interface FeaturedNarrativeUpdate {
+  title?: string;
+  subtitle?: string | null;
+  description?: string | null;
+  display_order?: number;
+  featured_weight?: number;
+  visible?: boolean;
+}
+
+export interface FeaturedTitleUpdate {
+  id: string;
+  featured: boolean;
+  featured_order: number;
+  featured_weight: number;
+}
+
+export interface FeaturedCreatorUpdate {
+  creator_id: string;
+  display_order: number;
+  featured_weight: number;
+  visible: boolean;
+}
+
+export interface ThemeUpdate {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  cover_image?: string | null;
+  theme_color?: string | null;
+  visible?: boolean;
+  sort_order?: number;
+}
+
+export interface TierDefinitionUpdate {
+  id: string;
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  color?: string;
+  icon?: string | null;
+  display_order?: number;
+  visible?: boolean;
+}
+
+async function requireStudioUser() {
+  const user = await getServerUser();
+  if (!user) return null;
+  return createSupabaseServerClient();
+}
+
+export async function loadMoodThemesCurationData() {
+  const user = await getServerUser();
+  if (!user) throw new Error('Unauthorized');
+  return fetchMoodThemesData();
+}
+
+export async function loadTiersCurationData() {
+  const user = await getServerUser();
+  if (!user) throw new Error('Unauthorized');
+  return fetchTiersData();
+}
+
+function clampWeight(value: number) {
+  return Math.min(100, Math.max(1, Math.round(value)));
+}
+
+function revalidateCurationSurfaces() {
+  revalidatePath('/');
+  revalidatePath('/discover');
+  revalidatePath('/tiers');
+  revalidatePath('/studio/curation');
+}
+
+export async function updateCurationSetting(key: CurationSettingKey, enabled: boolean) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('curation_settings')
+    .upsert({ key, value: { enabled } }, { onConflict: 'key' });
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function createFeaturedNarrative() {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: existing } = await supabase
+    .from('featured_narratives')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1);
+
+  const displayOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { data, error } = await supabase
+    .from('featured_narratives')
+    .insert({
+      title: 'Untitled narrative',
+      subtitle: 'Draft subtitle',
+      description: 'Add the editorial setup for this homepage narrative.',
+      cta_text: 'Explore',
+      cta_href: '/discover',
+      cover_slugs: [],
+      display_order: displayOrder,
+      featured_weight: 50,
+      visible: false,
+    })
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true, data };
+}
+
+export async function updateFeaturedNarrative(id: string, update: FeaturedNarrativeUpdate) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const payload = {
+    ...update,
+    featured_weight: update.featured_weight === undefined ? undefined : clampWeight(update.featured_weight),
+  };
+
+  const { error } = await supabase
+    .from('featured_narratives')
+    .update(payload)
+    .eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function duplicateFeaturedNarrative(id: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: narrative, error: fetchError } = await supabase
+    .from('featured_narratives')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) return { success: false, error: fetchError.message };
+
+  const { data: existing } = await supabase
+    .from('featured_narratives')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1);
+
+  const displayOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+  const { id: _id, created_at: _created, updated_at: _updated, ...copy } = narrative;
+
+  const { data, error } = await supabase
+    .from('featured_narratives')
+    .insert({
+      ...copy,
+      title: `${narrative.title} copy`,
+      display_order: displayOrder,
+      visible: false,
+    })
+    .select('*')
+    .single();
+
+  void _id;
+  void _created;
+  void _updated;
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true, data };
+}
+
+export async function deleteFeaturedNarrative(id: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('featured_narratives')
+    .delete()
+    .eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function saveFeaturedNarrativeOrder(updates: { id: string; display_order: number }[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const results = await Promise.all(
+    updates.map((item) =>
+      supabase
+        .from('featured_narratives')
+        .update({ display_order: item.display_order })
+        .eq('id', item.id),
+    ),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function saveFeaturedTitles(updates: FeaturedTitleUpdate[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const results = await Promise.all(
+    updates.map((item) =>
+      supabase
+        .from('titles')
+        .update({
+          featured: item.featured,
+          featured_order: item.featured_order,
+          featured_weight: clampWeight(item.featured_weight),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item.id),
+    ),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function addFeaturedCreator(creatorId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: existing } = await supabase
+    .from('featured_creators')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1);
+
+  const displayOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase
+    .from('featured_creators')
+    .upsert({
+      creator_id: creatorId,
+      display_order: displayOrder,
+      featured_weight: 50,
+      visible: true,
+    }, { onConflict: 'creator_id' });
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function saveFeaturedCreators(updates: FeaturedCreatorUpdate[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('featured_creators')
+    .upsert(
+      updates.map((item) => ({
+        creator_id: item.creator_id,
+        display_order: item.display_order,
+        featured_weight: clampWeight(item.featured_weight),
+        visible: item.visible,
+      })),
+      { onConflict: 'creator_id' },
+    );
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function removeFeaturedCreator(creatorId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('featured_creators')
+    .delete()
+    .eq('creator_id', creatorId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function updateTheme(themeId: string, update: ThemeUpdate) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('moods')
+    .update(update)
+    .eq('id', themeId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function deleteTheme(themeId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('moods')
+    .delete()
+    .eq('id', themeId);
+
+  if (error) return { success: false, error: error.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function assignTitlesToTheme(themeId: string, titleIds: string[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: existing } = await supabase
+    .from('title_moods')
+    .select('position')
+    .eq('mood_id', themeId)
+    .order('position', { ascending: false })
+    .limit(1);
+
+  const startPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { error } = await supabase
+    .from('title_moods')
+    .upsert(
+      titleIds.map((titleId, index) => ({
+        mood_id: themeId,
+        title_id: titleId,
+        position: startPosition + index,
+      })),
+      { onConflict: 'title_id,mood_id' },
+    );
+
+  if (error) return { success: false, error: error.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function removeTitleFromTheme(themeId: string, titleId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error } = await supabase
+    .from('title_moods')
+    .delete()
+    .eq('mood_id', themeId)
+    .eq('title_id', titleId);
+
+  if (error) return { success: false, error: error.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function reorderThemeTitles(themeId: string, titleIds: string[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const results = await Promise.all(
+    titleIds.map((titleId, position) =>
+      supabase
+        .from('title_moods')
+        .update({ position })
+        .eq('mood_id', themeId)
+        .eq('title_id', titleId),
+    ),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function updateTierDefinitions(updates: TierDefinitionUpdate[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const results = await Promise.all(
+    updates.map((item) => {
+      const { id, ...payload } = item;
+      return supabase.from('tier_definitions').update(payload).eq('id', id);
+    }),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function assignTitleToTier(tierId: string, titleId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: tier, error: tierError } = await supabase
+    .from('tier_definitions')
+    .select('name')
+    .eq('id', tierId)
+    .single();
+
+  if (tierError) return { success: false, error: tierError.message };
+
+  const { data: existing } = await supabase
+    .from('tier_titles')
+    .select('position')
+    .eq('tier_id', tierId)
+    .order('position', { ascending: false })
+    .limit(1);
+
+  const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { error: deleteError } = await supabase
+    .from('tier_titles')
+    .delete()
+    .eq('title_id', titleId);
+
+  if (deleteError) return { success: false, error: deleteError.message };
+
+  const { error: insertError } = await supabase
+    .from('tier_titles')
+    .insert({ tier_id: tierId, title_id: titleId, position });
+
+  if (insertError) return { success: false, error: insertError.message };
+
+  const { error: titleError } = await supabase
+    .from('titles')
+    .update({ tier: tier.name })
+    .eq('id', titleId);
+
+  if (titleError) return { success: false, error: titleError.message };
+
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function removeTitleFromTier(tierId: string, titleId: string) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { error: relationError } = await supabase
+    .from('tier_titles')
+    .delete()
+    .eq('tier_id', tierId)
+    .eq('title_id', titleId);
+
+  if (relationError) return { success: false, error: relationError.message };
+
+  const { error: titleError } = await supabase
+    .from('titles')
+    .update({ tier: null })
+    .eq('id', titleId);
+
+  if (titleError) return { success: false, error: titleError.message };
+  revalidateCurationSurfaces();
+  return { success: true };
+}
+
+export async function reorderTierTitles(tierId: string, titleIds: string[]) {
+  const supabase = await requireStudioUser();
+  if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const results = await Promise.all(
+    titleIds.map((titleId, position) =>
+      supabase
+        .from('tier_titles')
+        .update({ position })
+        .eq('tier_id', tierId)
+        .eq('title_id', titleId),
+    ),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+  revalidateCurationSurfaces();
   return { success: true };
 }
