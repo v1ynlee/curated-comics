@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Comic Curated</title>
+  <rect width="512" height="512" rx="96" fill="#08080f"/>
+  <path d="M122 132h268v248H122z" fill="#1a1a2e" stroke="#8b5cf6" stroke-width="16"/>
+  <path d="M178 194h156M178 252h116M178 310h156" stroke="#f0f0f5" stroke-width="22" stroke-linecap="round"/>
+  <path d="M390 132v248l-60-46" fill="none" stroke="#f59e0b" stroke-width="16" stroke-linejoin="round"/>
+</svg>
