@@ -10,13 +10,15 @@
 //               10.1-10.7, 11.1, 11.2, 12.1-12.6
 // ============================================================
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import { DetailsCard } from '@/components/studio/DetailsCard';
 import { ProgressCard } from '@/components/studio/ProgressCard';
 import { ReviewsCard } from '@/components/studio/ReviewsCard';
 import { SettingsCard } from '@/components/studio/SettingsCard';
 import { ConfirmDialog } from '@/components/studio/ConfirmDialog';
+import { getErrorMessage } from '@/lib/utils/toast';
 import type { TitleFormData } from '@/types/studio';
 import type { MediaAsset } from '@/types/media';
 
@@ -77,6 +79,7 @@ export function TitleEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const unsavedToastShown = useRef(false);
 
   // ── Deferred upload state ─────────────────────────────────
 
@@ -96,6 +99,12 @@ export function TitleEditor({
 
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
 
+  const markUnsaved = useCallback(() => {
+    if (unsavedToastShown.current) return;
+    unsavedToastShown.current = true;
+    toast.info('Unsaved changes detected.');
+  }, []);
+
   const handleCoverFileSelectWithPreview = useCallback((file: File | null) => {
     // Revoke previous blob URL
     if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
@@ -106,7 +115,11 @@ export function TitleEditor({
       setCoverPreviewUrl(null);
     }
     setPendingCoverFile(file);
-  }, [coverPreviewUrl]);
+    if (file) {
+      markUnsaved();
+      toast.info('Cover image queued.');
+    }
+  }, [coverPreviewUrl, markUnsaved]);
 
   // Derive preview src: pending blob > existing cover image path
   const previewSrc = useMemo(() => {
@@ -124,41 +137,62 @@ export function TitleEditor({
     key: K,
     value: TitleFormData[K]
   ) => {
+    markUnsaved();
     setFormData((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  }, [markUnsaved]);
 
   // ── Genre/mood toggle ─────────────────────────────────────
 
   const toggleGenre = useCallback((genreId: string) => {
+    const genreName = genres.find((genre) => genre.id === genreId)?.name ?? 'Genre';
     setFormData((prev) => ({
       ...prev,
       genres: prev.genres.includes(genreId)
         ? prev.genres.filter((id) => id !== genreId)
         : [...prev.genres, genreId],
     }));
-  }, []);
+    markUnsaved();
+    toast.info(formData.genres.includes(genreId) ? `${genreName} removed.` : `${genreName} added.`);
+  }, [formData.genres, genres, markUnsaved]);
 
   const toggleMood = useCallback((moodId: string) => {
+    const moodName = moods.find((mood) => mood.id === moodId)?.name ?? 'Mood';
     setFormData((prev) => ({
       ...prev,
       moods: prev.moods.includes(moodId)
         ? prev.moods.filter((id) => id !== moodId)
         : [...prev.moods, moodId],
     }));
-  }, []);
-
-  // ── Image file selection (deferred — no upload yet) ───────
-
-  const handleCoverFileSelect = useCallback((file: File | null) => {
-    setPendingCoverFile(file);
-  }, []);
+    markUnsaved();
+    toast.info(formData.moods.includes(moodId) ? `${moodName} removed.` : `${moodName} added.`);
+  }, [formData.moods, markUnsaved, moods]);
 
   // ── Image upload complete (after actual R2 upload) ────────
 
   const handleCoverUpload = useCallback((asset: MediaAsset) => {
     updateField('coverImageId', asset.id);
     setPendingCoverFile(null);
+    toast.success('Cover image uploaded.');
   }, [updateField]);
+
+  const validateTitle = useCallback(() => {
+    if (formData.englishTitle.trim()) return true;
+    toast.warning('Add an English title before saving.');
+    return false;
+  }, [formData.englishTitle]);
+
+  const saveSection = useCallback(async (section: string) => {
+    if (!validateTitle()) return;
+    try {
+      await onSave(formData);
+      unsavedToastShown.current = false;
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        throw error;
+      }
+      throw new Error(`${section} save failed.`);
+    }
+  }, [formData, onSave, validateTitle]);
 
   // ── Upload pending cover image to R2 ──────────────────────
 
@@ -189,12 +223,15 @@ export function TitleEditor({
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    toast.info('Save title requested.');
+    if (!validateTitle()) return;
     setShowConfirmDialog(true);
-  }, []);
+  }, [validateTitle]);
 
   const handleConfirmSave = useCallback(async () => {
     setSubmitError(null);
     setIsSubmitting(true);
+    const toastId = toast.loading(pendingCoverFile ? 'Uploading cover...' : 'Saving title...');
 
     try {
       let finalFormData = { ...formData };
@@ -215,6 +252,7 @@ export function TitleEditor({
             ? uploadErr.message
             : 'Cover image upload failed';
           setSubmitError(`Upload error: ${message}`);
+          toast.error(message, { id: toastId });
           setShowConfirmDialog(false);
           setIsSubmitting(false);
           setIsUploading(false);
@@ -225,17 +263,20 @@ export function TitleEditor({
       }
 
       // Step 2: Save the title form data
+      toast.loading('Saving title...', { id: toastId });
       await onSave(finalFormData);
+      toast.success(mode === 'create' ? 'Title created.' : 'Title updated.', { id: toastId });
+      unsavedToastShown.current = false;
       setShowConfirmDialog(false);
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : 'Failed to save title. Please try again.'
-      );
+      const message = getErrorMessage(err, 'Failed to save title. Please try again.');
+      toast.error(message, { id: toastId });
+      setSubmitError(message);
       setShowConfirmDialog(false);
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, onSave, pendingCoverFile, uploadPendingCoverImage]);
+  }, [formData, mode, onSave, pendingCoverFile, uploadPendingCoverImage]);
 
   const handleCancelDialog = useCallback(() => {
     if (!isSubmitting) {
@@ -253,7 +294,7 @@ export function TitleEditor({
       <DetailsCard
         formData={formData}
         onFieldChange={updateField}
-        onSave={async () => { await onSave(formData); }}
+        onSave={() => saveSection('Details')}
         genres={genres}
         moods={moods}
         onToggleGenre={toggleGenre}
@@ -280,7 +321,7 @@ export function TitleEditor({
         onStartedDateChange={(value) => updateField('startedDate', value)}
         onCompletedDateChange={(value) => updateField('completedDate', value)}
         onLastReadDateChange={(value) => updateField('lastReadDate', value)}
-        onSave={async () => { await onSave(formData); }}
+        onSave={() => saveSection('Progress')}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -293,7 +334,7 @@ export function TitleEditor({
         onReviewChange={(content) => updateField('review', content)}
         onReviewHtmlChange={(html) => updateField('reviewHtml', html)}
         onUnreviewedChange={(checked) => updateField('isUnreviewed', checked)}
-        onSave={async () => { await onSave(formData); }}
+        onSave={() => saveSection('Review')}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -304,7 +345,7 @@ export function TitleEditor({
         hidden={formData.hidden}
         onFeaturedChange={(checked) => updateField('featured', checked)}
         onHiddenChange={(checked) => updateField('hidden', checked)}
-        onSave={async () => { await onSave(formData); }}
+        onSave={() => saveSection('Settings')}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -322,7 +363,7 @@ export function TitleEditor({
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={isSubmitting || !formData.englishTitle.trim()}
+          disabled={isSubmitting}
           className={cn(
             'px-6 py-3 rounded-lg',
             'bg-accent-primary text-white font-heading text-sm font-bold',
