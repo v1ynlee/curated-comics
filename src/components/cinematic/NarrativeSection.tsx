@@ -19,6 +19,8 @@ export interface NarrativeSectionProps {
   heading: string;
   /** Descriptive subtitle */
   subtitle: string;
+  /** Optional supporting description from Studio curation */
+  description?: string;
   /** CTA button text */
   ctaText: string;
   /** Link destination (e.g. /discover?mood=wholesome) */
@@ -36,6 +38,7 @@ export interface NarrativeSectionProps {
 export function NarrativeSection({
   heading,
   subtitle,
+  description,
   ctaText,
   ctaHref,
   coverSlugs,
@@ -142,6 +145,11 @@ export function NarrativeSection({
           <p className="font-body text-text-secondary text-base md:text-lg max-w-md leading-relaxed">
             {subtitle}
           </p>
+          {description && (
+            <p className="font-body text-sm text-text-tertiary max-w-md leading-relaxed">
+              {description}
+            </p>
+          )}
           <div className="mt-2">
             <Button size="lg" asChild>
               <Link href={ctaHref}>{ctaText}</Link>
