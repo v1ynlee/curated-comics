@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+
 // ============================================================
 // MarkdownRenderer — editorial markdown rendering with
 // responsive images, syntax highlighting, and typographic hierarchy
@@ -10,6 +12,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import { Children, isValidElement, type ComponentPropsWithoutRef } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { MediaVariant } from '@/types/media';
 import type { Components } from 'react-markdown';
@@ -38,6 +41,65 @@ function buildSrcSet(variants: MediaVariant[], preferredFormat: 'avif' | 'webp' 
     .join(', ');
 }
 
+function MarkdownImage({
+  src,
+  alt,
+  ...props
+}: ComponentPropsWithoutRef<'img'> & { node?: unknown }) {
+  const domProps = { ...props };
+  delete domProps.node;
+  const imgSrc = typeof src === 'string' ? src : undefined;
+  const isCdnImage = imgSrc ? CDN_PATTERN.test(imgSrc) : false;
+
+  if (isCdnImage && imgSrc) {
+    const widths = [480, 768, 1200];
+    const srcSet = widths
+      .map((w) => {
+        const variantUrl = imgSrc.replace(/\/\d+w\./, `/${w}w.`);
+        return `${variantUrl} ${w}w`;
+      })
+      .join(', ');
+
+    return (
+      <figure className="my-10 md:-mx-8">
+        <img
+          src={imgSrc}
+          srcSet={srcSet}
+          sizes="(max-width: 480px) 480px, (max-width: 768px) 768px, 1200px"
+          alt={alt || ''}
+          loading="lazy"
+          decoding="async"
+          className="h-auto w-full rounded-lg border border-white/10 bg-bg-surface object-cover"
+          {...domProps}
+        />
+        {alt && (
+          <figcaption className="mt-3 text-center text-sm italic text-text-tertiary">
+            {alt}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
+  return (
+    <figure className="my-10 md:-mx-8">
+      <img
+        src={imgSrc}
+        alt={alt || ''}
+        loading="lazy"
+        decoding="async"
+        className="h-auto w-full rounded-lg border border-white/10 bg-bg-surface object-cover"
+        {...domProps}
+      />
+      {alt && (
+        <figcaption className="mt-3 text-center text-sm italic text-text-tertiary">
+          {alt}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 /**
  * Custom components for react-markdown with editorial typography
  * and responsive image handling.
@@ -46,7 +108,7 @@ const markdownComponents: Components = {
   // ── Headings — typographic hierarchy with generous spacing ──
   h1: ({ children, ...props }) => (
     <h1
-      className="font-display text-3xl md:text-4xl font-bold text-text-primary mt-12 mb-6 leading-tight tracking-tight"
+      className="mt-14 mb-6 font-display text-3xl font-bold leading-tight tracking-tight text-text-primary md:text-4xl"
       {...props}
     >
       {children}
@@ -55,7 +117,7 @@ const markdownComponents: Components = {
 
   h2: ({ children, ...props }) => (
     <h2
-      className="font-display text-2xl md:text-3xl font-semibold text-text-primary mt-10 mb-4 leading-snug"
+      className="mt-12 mb-4 font-display text-2xl font-semibold leading-snug text-text-primary md:text-3xl"
       {...props}
     >
       {children}
@@ -64,7 +126,7 @@ const markdownComponents: Components = {
 
   h3: ({ children, ...props }) => (
     <h3
-      className="font-display text-xl md:text-2xl font-semibold text-text-primary mt-8 mb-3 leading-snug"
+      className="mt-9 mb-3 font-display text-xl font-semibold leading-snug text-text-primary md:text-2xl"
       {...props}
     >
       {children}
@@ -73,7 +135,7 @@ const markdownComponents: Components = {
 
   h4: ({ children, ...props }) => (
     <h4
-      className="font-display text-lg md:text-xl font-medium text-text-primary mt-6 mb-2 leading-snug"
+      className="mt-7 mb-2 font-display text-lg font-medium leading-snug text-text-primary md:text-xl"
       {...props}
     >
       {children}
@@ -82,12 +144,23 @@ const markdownComponents: Components = {
 
   // ── Paragraphs — readable line length (60-75 chars) ──
   p: ({ children, ...props }) => (
-    <p
-      className="text-text-secondary text-base md:text-lg leading-relaxed mb-6 max-w-[65ch]"
-      {...props}
-    >
-      {children}
-    </p>
+    (() => {
+      const childArray = Children.toArray(children);
+      const onlyChild = childArray[0];
+
+      if (childArray.length === 1 && isValidElement(onlyChild) && onlyChild.type === MarkdownImage) {
+        return <>{children}</>;
+      }
+
+      return (
+        <p
+          className="mb-7 max-w-[65ch] text-base leading-8 text-text-secondary md:text-lg md:leading-9"
+          {...props}
+        >
+          {children}
+        </p>
+      );
+    })()
   ),
 
   // ── Links — accent color with hover state ──
@@ -104,67 +177,12 @@ const markdownComponents: Components = {
   ),
 
   // ── Images — responsive srcset for CDN images, lazy loading ──
-  img: ({ src, alt, ...props }) => {
-    const imgSrc = typeof src === 'string' ? src : undefined;
-    const isCdnImage = imgSrc ? CDN_PATTERN.test(imgSrc) : false;
-
-    if (isCdnImage && imgSrc) {
-      // For CDN images, generate responsive srcset at common breakpoints
-      const widths = [480, 768, 1200];
-      const srcSet = widths
-        .map((w) => {
-          // Derive variant URL by replacing width descriptor in the URL path
-          // CDN URLs follow pattern: .../content_hash/{width}w.{format}
-          const variantUrl = imgSrc.replace(/\/\d+w\./, `/${w}w.`);
-          return `${variantUrl} ${w}w`;
-        })
-        .join(', ');
-
-      return (
-        <figure className="my-8">
-          <img
-            src={imgSrc}
-            srcSet={srcSet}
-            sizes="(max-width: 480px) 480px, (max-width: 768px) 768px, 1200px"
-            alt={alt || ''}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-auto rounded-md"
-            {...props}
-          />
-          {alt && (
-            <figcaption className="mt-2 text-center text-text-tertiary text-sm italic">
-              {alt}
-            </figcaption>
-          )}
-        </figure>
-      );
-    }
-
-    // Non-CDN images: render normally with lazy loading
-    return (
-      <figure className="my-8">
-        <img
-          src={imgSrc}
-          alt={alt || ''}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-auto rounded-md"
-          {...props}
-        />
-        {alt && (
-          <figcaption className="mt-2 text-center text-text-tertiary text-sm italic">
-            {alt}
-          </figcaption>
-        )}
-      </figure>
-    );
-  },
+  img: MarkdownImage,
 
   // ── Code blocks — dark background with syntax highlighting ──
   pre: ({ children, ...props }) => (
     <pre
-      className="my-6 p-4 rounded-lg bg-bg-deep border border-white/5 overflow-x-auto text-sm leading-relaxed font-data"
+      className="my-8 overflow-x-auto rounded-lg border border-white/10 bg-bg-deep p-4 font-data text-sm leading-relaxed"
       {...props}
     >
       {children}
@@ -196,7 +214,7 @@ const markdownComponents: Components = {
   // ── Blockquotes — editorial pull-quote style ──
   blockquote: ({ children, ...props }) => (
     <blockquote
-      className="my-8 pl-6 border-l-3 border-accent-primary/60 italic text-text-secondary"
+      className="my-10 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-5 py-4 italic text-text-secondary"
       {...props}
     >
       {children}
@@ -206,7 +224,7 @@ const markdownComponents: Components = {
   // ── Lists — proper spacing ──
   ul: ({ children, ...props }) => (
     <ul
-      className="my-4 ml-6 list-disc space-y-2 text-text-secondary max-w-[65ch]"
+      className="my-5 ml-6 max-w-[70ch] list-disc space-y-2 text-text-secondary"
       {...props}
     >
       {children}
@@ -215,7 +233,7 @@ const markdownComponents: Components = {
 
   ol: ({ children, ...props }) => (
     <ol
-      className="my-4 ml-6 list-decimal space-y-2 text-text-secondary max-w-[65ch]"
+      className="my-5 ml-6 max-w-[70ch] list-decimal space-y-2 text-text-secondary"
       {...props}
     >
       {children}
@@ -223,14 +241,14 @@ const markdownComponents: Components = {
   ),
 
   li: ({ children, ...props }) => (
-    <li className="text-base md:text-lg leading-relaxed" {...props}>
+    <li className="text-base leading-8 md:text-lg md:leading-9" {...props}>
       {children}
     </li>
   ),
 
   // ── Tables — GFM table support ──
   table: ({ children, ...props }) => (
-    <div className="my-8 overflow-x-auto rounded-lg border border-white/10">
+    <div className="my-10 overflow-x-auto rounded-lg border border-white/10">
       <table className="w-full text-sm text-left" {...props}>
         {children}
       </table>
@@ -296,11 +314,8 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
   return (
     <article
       className={cn(
-        // Editorial typography container
         'prose-editorial',
-        // Max-width for readable line length (60-75 chars)
         'max-w-prose',
-        // Generous whitespace
         'space-y-0',
         className,
       )}
