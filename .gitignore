@@ -50,6 +50,7 @@ next-env.d.ts
 /public/images/covers/
 /public/images/banners/
 /public/images/articles/
+/public/images/authors/
 /public/images/artists/
 
 .vscode
