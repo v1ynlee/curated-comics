@@ -18,15 +18,15 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['entertainment', 'books'],
     icons: [
       {
-        src: '/icons/icon-192.png',
+        src: '/icons/icon-192.svg',
         sizes: '192x192',
-        type: 'image/png',
+        type: 'image/svg+xml',
         purpose: 'maskable',
       },
       {
-        src: '/icons/icon-512.png',
+        src: '/icons/icon-512.svg',
         sizes: '512x512',
-        type: 'image/png',
+        type: 'image/svg+xml',
         purpose: 'any',
       },
     ],
