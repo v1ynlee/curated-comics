@@ -9,6 +9,7 @@
 // ============================================================
 
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import { Save, X, Loader2 } from 'lucide-react';
 
@@ -45,20 +46,24 @@ export function CardWrapper({
     if (isDisabled) return;
 
     setCardState('saving');
+    toast.loading(`Saving ${title.toLowerCase()}...`, { id: `card-${title}` });
     try {
       await onSave();
       setCardState('saved');
-    } catch {
+      toast.success(`${title} saved.`, { id: `card-${title}` });
+    } catch (error) {
       // On error, return to editing state so user can retry
       setCardState('editing');
+      toast.error(error instanceof Error ? error.message : `${title} save failed.`, { id: `card-${title}` });
     }
-  }, [onSave, isDisabled]);
+  }, [onSave, isDisabled, title]);
 
   // ── Cancel handler ────────────────────────────────────────
 
   const handleCancel = useCallback(() => {
     setCardState('editing');
-  }, []);
+    toast.info(`${title} unlocked for editing.`);
+  }, [title]);
 
   // ── Render ────────────────────────────────────────────────
 
