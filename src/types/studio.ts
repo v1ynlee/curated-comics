@@ -48,10 +48,18 @@ export interface StudioArticleRow {
   id: string;
   slug: string;
   title: string;
+  subtitle: string | null;
+  excerpt: string | null;
   publicationState: PublicationState;
   publishDate: string | null;
   scheduledDate: string | null;
+  categoryId: string | null;
   categoryName: string | null;
+  categorySlug: string | null;
+  tagNames: string[];
+  tagSlugs: string[];
+  featuredImageUrl: string | null;
+  featuredImageColor: string | null;
   wordCount: number;
   readingTimeMinutes: number;
   featured: boolean;
