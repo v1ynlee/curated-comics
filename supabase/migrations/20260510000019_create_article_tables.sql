@@ -1,12 +1,44 @@
 -- ============================================================
--- Migration: 019 — Article tables (categories, tags, articles, assignments)
+-- Migration: 019 — media_assets + Article tables
+-- (categories, tags, articles, assignments)
 -- Source: .kiro/specs/platform-evolution-planning (Requirements 12.1–12.6)
 --
--- Security model:
---   Public (anon)  → SELECT only on published articles (state='published'
---                    AND publish_date <= NOW()), full SELECT on categories/tags
---   Authenticated  → Full access (owner only via Supabase Auth)
+-- Note: media_assets is created first because articles.featured_image_id
+-- references it via FK. Originally split across two files with the same
+-- migration number; merged here for correct dependency order.
 -- ============================================================
+
+-- ── media_assets ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS media_assets (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug            TEXT        NOT NULL,
+  asset_type      TEXT        NOT NULL
+    CHECK (asset_type IN ('cover', 'banner', 'article-image', 'thumbnail', 'og-asset')),
+  content_hash    TEXT        NOT NULL,
+  original_width  INTEGER,
+  original_height INTEGER,
+  aspect_ratio    NUMERIC(6,4),
+  mime_type       TEXT,
+  dominant_color  TEXT,
+  blur_data_uri   TEXT,
+  variants        JSONB       NOT NULL DEFAULT '[]'::jsonb,
+  r2_base_path    TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_asset UNIQUE (slug, asset_type, content_hash)
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_slug      ON media_assets(slug);
+CREATE INDEX IF NOT EXISTS idx_media_type      ON media_assets(asset_type);
+CREATE INDEX IF NOT EXISTS idx_media_slug_type ON media_assets(slug, asset_type);
+
+ALTER TABLE media_assets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public can view media_assets" ON media_assets;
+CREATE POLICY "Public can view media_assets"
+  ON media_assets FOR SELECT TO anon, authenticated USING (TRUE);
+DROP POLICY IF EXISTS "Authenticated owner has full access to media_assets" ON media_assets;
+CREATE POLICY "Authenticated owner has full access to media_assets"
+  ON media_assets FOR ALL TO authenticated USING (TRUE) WITH CHECK (TRUE);
 
 -- ── article_categories ────────────────────────────────────────
 CREATE TABLE article_categories (
