@@ -4,29 +4,13 @@
 // Hero — cinematic landing hero section
 // Source of truth: docs/design/UI_UX_DIRECTION.md
 //                  docs/motion/MOTION_SYSTEM.md — First Load Sequence
-//
-// Font: Morvein (local, src/fonts/Morvein/Morvien-Regular.woff2)
-//       loaded via next/font/local → CSS var --font-morvein
-//       mapped to --font-hero in @theme inline.
-//
-// Layout:
-//   Desktop (md+): hero title words sit side-by-side horizontally
-//   Mobile (<md):  hero title words stack vertically, compact spacing
-//
-// Colors:
-//   Dark theme:  soft off-white (#e8e8f0), NOT pure white
-//   Light theme: deep charcoal (#1a1a2e), NOT pure black
-//   First word:  always accent gradient (purple → pink)
-//
-// Background images:
-//   dark  → /images/background.png
-//   light → /images/background-light.png
 // ============================================================
 
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { GradientText } from '@/components/ui/GradientText';
 import { Button } from '@/components/ui/Button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
@@ -44,17 +28,32 @@ const SEQUENCE = {
 
 export function Hero() {
   const prefersReduced = usePrefersReducedMotion();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  // Ref for the scrollable content — used by GSAP instead of a global
+  // CSS selector '.hero-content'. Global selectors fail when the component
+  // unmounts during navigation, causing the "target not found" warning.
+  const heroContentRef  = useRef<HTMLDivElement>(null);
+  
+  // Theme is only needed for the physical background image source now; 
+  // all typography/colors are handled autonomously via CSS variables.
   const theme = useUIStore((s) => s.theme);
 
   useEffect(() => {
     if (prefersReduced || !containerRef.current) return;
 
+    // isMounted guard — getGSAP() is an async dynamic import.
+    // In React Strict Mode the cleanup runs BEFORE the Promise resolves,
+    // leaving cleanup=undefined. The .then() then fires after unmount,
+    // creates a ScrollTrigger on a gone DOM, and the onUpdate selector
+    // finds nothing. Setting isMounted=false tells the .then() to abort.
+    let isMounted = true;
     let cleanup: (() => void) | undefined;
 
     getGSAP().then((g) => {
-      if (!g || !containerRef.current) return;
+      if (!g || !isMounted || !containerRef.current || !heroContentRef.current) return;
       const { gsap, ScrollTrigger } = g;
+
+      const target = heroContentRef.current; // capture ref value at creation time
 
       const ctx = gsap.context(() => {
         ScrollTrigger.create({
@@ -63,9 +62,13 @@ export function Hero() {
           end: 'bottom top',
           scrub: 1,
           onUpdate: (self) => {
-            gsap.set('.hero-content', {
-              y: self.progress * -60,
-              opacity: 1 - self.progress * 0.6,
+            // Use the captured DOM node directly — never a global selector.
+            // If target was removed from DOM this is a no-op.
+            if (!target.isConnected) return;
+            gsap.set(target, {
+              y: self.progress * -80,
+              opacity: 1 - self.progress * 0.7,
+              scale: 1 - self.progress * 0.05,
             });
           },
         });
@@ -74,35 +77,31 @@ export function Hero() {
       cleanup = () => ctx.revert();
     });
 
-    return () => cleanup?.();
+    return () => {
+      isMounted = false;
+      cleanup?.();
+    };
   }, [prefersReduced]);
 
   const stagger = prefersReduced ? 0 : 1;
   const bgSrc = theme === 'light'
     ? '/images/background-light.png'
     : '/images/background.png';
-  const bgOpacity = theme === 'light' ? 0.25 : 0.18;
-
-  /*
-    Soft text colors — avoid pure white (#fff) in dark and pure black (#000) in light.
-    Dark:  #e8e8f0 — warm off-white, easy on the eyes
-    Light: #1a1a2e — deep charcoal-navy, not harsh black
-  */
-  const heroTextColor = theme === 'light' ? '#1a1a2e' : '#e8e8f0';
+  const bgOpacity = theme === 'light' ? 0.35 : 0.25;
 
   return (
     <section
       ref={containerRef}
-      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden -mt-14 md:-mt-16"
       aria-labelledby="hero-title"
     >
-      {/* ── Background image — theme-aware ─────────────────── */}
+      {/* ── Background image ─────────────────────────────── */}
       <motion.div
         key={bgSrc}
         className="absolute inset-0 -z-20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
         aria-hidden="true"
       >
         <Image
@@ -110,140 +109,138 @@ export function Hero() {
           alt=""
           fill
           priority
-          quality={85}
+          quality={90}
           className="object-cover object-center"
           style={{ opacity: bgOpacity }}
           sizes="100vw"
         />
-        {/* Gradient overlay — inline CSS vars resolve correctly in both themes */}
+        {/* Gradient overlay adapting to theme variables */}
         <div
           className="absolute inset-0"
           style={{
             background: `linear-gradient(to bottom,
-              color-mix(in srgb, var(--color-bg-deep) 55%, transparent) 0%,
-              color-mix(in srgb, var(--color-bg-deep) 35%, transparent) 40%,
-              color-mix(in srgb, var(--color-bg-deep) 75%, transparent) 100%)`,
+              color-mix(in srgb, var(--color-bg-deep) 60%, transparent) 0%,
+              color-mix(in srgb, var(--color-bg-deep) 40%, transparent) 40%,
+              color-mix(in srgb, var(--color-bg-deep) 90%, transparent) 100%)`,
           }}
         />
       </motion.div>
 
-      {/* ── Corner accent gradients — theme-aware ──────────── */}
+      {/* ── Corner accent gradients ──────────────────────── */}
       <div
         className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
         aria-hidden="true"
       >
         <div
           className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full blur-[160px]"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-primary) 7%, transparent)' }}
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-primary) 8%, transparent)' }}
         />
         <div
           className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full blur-[140px]"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-quaternary) 5%, transparent)' }}
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-quaternary) 6%, transparent)' }}
         />
       </div>
 
       {/* ── Content ────────────────────────────────────────── */}
-      <div className="hero-content container-content flex flex-col items-center gap-5 text-center pt-16 md:pt-0">
+      <div
+        ref={heroContentRef}
+        className="hero-content container-content flex flex-col items-center text-center pt-20 md:pt-0 z-10">
 
-        {/* Section label */}
-        <motion.span
-          className="font-heading text-xs font-medium uppercase tracking-[0.25em] text-text-tertiary"
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 16, filter: prefersReduced ? 'none' : 'blur(4px)' }}
+        {/* Glassmorphic Section Label */}
+        <motion.div
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 20, filter: prefersReduced ? 'none' : 'blur(4px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ delay: SEQUENCE.label * stagger, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-8"
         >
-          Personal Reading Archive
-        </motion.span>
+          <span className={cn(
+            "inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full",
+            "bg-text-primary/5 backdrop-blur-md border border-text-primary/10 shadow-sm",
+            "transition-all hover:bg-text-primary/10"
+          )}>
+            <Sparkles size={14} className="text-accent-primary" />
+            <span className="font-heading text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-text-secondary mt-0.5">
+              Personal Reading Archive
+            </span>
+          </span>
+        </motion.div>
 
-        {/*
-          Hero heading — Morvein font
-          Desktop: "Comic Curated" side-by-side on one line
-          Mobile:  "Comic" and "Curated" stacked vertically, compact gap
-        */}
+        {/* Cinematic Hero Heading */}
         <motion.h1
           id="hero-title"
-          className="hero-title-glow"
+          className="hero-title-glow mb-6"
           style={{ fontFamily: 'var(--font-hero)' }}
-          initial={{ opacity: 0, y: prefersReduced ? 0 : 32, filter: prefersReduced ? 'none' : 'blur(12px)', scale: prefersReduced ? 1 : 0.95 }}
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 40, filter: prefersReduced ? 'none' : 'blur(12px)', scale: prefersReduced ? 1 : 0.95 }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
           transition={{ delay: SEQUENCE.title * stagger, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/*
-            Desktop: flex-row — words sit side by side
-            Mobile:  flex-col — words stack vertically
-            The gap is tight on mobile (gap-0) to keep it compact.
-          */}
           <span className={cn(
-            'flex leading-[0.95] tracking-tight',
-            'text-[clamp(3.5rem,11vw,9rem)]',
-            // Mobile: vertical stack, compact
-            'flex-col gap-0',
-            // Desktop: horizontal, single line with a small gap
-            'md:flex-row md:gap-[0.2em] md:items-baseline',
+            'flex leading-[0.85] tracking-[-0.04em]',
+            'text-[clamp(4rem,13vw,10rem)]',
+            'flex-col gap-0', // Mobile vertical
+            'md:flex-row md:gap-[0.2em] md:items-baseline', // Desktop horizontal
           )}>
-            {/* "Comic" — accent gradient, always vivid */}
-            <GradientText>Comic</GradientText>
-
-            {/* "Curated" — soft theme-aware color, NOT pure white/black */}
-            <span style={{ color: heroTextColor }}>Curated</span>
+            <GradientText className="drop-shadow-sm">Comic</GradientText>
+            <span className="text-text-primary drop-shadow-sm">Curated</span>
           </span>
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
-          className="max-w-lg font-body text-base font-light md:text-lg"
-          style={{ color: theme === 'light' ? '#3a3a5c' : '#b0b0c8' }}
+          className="max-w-2xl font-body text-balance flex flex-col gap-2 mb-10"
           initial={{ opacity: 0, y: prefersReduced ? 0 : 20, filter: prefersReduced ? 'none' : 'blur(6px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ delay: SEQUENCE.subtitle * stagger, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          Korean manhwa · Chinese manhua · Japanese manga
-          <br />
-          <span
-            className="text-sm"
-            style={{ color: theme === 'light' ? '#5a5a80' : '#7a7a98' }}
-          >
+          <span className="text-lg sm:text-xl md:text-2xl font-medium text-text-secondary">
+            Korean manhwa · Chinese manhua · Japanese manga
+          </span>
+          <span className="text-sm sm:text-base font-light text-text-tertiary">
             A cinematic showcase of every title I&apos;ve read, rated, and loved.
           </span>
         </motion.p>
 
-        {/* CTA */}
+        {/* CTA Actions */}
         <motion.div
-          className="flex flex-col sm:flex-row gap-3 mt-1"
+          className="relative flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
           initial={{ opacity: 0, y: prefersReduced ? 0 : 16, filter: prefersReduced ? 'none' : 'blur(4px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ delay: SEQUENCE.cta * stagger, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <Button size="lg" asChild>
-            <Link href="/library">Browse Library</Link>
+          {/* Subtle glow behind primary button */}
+          <div className="absolute inset-0 -z-10 bg-accent-primary/20 blur-2xl rounded-full scale-110 pointer-events-none" />
+          
+          <Button size="lg" className="w-full sm:w-auto rounded-full px-8 gap-2 group" asChild>
+            <Link href="/library">
+              Browse Library
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+            </Link>
           </Button>
-          <Button variant="secondary" size="lg" asChild>
+          
+          <Button variant="secondary" size="lg" className="w-full sm:w-auto rounded-full px-8 bg-surface-elevated/30 hover:bg-surface-elevated/60 border-text-primary/10" asChild>
             <Link href="/discover">Discover by Mood</Link>
           </Button>
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* ── Scroll indicator ───────────────────────────────── */}
         <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: SEQUENCE.scroll * stagger, duration: 0.5 }}
+          transition={{ delay: SEQUENCE.scroll * stagger, duration: 0.8 }}
           aria-hidden="true"
         >
-          <span
-            className="font-heading text-[10px] uppercase tracking-[0.2em]"
-            style={{ color: theme === 'light' ? '#7a7a98' : '#6b6b80' }}
-          >
+          {/* Mouse Outline Pill */}
+          <div className="w-5 h-8 border-[1.5px] border-text-tertiary rounded-full flex justify-center p-1 opacity-60">
+            <motion.div 
+              className="w-1 h-1.5 bg-text-secondary rounded-full"
+              animate={{ y: [0, 10, 0], opacity: [1, 0, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+          <span className="font-heading text-[9px] font-bold uppercase tracking-[0.25em] text-text-tertiary opacity-70">
             Scroll
           </span>
-          <motion.div
-            className="h-8 w-px"
-            style={{
-              background: `linear-gradient(to bottom, ${theme === 'light' ? '#7a7a98' : '#6b6b80'}, transparent)`,
-            }}
-            animate={{ scaleY: [1, 0.5, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-          />
         </motion.div>
       </div>
     </section>
