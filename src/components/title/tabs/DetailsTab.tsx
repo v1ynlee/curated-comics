@@ -1,58 +1,36 @@
 'use client';
 
 // ============================================================
-// DetailsTab — compact inline label: value layout
-// Label on the left, value inline on the right.
-// No dividers on tier, genres, vibe check, status, author, artist.
+// DetailsTab — premium, immersive, organized metadata layout
 // ============================================================
 
-import {
-  Trophy, Star, BookOpen, Palette, Tag as TagIcon,
-  MessageSquareQuote, Layers, Users,
-} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { Tag } from '@/components/ui/Tag';
-import { RatingDisplay } from '@/components/title/RatingDisplay';
 import { TIER_CONFIG } from '@/types/title';
 import type { Title } from '@/types/title';
+import Link from 'next/link';
 
 interface DetailsTabProps {
   title: Title;
 }
 
-// ── Inline row: icon + label on left, value on right ─────────
+// Helper to handle multiple authors/artists splitting by comma
+const splitNames = (str?: string) => str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-function Row({
-  icon,
+function MetaItem({
   label,
   children,
-  divider = false,
-  alignTop = false,
+  className,
 }: {
-  icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-  divider?: boolean;
-  alignTop?: boolean;
+  className?: string;
 }) {
   return (
-    <div className={cn(
-      'flex items-start gap-3 py-1.5',
-      divider && 'border-b border-white/5',
-    )}>
-      {/* Icon + label — fixed width so values align */}
-      <div className={cn(
-        'flex items-center gap-1.5 shrink-0 w-28',
-        alignTop ? 'mt-0.5' : '',
-      )}>
-        <span className="text-text-tertiary shrink-0">{icon}</span>
-        <span className="font-heading text-[10px] uppercase tracking-[0.15em] text-text-tertiary whitespace-nowrap">
-          {label}
-        </span>
-      </div>
-
-      {/* Value — inline, right of label */}
-      <div className="flex-1 min-w-0 font-body text-sm text-text-secondary">
+    <div className={cn('flex flex-col gap-1.5', className)}>
+      <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
+        {label}
+      </span>
+      <div className="font-body text-sm text-text-primary font-medium">
         {children}
       </div>
     </div>
@@ -61,81 +39,134 @@ function Row({
 
 export function DetailsTab({ title }: DetailsTabProps) {
   const tierConfig = title.tier ? TIER_CONFIG[title.tier] : null;
+  const authors = splitNames(title.author);
+  const artists = splitNames(title.artist);
 
   return (
-    <div className="flex flex-col py-3">
-
-      {/* Tier */}
-      {tierConfig && (
-        <Row icon={<Trophy size={13} />} label="Tier">
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-heading text-[11px] font-bold uppercase tracking-widest"
-            style={{
-              color: tierConfig.color,
-              backgroundColor: `${tierConfig.color}18`,
-              border: `1px solid ${tierConfig.color}35`,
-            }}
-          >
-            {title.tier} — {tierConfig.label}
-          </span>
-        </Row>
-      )}
-
-      {/* Rating */}
-      {title.ratings && (
-        <Row icon={<Star size={13} />} label="Ratings" alignTop divider>
-          <RatingDisplay ratings={title.ratings} />
-        </Row>
-      )}
-
-      {/* Author */}
-      {title.author && (
-        <Row icon={<BookOpen size={13} />} label="Author">
-          <span className="text-text-primary font-medium">{title.author}</span>
-        </Row>
-      )}
-
-      {/* Artist */}
-      {title.artist && title.artist !== title.author && (
-        <Row icon={<Palette size={13} />} label="Artist">
-          <span className="text-text-primary font-medium">{title.artist}</span>
-        </Row>
-      )}
-
-      {/* Genres — comma-separated inline */}
-      {title.genres.length > 0 && (
-        <Row icon={<TagIcon size={13} />} label="Genres" divider>
-          <span className="text-text-secondary">
-            {title.genres.map((g) => g.name).join(', ')}
-          </span>
-        </Row>
-      )}
-
-      {/* Themes / Moods — comma-separated inline */}
-      {title.moods.length > 0 && (
-        <Row icon={<Layers size={13} />} label="Themes">
-          <span className="text-text-secondary">
-            {title.moods.map((m) => m.name).join(', ')}
-          </span>
-        </Row>
-      )}
-
-      {/* Vibe Check */}
+    <div className="flex flex-col gap-10 py-6 max-w-3xl">
+      {/* Vibe Check Highlight */}
       {title.vibeCheck && (
-        <Row icon={<MessageSquareQuote size={13} />} label="Vibe Check" divider>
-          <p className="font-accent text-sm text-text-accent leading-snug italic">
+        <div className="border-l border-accent-primary/40 pl-5 py-1">
+          <span className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary block mb-3">
+            Curator Vibe Check
+          </span>
+          <p className="font-accent text-xl text-text-primary/90 leading-relaxed italic">
             &ldquo;{title.vibeCheck}&rdquo;
           </p>
-        </Row>
+        </div>
       )}
 
-      {/* Status */}
-      <Row icon={<Users size={13} />} label="Status">
-        <span className="text-text-secondary">
-          {title.origin} · {title.status} · {title.chaptersRead}
-          {title.totalChapters ? `/${title.totalChapters}` : '+'} ch
-        </span>
-      </Row>
+      {/* Main Metadata Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+        
+        {/* Tier */}
+        {tierConfig && (
+          <MetaItem label="Tier">
+            <span
+              className="text-sm font-bold uppercase tracking-widest"
+              style={{ color: tierConfig.color }}
+            >
+              {title.tier}
+            </span>
+          </MetaItem>
+        )}
+
+        {/* Rating */}
+        {title.ratings && (
+          <MetaItem label="Rating">
+            <span className="text-accent-secondary font-bold">{title.ratings.overall.toFixed(1)}</span>
+            <span className="text-xs text-text-tertiary font-normal"> / 10</span>
+          </MetaItem>
+        )}
+
+        {/* Type / Origin */}
+        <MetaItem label="Type">
+          <span className="capitalize">{title.origin}</span>
+        </MetaItem>
+
+        {/* Status */}
+        <MetaItem label="Status">
+          <span className="capitalize">{title.status}</span>
+        </MetaItem>
+
+        {/* Reading Status */}
+        <MetaItem label="Reading Status">
+          <span className="capitalize text-text-secondary">{title.readingStatus.replace('-', ' ')}</span>
+        </MetaItem>
+
+        {/* Chapters */}
+        <MetaItem label="Total Chapters">
+          <span className="text-text-secondary">{title.totalChapters ? `${title.totalChapters}` : 'Unknown'}</span>
+        </MetaItem>
+
+        {/* Chapters Read */}
+        <MetaItem label="Chapters Read">
+          <span className="text-text-secondary">{title.chaptersRead}</span>
+        </MetaItem>
+
+        {/* Release Date */}
+        {title.startedDate && (
+          <MetaItem label="Started Date">
+            <span className="text-text-secondary">{new Date(title.startedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</span>
+          </MetaItem>
+        )}
+        
+        {/* Completion Date */}
+        {title.completedDate && (
+          <MetaItem label="Completed Date">
+            <span className="text-text-secondary">{new Date(title.completedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</span>
+          </MetaItem>
+        )}
+
+      </div>
+
+      {/* Creators Section */}
+      <div className="flex flex-col md:flex-row gap-10 border-t border-white/5 pt-8 mt-2">
+        {authors.length > 0 && (
+          <MetaItem label="Author(s)">
+            <span className="text-text-secondary">{authors.join(', ')}</span>
+          </MetaItem>
+        )}
+        
+        {artists.length > 0 && (
+          <MetaItem label="Artist(s)">
+            <span className="text-text-secondary">{artists.join(', ')}</span>
+          </MetaItem>
+        )}
+      </div>
+
+      {/* Tags & Categorization */}
+      <div className="flex flex-col gap-8 border-t border-white/5 pt-8 mt-2">
+        {/* Genres */}
+        {title.genres.length > 0 && (
+          <MetaItem label="Genres">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-text-secondary">
+              {title.genres.map((genre) => (
+                <Link
+                  key={genre.id}
+                  href={`/discover?genres=${genre.slug}`}
+                  className="hover:text-accent-primary transition-colors duration-200"
+                >
+                  {genre.name}
+                </Link>
+              ))}
+            </div>
+          </MetaItem>
+        )}
+
+        {/* Themes/Moods */}
+        {title.moods.length > 0 && (
+          <MetaItem label="Themes & Moods">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-text-tertiary">
+              {title.moods.map((mood) => (
+                <span key={mood.id}>
+                  {mood.name}
+                </span>
+              ))}
+            </div>
+          </MetaItem>
+        )}
+      </div>
     </div>
   );
 }
