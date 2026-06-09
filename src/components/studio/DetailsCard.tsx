@@ -10,6 +10,7 @@
 
 import { useCallback } from 'react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { FileText, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { CardWrapper } from '@/components/studio/CardWrapper';
@@ -124,6 +125,7 @@ export function DetailsCard({
         if (trimmed && !formData.alternativeTitles?.includes(trimmed)) {
           onFieldChange('alternativeTitles', [...(formData.alternativeTitles ?? []), trimmed]);
           input.value = '';
+          toast.info('Alternative title added.');
         }
       }
     },
@@ -136,6 +138,7 @@ export function DetailsCard({
         'alternativeTitles',
         (formData.alternativeTitles ?? []).filter((t) => t !== title)
       );
+      toast.info('Alternative title removed.');
     },
     [formData.alternativeTitles, onFieldChange]
   );
