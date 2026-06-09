@@ -33,6 +33,7 @@ import { DetailsTab } from '@/components/title/tabs/DetailsTab';
 import { ReadTab } from '@/components/title/tabs/ReadTab';
 import { GalleryTab } from '@/components/title/tabs/GalleryTab';
 import { CharactersTab } from '@/components/title/tabs/CharactersTab';
+import { ReviewsTab } from '@/components/title/tabs/ReviewsTab';
 import { NewsTab } from '@/components/title/tabs/NewsTab';
 import { useUIStore } from '@/stores/useUIStore';
 import { TIER_CONFIG } from '@/types/title';
@@ -40,13 +41,14 @@ import type { Title } from '@/types/title';
 
 // ── Tab config ────────────────────────────────────────────────
 
-type TabId = 'details' | 'read' | 'gallery' | 'characters' | 'news';
+type TabId = 'details' | 'read' | 'gallery' | 'characters' | 'reviews' | 'news';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'details',    label: 'Details',    icon: Info },
   { id: 'read',       label: 'Read',       icon: BookMarked },
   { id: 'gallery',    label: 'Gallery',    icon: Images },
   { id: 'characters', label: 'Characters', icon: Users2 },
+  { id: 'reviews',    label: 'Reviews',    icon: Star },
   { id: 'news',       label: 'News',       icon: Newspaper },
 ];
 
@@ -63,7 +65,7 @@ function TabBar({
     <div
       role="tablist"
       aria-label="Title sections"
-      className="flex gap-0 overflow-x-auto scrollbar-none border-b border-white/5"
+      className="flex gap-2 overflow-x-auto scrollbar-none border-b border-white/10 pb-[-1px] mb-6"
     >
       {TABS.map(({ id, label, icon: Icon }) => {
         const isActive = activeTab === id;
@@ -75,20 +77,22 @@ function TabBar({
             aria-controls={`tabpanel-${id}`}
             onClick={() => onChange(id)}
             className={cn(
-              'relative flex items-center gap-1.5 px-3 py-3 shrink-0',
-              'font-heading text-[11px] uppercase tracking-widest',
-              'transition-colors duration-150',
+              'relative flex items-center gap-2 px-4 py-3 shrink-0',
+              'font-heading text-xs uppercase tracking-widest rounded-t-lg',
+              'transition-all duration-300',
               'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-              isActive ? 'text-accent-primary' : 'text-text-tertiary hover:text-text-secondary',
+              isActive 
+                ? 'text-accent-primary bg-white/5 shadow-[inset_0_-2px_0_var(--color-accent-primary)]' 
+                : 'text-text-tertiary hover:text-text-secondary hover:bg-white/5',
             )}
           >
-            <Icon size={12} aria-hidden="true" />
+            <Icon size={14} aria-hidden="true" className={cn("transition-transform duration-300", isActive && "scale-110")} />
             {label}
             {isActive && (
               <motion.span
                 layoutId="tab-indicator"
-                className="absolute inset-x-0 -bottom-px h-px bg-accent-primary"
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                className="absolute inset-x-0 bottom-0 h-0.5 bg-accent-primary rounded-t-sm shadow-[0_0_8px_var(--color-accent-primary)]"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
           </button>
@@ -126,7 +130,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
         cross-browser issues.
       */}
       <div
-        className="relative overflow-hidden md:pt-16"
+        className="relative overflow-hidden -mt-14 md:-mt-16"
         style={{
           height: 'clamp(220px, 36vw, 360px)',
           isolation: 'isolate',
@@ -164,24 +168,6 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
           aria-hidden="true"
         />
 
-        {/* ── Back button — overlaid top-left on banner ──────── */}
-        <div className="absolute top-4 md:top-[4.5rem] left-0 right-0 container-content z-raised">
-          <Link
-            href="/library"
-            className={cn(
-              'inline-flex items-center gap-1.5',
-              'font-heading text-xs uppercase tracking-widest',
-              'text-white/90 hover:text-white transition-colors',
-              'bg-black/25 hover:bg-black/40 backdrop-blur-sm',
-              'px-3 py-1.5 rounded-lg',
-              'focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2',
-            )}
-            aria-label="Back to Library"
-          >
-            <ArrowLeft size={13} aria-hidden="true" />
-            Library
-          </Link>
-        </div>
       </div>
 
       {/* ── Cover + title info — overlaps banner by ~50% ───── */}
@@ -191,9 +177,21 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
         clamp(90px, 16vw, 160px) = ~50% of banner height.
       */}
       <div
-        className="container-content pb-6 relative z-raised"
+        className="container-content pb-6 relative z-raised flex flex-col gap-5 md:gap-6"
         style={{ marginTop: 'calc(clamp(90px, 16vw, 160px) * -1)' }}
       >
+        {/* ── Breadcrumb Navigation ──────── */}
+        <nav aria-label="Breadcrumb" className="inline-flex items-center gap-2 font-heading text-[10px] uppercase tracking-[0.2em] text-white/60 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-10 w-full mb-1">
+          <Link
+            href="/library"
+            className="hover:text-white transition-colors duration-200 flex items-center gap-1.5 group"
+          >
+            <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+            Library
+          </Link>
+          <span className="text-white/30">/</span>
+          <span className="text-white/90 truncate max-w-[150px] md:max-w-[300px]">{title.titleEnglish}</span>
+        </nav>
 
         {/* ── MOBILE layout: centered stack ──────────────────── */}
         <div className="flex flex-col items-center text-center md:hidden gap-4">
@@ -242,9 +240,26 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               {title.titleEnglish}
             </h1>
             {(title.titleOriginal || (title.titleAlternative && title.titleAlternative.length > 0)) && (
-              <p className="font-body text-xs text-text-tertiary leading-relaxed">
-                {[title.titleOriginal, ...(title.titleAlternative ?? [])].filter(Boolean).join(', ')}
-              </p>
+              <div className="flex flex-col gap-1 mt-2 text-left w-full max-w-sm">
+                {title.titleEnglish && (
+                  <p className="font-body text-[11px] text-text-tertiary">
+                    <span className="font-heading uppercase tracking-widest text-white/40 mr-2">English</span>
+                    {title.titleEnglish}
+                  </p>
+                )}
+                {title.titleOriginal && (
+                  <p className="font-body text-[11px] text-text-tertiary">
+                    <span className="font-heading uppercase tracking-widest text-white/40 mr-2">Original</span>
+                    {title.titleOriginal}
+                  </p>
+                )}
+                {title.titleAlternative && title.titleAlternative.length > 0 && (
+                  <p className="font-body text-[11px] text-text-tertiary">
+                    <span className="font-heading uppercase tracking-widest text-white/40 mr-2">Alternative</span>
+                    {title.titleAlternative.join(', ')}
+                  </p>
+                )}
+              </div>
             )}
           </motion.div>
 
@@ -289,13 +304,13 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
             </div>
           </motion.div>
 
-          {/* Synopsis */}
+          {/* Synopsis (Moved below title area) */}
           {title.synopsis && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.4 }}
-              className="font-body text-sm text-text-secondary leading-relaxed max-w-sm text-left"
+              className="font-body text-sm text-text-secondary leading-relaxed max-w-sm text-left mt-2"
             >
               {title.synopsis}
             </motion.p>
@@ -332,17 +347,7 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               />
             </div>
 
-            {/* Synopsis — below cover on desktop */}
-            {title.synopsis && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-                className="font-body text-xs text-text-secondary leading-relaxed"
-              >
-                {title.synopsis}
-              </motion.p>
-            )}
+            {/* Synopsis moved away from here */}
           </motion.div>
 
           {/* Right column: origin → title → alt titles → pills → read */}
@@ -365,13 +370,42 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
               {title.titleEnglish}
             </motion.h1>
             {(title.titleOriginal || (title.titleAlternative && title.titleAlternative.length > 0)) && (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25, duration: 0.4 }}
-                className="font-body text-sm text-text-tertiary leading-relaxed"
+                className="flex flex-col gap-1.5 mt-2"
               >
-                {[title.titleOriginal, ...(title.titleAlternative ?? [])].filter(Boolean).join(', ')}
+                {title.titleEnglish && (
+                  <p className="font-body text-xs text-text-tertiary">
+                    <span className="font-heading text-[10px] uppercase tracking-widest text-white/40 mr-2">English</span>
+                    {title.titleEnglish}
+                  </p>
+                )}
+                {title.titleOriginal && (
+                  <p className="font-body text-xs text-text-tertiary">
+                    <span className="font-heading text-[10px] uppercase tracking-widest text-white/40 mr-2">Original</span>
+                    {title.titleOriginal}
+                  </p>
+                )}
+                {title.titleAlternative && title.titleAlternative.length > 0 && (
+                  <p className="font-body text-xs text-text-tertiary">
+                    <span className="font-heading text-[10px] uppercase tracking-widest text-white/40 mr-2">Alternative</span>
+                    {title.titleAlternative.join(', ')}
+                  </p>
+                )}
+              </motion.div>
+            )}
+
+            {/* Synopsis — moved to directly below title info */}
+            {title.synopsis && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                className="font-body text-sm text-text-secondary leading-relaxed mt-2 max-w-2xl"
+              >
+                {title.synopsis}
               </motion.p>
             )}
 
@@ -420,62 +454,34 @@ export function TitleDetailClient({ title }: TitleDetailClientProps) {
       <div className="container-content pb-8">
 
         {/* Desktop: two-column — tabs left, ratings right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
-
-          {/* Tab panel */}
-          <div>
+          {/* Tab panel — full width now since we moved ratings to Reviews tab */}
+          <div className="w-full">
             <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
             <div
               id={`tabpanel-${activeTab}`}
               role="tabpanel"
               aria-labelledby={`tab-${activeTab}`}
+              className="min-h-[400px]"
             >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: [0.0, 0.0, 0.2, 1.0] }}
+                  initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -16, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   {activeTab === 'details'    && <DetailsTab title={title} />}
                   {activeTab === 'read'       && <ReadTab links={title.externalLinks} />}
                   {activeTab === 'gallery'    && <GalleryTab titleId={title.id} />}
                   {activeTab === 'characters' && <CharactersTab titleId={title.id} />}
+                  {activeTab === 'reviews'    && <ReviewsTab title={title} />}
                   {activeTab === 'news'       && <NewsTab />}
                 </motion.div>
               </AnimatePresence>
             </div>
-
-            {/* Review — shown below tabs when on details */}
-            {activeTab === 'details' && title.review && (
-              <ScrollReveal>
-                <div className="mt-8 pt-8 border-t border-white/5">
-                  <ReviewSection
-                    review={title.review}
-                    vibeCheck={undefined}
-                    quotableLines={title.quotableLines}
-                  />
-                </div>
-              </ScrollReveal>
-            )}
           </div>
-
-          {/* Sidebar — ratings (desktop only) */}
-          <aside className="hidden lg:flex flex-col gap-6">
-            {title.ratings && (
-              <ScrollReveal>
-                <div className="flex flex-col gap-3 p-4 rounded-xl bg-surface-elevated/20 border border-white/5">
-                  <h2 className="font-heading text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
-                    Ratings
-                  </h2>
-                  <RatingDisplay ratings={title.ratings} />
-                </div>
-              </ScrollReveal>
-            )}
-          </aside>
-        </div>
 
         {/* ── Related titles — always at bottom ──────────────── */}
         <div className="mt-12 pt-8 border-t border-white/5">
