@@ -7,9 +7,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
-import { ArticleEditor } from '@/components/studio/ArticleEditor';
+import { ArticleEditor } from '@/components/studio/articles/ArticleEditor';
 import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
-import { studioCreateArticle } from '@/services/studio/studio-articles';
+import { studioCreateArticleCategory, studioCreateArticleTag } from '@/services/studio/studio-articles';
 import type { ArticleFormData } from '@/types/article';
 
 export const metadata: Metadata = {
@@ -106,6 +106,20 @@ async function createArticle(formData: ArticleFormData): Promise<void> {
   redirect(`/studio/articles/${slug}`);
 }
 
+async function createCategoryAction(name: string) {
+  'use server';
+  const user = await getServerUser();
+  if (!user) redirect('/studio/login');
+  return studioCreateArticleCategory(name);
+}
+
+async function createTagAction(name: string) {
+  'use server';
+  const user = await getServerUser();
+  if (!user) redirect('/studio/login');
+  return studioCreateArticleTag(name);
+}
+
 // ── Page component ──────────────────────────────────────────────
 
 export default async function StudioArticleNewPage() {
@@ -115,7 +129,7 @@ export default async function StudioArticleNewPage() {
   const [categories, tags] = await Promise.all([fetchCategories(), fetchTags()]);
 
   return (
-    <div className="container-content py-8 max-w-4xl">
+    <div className="container-content max-w-7xl py-8 md:py-10">
       {/* Breadcrumbs */}
       <Breadcrumbs
         items={[
@@ -126,19 +140,21 @@ export default async function StudioArticleNewPage() {
       />
 
       {/* Header */}
-      <div className="flex flex-col gap-1 mb-8">
-        <h1 className="font-heading text-2xl md:text-3xl font-bold text-text-primary">
+      <div className="mb-8 flex flex-col gap-2">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">
           New Article
         </h1>
-        <p className="font-body text-sm text-text-secondary">
-          Write and publish editorial content for your readers.
+        <p className="max-w-2xl text-sm leading-6 text-text-secondary">
+          Draft, schedule, and publish editorial coverage for the public news archive.
         </p>
       </div>
 
       {/* Editor */}
       <ArticleEditor
         mode="create"
-        onSave={createArticle}
+        saveAction={createArticle}
+        createCategoryAction={createCategoryAction}
+        createTagAction={createTagAction}
         categories={categories}
         tags={tags}
       />
