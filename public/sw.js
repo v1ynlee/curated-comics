@@ -62,8 +62,8 @@ self.addEventListener('fetch', (event) => {
   // Skip Supabase API calls — always network
   if (url.hostname.includes('supabase.co')) return;
 
-  // Skip admin routes — always network
-  if (url.pathname.startsWith('/admin')) return;
+  // Skip Studio routes — always network
+  if (url.pathname.startsWith('/studio')) return;
 
   // Skip API routes — always network
   if (url.pathname.startsWith('/api/')) return;
