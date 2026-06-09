@@ -81,6 +81,37 @@ export interface MoodAtmosphere {
   ambientAnimation?: string;
 }
 
+// ── Vibe Discovery ────────────────────────────────────────────
+
+export type VibeBadge = 'NEW' | 'TRENDING' | 'PEAK' | 'CURSED';
+
+export interface CoverPreview {
+  slug: string;
+  dominantColor: string;
+}
+
+/**
+ * Enriched mood with editorial metadata, derived stats from
+ * mood_discovery_stats view, and collage cover selection.
+ */
+export interface EnrichedMood extends Mood {
+  // Editorial columns (from moods table)
+  badge: VibeBadge | null;
+  featuredPriority: number;
+  featuredSlot: string | null;
+  featuredUntil: string | null;
+  popularityScore: number;
+  editorNote: string | null;
+  atmosphereConfig: Record<string, unknown>;
+  // Derived — computed from mood_discovery_stats view
+  titleCount: number;
+  lastTitleAddedAt: string | null;
+  titlesAddedThisMonth: number;
+  // Collage
+  collageCovers: CoverPreview[];
+  isManualCollage: boolean; // true = from mood_collage_covers, false = auto fallback
+}
+
 export interface ExternalLink {
   platform: ExternalPlatform;
   url: string;
