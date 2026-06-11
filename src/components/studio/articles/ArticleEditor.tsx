@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { DraftManagerModals } from '@/components/studio/DraftManagerModals';
 import { ArticleTiptapEditor } from '@/components/studio/editor/ArticleTiptapEditor';
 import { countWords, createExcerpt } from '@/components/studio/editor/markdown';
+import { useDraftManager } from '@/hooks/useDraftManager';
 import { toSlug } from '@/lib/utils/utils';
 import { getErrorMessage } from '@/lib/utils/toast';
-import type { ArticleFormData, PublicationState } from '@/types/article';
+import { canUseEditorialState, EDITORIAL_STATE_LABELS, validateArticleWorkflow } from '@/services/studio/article-workflow';
+import type { ArticleFormData, EditorialState, PublicationState } from '@/types/article';
 import { ArticleAdvancedPanel } from './ArticleAdvancedPanel';
 import { ArticleMetadataPanel } from './ArticleMetadataPanel';
 import { ArticlePublishingPanel } from './ArticlePublishingPanel';
 import { ArticleTitleCard } from './ArticleTitleCard';
+import { ArticleWorkflowPanel } from './ArticleWorkflowPanel';
 import { ALLOWED_IMAGE_TYPES, DEFAULT_FORM_DATA, MAX_IMAGE_SIZE } from './article-editor-constants';
 import type { ArticleEditorProps, CategoryOption, TagOption } from './article-editor-types';
 
@@ -26,6 +30,7 @@ export function ArticleEditor({
   tags = [],
 }: ArticleEditorProps) {
   const [formData, setFormData] = useState<ArticleFormData>(initialData ?? DEFAULT_FORM_DATA);
+  const [savedFormData, setSavedFormData] = useState<ArticleFormData>(initialData ?? DEFAULT_FORM_DATA);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>(categories);
   const [tagOptions, setTagOptions] = useState<TagOption[]>(tags);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -54,8 +59,31 @@ export function ArticleEditor({
   const wordCount = useMemo(() => countWords(formData.body), [formData.body]);
   const generatedExcerpt = useMemo(() => createExcerpt(formData.body), [formData.body]);
   const readingTimeMinutes = wordCount === 0 ? 0 : Math.ceil(wordCount / 200);
-  const canSave = Boolean(formData.title.trim() && formData.body.trim()) && !isSubmitting;
   const thumbnailPreviewUrl = thumbnailObjectUrl || (!thumbnailRemoved ? initialFeaturedImage?.url : null);
+  const workflowValidation = useMemo(() => validateArticleWorkflow({
+    ...formData,
+    excerpt: generatedExcerpt || formData.excerpt,
+    wordCount,
+    readingTimeMinutes,
+    hasFeaturedImage: Boolean(thumbnailPreviewUrl || pendingThumbnailFile),
+  }), [formData, generatedExcerpt, pendingThumbnailFile, readingTimeMinutes, thumbnailPreviewUrl, wordCount]);
+  const canSave = Boolean(formData.title.trim() && formData.body.trim()) && !isSubmitting;
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(savedFormData) || Boolean(pendingThumbnailFile) || thumbnailRemoved;
+  const draftManager = useDraftManager({
+    type: 'article',
+    key: mode === 'create' ? 'new' : articleSlug ?? 'unknown',
+    title: formData.title || 'Untitled article',
+    preview: formData.excerpt || generatedExcerpt || formData.body.slice(0, 180),
+    data: formData,
+    isDirty,
+    onRestore: (data) => {
+      setFormData(data);
+      setPendingThumbnailFile(null);
+      setThumbnailRemoved(false);
+      if (thumbnailObjectUrl) URL.revokeObjectURL(thumbnailObjectUrl);
+      setThumbnailObjectUrl(null);
+    },
+  });
 
   const toggleTag = useCallback((tagId: string) => {
     const tagName = tagOptions.find((tag) => tag.id === tagId)?.name ?? 'Tag';
@@ -136,10 +164,25 @@ export function ArticleEditor({
     return data.asset.id;
   }, [articleSlug, formData.featuredImageId, formData.title, pendingThumbnailFile]);
 
+  const changeEditorialState = useCallback((value: EditorialState) => {
+    if (!canUseEditorialState(value, workflowValidation)) {
+      const missing = workflowValidation.failedChecks.map((check) => check.label).join(', ');
+      toast.warning(`${EDITORIAL_STATE_LABELS[value]} is blocked.`, { description: missing });
+      return;
+    }
+    updateField('editorialState', value);
+    toast.info(`${EDITORIAL_STATE_LABELS[value]} selected.`);
+  }, [updateField, workflowValidation]);
+
   const handleSave = useCallback(async (publicationState?: PublicationState) => {
     setError(null);
 
     const targetState = publicationState ?? formData.publicationState;
+    const targetEditorialState: EditorialState = targetState === 'published'
+      ? 'published'
+      : targetState === 'scheduled'
+        ? 'scheduled'
+        : formData.editorialState;
     if (!formData.title.trim()) {
       const message = 'Add a title before saving.';
       setError(message);
@@ -156,6 +199,13 @@ export function ArticleEditor({
       const message = 'Choose a scheduled date first.';
       setError(message);
       toast.warning(message);
+      return;
+    }
+    if (!canUseEditorialState(targetEditorialState, workflowValidation)) {
+      const missing = workflowValidation.failedChecks.map((check) => check.label).join(', ');
+      const message = `${EDITORIAL_STATE_LABELS[targetEditorialState]} is blocked until the review checklist passes.`;
+      setError(message);
+      toast.warning(message, { description: missing });
       return;
     }
 
@@ -180,12 +230,20 @@ export function ArticleEditor({
         toast.loading('Saving article...', { id: toastId });
       }
 
-      await saveAction({
+      const savedData: ArticleFormData = {
         ...formData,
         excerpt: generatedExcerpt || undefined,
         featuredImageId,
         publicationState: targetState,
-      });
+        editorialState: targetEditorialState,
+      };
+
+      await saveAction(savedData);
+      setFormData(savedData);
+      setSavedFormData(savedData);
+      setPendingThumbnailFile(null);
+      setThumbnailRemoved(false);
+      draftManager.markClean();
       toast.success(
         targetState === 'published'
           ? 'Article published.'
@@ -201,7 +259,7 @@ export function ArticleEditor({
       setIsSubmitting(false);
       setIsUploading(false);
     }
-  }, [formData, generatedExcerpt, pendingThumbnailFile, saveAction, thumbnailRemoved, uploadPendingThumbnail]);
+  }, [draftManager, formData, generatedExcerpt, pendingThumbnailFile, saveAction, thumbnailRemoved, uploadPendingThumbnail, workflowValidation]);
 
   const handleCreateCategory = useCallback(async () => {
     if (!createCategoryAction) return;
@@ -310,6 +368,12 @@ export function ArticleEditor({
           onCreateTag={handleCreateTag}
         />
 
+        <ArticleWorkflowPanel
+          editorialState={formData.editorialState}
+          validation={workflowValidation}
+          onEditorialStateChange={changeEditorialState}
+        />
+
         <ArticleAdvancedPanel
           title={formData.title}
           excerpt={generatedExcerpt}
@@ -322,6 +386,18 @@ export function ArticleEditor({
           onSeoDescriptionChange={(value) => updateField('seoDescription', value)}
         />
       </aside>
+
+      <DraftManagerModals
+        draft={draftManager.draft}
+        showRecovery={draftManager.showRecovery}
+        showUnsaved={draftManager.showUnsaved}
+        onContinueDraft={draftManager.continueDraft}
+        onStartFresh={draftManager.startFresh}
+        onDeleteDraft={draftManager.deleteDraft}
+        onSaveDraft={draftManager.saveDraftAndContinue}
+        onDiscard={draftManager.discardAndContinue}
+        onCancel={draftManager.cancelNavigation}
+      />
     </div>
   );
 }
