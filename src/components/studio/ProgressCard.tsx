@@ -27,7 +27,10 @@ export interface ProgressCardProps {
   onCompletedDateChange: (value: string) => void;
   onLastReadDateChange: (value: string) => void;
   onSave: () => Promise<void>;
+  onCancel?: () => void;
   disabled?: boolean;
+  isDirty?: boolean;
+  isValid?: boolean;
 }
 
 // ── Shared styles ─────────────────────────────────────────────
@@ -56,14 +59,20 @@ export function ProgressCard({
   onCompletedDateChange,
   onLastReadDateChange,
   onSave,
+  onCancel,
   disabled,
+  isDirty = true,
+  isValid = true,
 }: ProgressCardProps) {
   return (
     <CardWrapper
       title="Progress"
       icon={<TrendingUp className="w-4 h-4" />}
       onSave={onSave}
+      onCancel={onCancel}
       disabled={disabled}
+      isDirty={isDirty}
+      isValid={isValid}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {/* Chapters Read */}
