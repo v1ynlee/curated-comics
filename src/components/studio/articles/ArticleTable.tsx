@@ -6,7 +6,9 @@ import { ArticleIdentity } from './ArticleIdentity';
 import { ArticleRowActionsMenu } from './ArticleRowActionsMenu';
 import { ArticleStateButton } from './ArticleStateButton';
 import type { ArticleActionHandlers } from './article-dashboard-types';
-import { formatDateTime } from './article-dashboard-utils';
+import { WORKFLOW_STATE_STYLES } from './article-dashboard-constants';
+import { formatDateTime, formatWorkflowState } from './article-dashboard-utils';
+import { cn } from '@/lib/utils/cn';
 
 interface ArticleTableProps extends ArticleActionHandlers {
   articles: StudioArticleRow[];
@@ -38,7 +40,8 @@ export function ArticleTable({
               <SelectionBox checked={allVisibleSelected} label="Select all visible articles" onChange={onToggleVisibleSelection} />
             </th>
             <th className="px-4 py-3 font-medium">Article</th>
-            <th className="w-32 px-4 py-3 font-medium">State</th>
+            <th className="w-32 px-4 py-3 font-medium">Publication</th>
+            <th className="w-40 px-4 py-3 font-medium">Workflow</th>
             <th className="w-36 px-4 py-3 font-medium">Category</th>
             <th className="w-40 px-4 py-3 font-medium">Created</th>
             <th className="w-40 px-4 py-3 font-medium">Updated</th>
@@ -65,6 +68,11 @@ export function ArticleTable({
               </td>
               <td className="px-4 py-4 align-top">
                 <ArticleStateButton article={article} pending={pendingKey === `state-${article.id}`} onClick={() => onToggleState(article)} />
+              </td>
+              <td className="px-4 py-4 align-top">
+                <span className={cn('inline-flex rounded-md border px-2 py-1 text-xs', WORKFLOW_STATE_STYLES[article.editorialState])}>
+                  {formatWorkflowState(article.editorialState)}
+                </span>
               </td>
               <td className="px-4 py-4 align-top text-xs text-text-secondary">
                 {article.categoryName ?? 'Unassigned'}
