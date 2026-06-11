@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { TitleEditor } from '@/components/studio/TitleEditor';
+import { logStudioActivity } from '@/services/studio/activity-log';
 import type { TitleFormData } from '@/types/studio';
 
 // ── Metadata ────────────────────────────────────────────────────
@@ -73,6 +74,21 @@ async function fetchTitleReview(titleId: string) {
   return data?.body ?? '';
 }
 
+async function fetchTitleCompletionSeed(titleId: string) {
+  const supabase = await createSupabaseServerClient();
+  const [creatorsResult, linksResult, galleryResult] = await Promise.all([
+    supabase.from('title_creators').select('title_id').eq('title_id', titleId).limit(1),
+    supabase.from('external_links').select('title_id').eq('title_id', titleId).limit(1),
+    supabase.from('title_gallery').select('title_id').eq('title_id', titleId).limit(1),
+  ]);
+
+  return {
+    creators: !creatorsResult.error && Boolean(creatorsResult.data?.length),
+    readingUrls: !linksResult.error && Boolean(linksResult.data?.length),
+    galleryAssets: !galleryResult.error && Boolean(galleryResult.data?.length),
+  };
+}
+
 async function fetchGenres() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -101,6 +117,12 @@ function createUpdateAction(titleId: string) {
     if (!user) redirect('/studio/login');
 
     const supabase = await createSupabaseServerClient();
+
+    const { data: existingTitle } = await supabase
+      .from('titles')
+      .select('title_english, origin, series_status, reading_status, tier, featured, hidden')
+      .eq('id', titleId)
+      .single();
 
     // Update the title row
     const { error: updateError } = await supabase
@@ -189,6 +211,34 @@ function createUpdateAction(titleId: string) {
       await supabase.from('reviews').delete().eq('title_id', titleId);
     }
 
+    await logStudioActivity({
+      eventType: !existingTitle?.hidden && formData.hidden ? 'TITLE_ARCHIVED' : 'TITLE_UPDATED',
+      entityType: 'title',
+      entityId: titleId,
+      entityName: formData.englishTitle,
+      metadata: {
+        oldValues: existingTitle ? {
+          title: existingTitle.title_english,
+          origin: existingTitle.origin,
+          tier: existingTitle.tier,
+          readingStatus: existingTitle.reading_status,
+          seriesStatus: existingTitle.series_status,
+          featured: existingTitle.featured,
+          hidden: existingTitle.hidden,
+        } : undefined,
+        newValues: {
+          title: formData.englishTitle,
+          origin: formData.origin,
+          tier: formData.tier,
+          readingStatus: formData.readingStatus,
+          seriesStatus: formData.seriesStatus,
+          featured: formData.featured,
+          hidden: formData.hidden,
+        },
+        changedFields: ['title', 'origin', 'tier', 'readingStatus', 'seriesStatus', 'featured', 'hidden'],
+      },
+    });
+
     redirect('/studio/titles');
   };
 }
@@ -211,10 +261,11 @@ export default async function StudioTitleEditPage({
   }
 
   // Fetch related data in parallel
-  const [titleGenres, titleMoods, review, genres, moods] = await Promise.all([
+  const [titleGenres, titleMoods, review, completionSeed, genres, moods] = await Promise.all([
     fetchTitleGenres(title.id),
     fetchTitleMoods(title.id),
     fetchTitleReview(title.id),
+    fetchTitleCompletionSeed(title.id),
     fetchGenres(),
     fetchMoods(),
   ]);
@@ -276,6 +327,7 @@ export default async function StudioTitleEditPage({
         onSave={updateTitle}
         genres={genres}
         moods={moods}
+        completionSeed={completionSeed}
       />
     </div>
   );
