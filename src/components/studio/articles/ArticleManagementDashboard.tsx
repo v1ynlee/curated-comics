@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { StatStrip } from '@/components/studio/dashboard/StatStrip';
 import { ArticleDashboardFilters } from '@/components/studio/filters/ArticleDashboardFilters';
 import { StudioNotice } from '@/components/studio/shared/StudioNotice';
-import type { PublicationState } from '@/types/article';
+import type { EditorialState, PublicationState } from '@/types/article';
 import type { StudioArticleRow } from '@/types/studio';
 import { ArticleCardList } from './ArticleCardList';
 import { ArticleDashboardHeader } from './ArticleDashboardHeader';
@@ -31,6 +31,7 @@ export function ArticleManagementDashboard({
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [stateFilter, setStateFilter] = useState<PublicationState | 'all'>('all');
+  const [workflowFilter, setWorkflowFilter] = useState<EditorialState | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>('all');
@@ -60,8 +61,10 @@ export function ArticleManagementDashboard({
   const stats = useMemo(() => [
     { label: 'Total', value: articles.length },
     { label: 'Published', value: articles.filter((article) => article.publicationState === 'published').length },
-    { label: 'Drafts', value: articles.filter((article) => article.publicationState === 'draft').length },
-    { label: 'Scheduled', value: articles.filter((article) => article.publicationState === 'scheduled').length },
+    { label: 'Needs Edit', value: articles.filter((article) => article.editorialState === 'needs_edit').length },
+    { label: 'Ready Review', value: articles.filter((article) => article.editorialState === 'ready_for_review').length },
+    { label: 'Approved', value: articles.filter((article) => article.editorialState === 'approved').length },
+    { label: 'Scheduled', value: articles.filter((article) => article.editorialState === 'scheduled').length },
     { label: 'Featured', value: articles.filter((article) => article.featured).length },
   ], [articles]);
 
@@ -70,6 +73,7 @@ export function ArticleManagementDashboard({
     return articles
       .filter((article) => {
         if (stateFilter !== 'all' && article.publicationState !== stateFilter) return false;
+        if (workflowFilter !== 'all' && article.editorialState !== workflowFilter) return false;
         if (categoryFilter !== 'all' && article.categorySlug !== categoryFilter) return false;
         if (tagFilter !== 'all' && !article.tagSlugs.includes(tagFilter)) return false;
         if (featuredFilter === 'featured' && !article.featured) return false;
@@ -94,7 +98,7 @@ export function ArticleManagementDashboard({
         if (sortKey === 'publish-desc') return Date.parse(b.publishDate ?? '0') - Date.parse(a.publishDate ?? '0');
         return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
       });
-  }, [articles, categoryFilter, featuredFilter, query, sortKey, stateFilter, tagFilter]);
+  }, [articles, categoryFilter, featuredFilter, query, sortKey, stateFilter, tagFilter, workflowFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -102,7 +106,7 @@ export function ArticleManagementDashboard({
   const visibleIds = visibleArticles.map((article) => article.id);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
   const hasFilters = Boolean(
-    query || stateFilter !== 'all' || categoryFilter !== 'all' || tagFilter !== 'all' || featuredFilter !== 'all',
+    query || stateFilter !== 'all' || workflowFilter !== 'all' || categoryFilter !== 'all' || tagFilter !== 'all' || featuredFilter !== 'all',
   );
 
   function resetPage() {
@@ -112,6 +116,7 @@ export function ArticleManagementDashboard({
   function clearFilters() {
     setQuery('');
     setStateFilter('all');
+    setWorkflowFilter('all');
     setCategoryFilter('all');
     setTagFilter('all');
     setFeaturedFilter('all');
@@ -259,6 +264,7 @@ export function ArticleManagementDashboard({
       <ArticleDashboardFilters
         query={query}
         stateFilter={stateFilter}
+        workflowFilter={workflowFilter}
         categoryFilter={categoryFilter}
         tagFilter={tagFilter}
         featuredFilter={featuredFilter}
@@ -274,6 +280,10 @@ export function ArticleManagementDashboard({
         }}
         onStateChange={(value) => {
           setStateFilter(value);
+          resetPage();
+        }}
+        onWorkflowChange={(value) => {
+          setWorkflowFilter(value);
           resetPage();
         }}
         onCategoryChange={(value) => {
