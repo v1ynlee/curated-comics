@@ -1,4 +1,4 @@
-import type { PublicationState } from '@/types/article';
+import type { EditorialState, PublicationState } from '@/types/article';
 import type { StudioArticleRow } from '@/types/studio';
 
 export type ServerResult = Promise<{ success: boolean; error?: string }>;
@@ -26,3 +26,4 @@ export interface ArticleActionHandlers {
 }
 
 export type ArticleStateOption = { value: PublicationState | 'all'; label: string };
+export type ArticleWorkflowOption = { value: EditorialState | 'all'; label: string };
