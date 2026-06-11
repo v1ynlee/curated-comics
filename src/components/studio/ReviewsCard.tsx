@@ -25,6 +25,9 @@ export interface ReviewsCardProps {
   onReviewHtmlChange: (html: string) => void;
   onUnreviewedChange: (checked: boolean) => void;
   onSave: () => Promise<void>;
+  onCancel?: () => void;
+  isDirty?: boolean;
+  isValid?: boolean;
 }
 
 // ── Tab type ──────────────────────────────────────────────────
@@ -39,6 +42,9 @@ export function ReviewsCard({
   onReviewHtmlChange,
   onUnreviewedChange,
   onSave,
+  onCancel,
+  isDirty = true,
+  isValid = true,
 }: ReviewsCardProps) {
   const [activeTab, setActiveTab] = useState<ReviewTab>('editor');
 
@@ -47,7 +53,9 @@ export function ReviewsCard({
       title="Review"
       icon={<FileText className="w-4 h-4" />}
       onSave={onSave}
-      disabled={isUnreviewed}
+      onCancel={onCancel}
+      isDirty={isDirty}
+      isValid={isValid}
     >
       {/* "Mark as unreviewed" checkbox */}
       <div className="mb-4">
