@@ -6,6 +6,7 @@
 
 import { createSupabaseServerClient } from '@/lib/db/supabase-server';
 import { toSlug } from '@/lib/utils/utils';
+import { logStudioActivity } from '@/services/studio/activity-log';
 import type { ArticleFormData } from '@/types/article';
 import type { StudioArticleRow } from '@/types/studio';
 
@@ -29,6 +30,16 @@ function countWords(body: string): number {
   return body.split(/\s+/).filter((token) => token.length > 0).length;
 }
 
+async function fetchArticleActivityContext(id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('articles')
+    .select('title, publication_state, editorial_state, scheduled_date, featured')
+    .eq('id', id)
+    .single();
+  return data;
+}
+
 // ── Service Functions ─────────────────────────────────────────
 
 /**
@@ -47,6 +58,7 @@ export async function studioFetchAllArticles(): Promise<StudioArticleRow[]> {
       subtitle,
       excerpt,
       publication_state,
+      editorial_state,
       publish_date,
       scheduled_date,
       word_count,
@@ -90,6 +102,7 @@ export async function studioFetchAllArticles(): Promise<StudioArticleRow[]> {
       subtitle: (row.subtitle as string) ?? null,
       excerpt: (row.excerpt as string) ?? null,
       publicationState: row.publication_state as StudioArticleRow['publicationState'],
+      editorialState: (row.editorial_state as StudioArticleRow['editorialState']) ?? 'draft',
       publishDate: (row.publish_date as string) ?? null,
       scheduledDate: (row.scheduled_date as string) ?? null,
       categoryId: category?.id ?? null,
@@ -132,6 +145,7 @@ export async function studioCreateArticle(data: ArticleFormData): Promise<string
       featured_image_id: data.featuredImageId ?? null,
       category_id: data.categoryId ?? null,
       publication_state: data.publicationState,
+      editorial_state: data.editorialState,
       scheduled_date: data.scheduledDate ?? null,
       seo_title: data.seoTitle ?? null,
       seo_description: data.seoDescription ?? null,
@@ -227,6 +241,7 @@ export async function studioUpdateArticle(
   if (data.featuredImageId !== undefined) updatePayload.featured_image_id = data.featuredImageId ?? null;
   if (data.categoryId !== undefined) updatePayload.category_id = data.categoryId ?? null;
   if (data.publicationState !== undefined) updatePayload.publication_state = data.publicationState;
+  if (data.editorialState !== undefined) updatePayload.editorial_state = data.editorialState;
   if (data.scheduledDate !== undefined) updatePayload.scheduled_date = data.scheduledDate ?? null;
   if (data.seoTitle !== undefined) updatePayload.seo_title = data.seoTitle ?? null;
   if (data.seoDescription !== undefined) updatePayload.seo_description = data.seoDescription ?? null;
@@ -265,16 +280,30 @@ export async function studioUpdateArticle(
  */
 export async function studioArchiveArticle(id: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
+  const existing = await fetchArticleActivityContext(id);
 
   const { error } = await supabase
     .from('articles')
     .update({
       publication_state: 'archived',
+      editorial_state: 'archived',
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);
 
   if (error) throw new Error(`studioArchiveArticle: ${error.message}`);
+
+  await logStudioActivity({
+    eventType: 'ARTICLE_UPDATED',
+    entityType: 'article',
+    entityId: id,
+    entityName: existing?.title ?? null,
+    metadata: {
+      oldValues: { publicationState: existing?.publication_state ?? null, editorialState: existing?.editorial_state ?? null },
+      newValues: { publicationState: 'archived', editorialState: 'archived' },
+      changedFields: ['publicationState', 'editorialState'],
+    },
+  });
 }
 
 export async function studioSetArticlePublicationState(
@@ -282,12 +311,14 @@ export async function studioSetArticlePublicationState(
   publicationState: StudioArticleRow['publicationState'],
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
+  const existing = await fetchArticleActivityContext(id);
   const payload: Record<string, unknown> = {
     publication_state: publicationState,
     updated_at: new Date().toISOString(),
   };
 
   if (publicationState === 'published') {
+    payload.editorial_state = 'published';
     payload.publish_date = new Date().toISOString();
     payload.scheduled_date = null;
   } else if (publicationState !== 'scheduled') {
@@ -300,10 +331,31 @@ export async function studioSetArticlePublicationState(
     .eq('id', id);
 
   if (error) throw new Error(`studioSetArticlePublicationState: ${error.message}`);
+
+  await logStudioActivity({
+    eventType: publicationState === 'published' ? 'ARTICLE_PUBLISHED' : publicationState === 'scheduled' ? 'ARTICLE_SCHEDULED' : 'ARTICLE_UPDATED',
+    entityType: 'article',
+    entityId: id,
+    entityName: existing?.title ?? null,
+    metadata: {
+      oldValues: {
+        publicationState: existing?.publication_state ?? null,
+        editorialState: existing?.editorial_state ?? null,
+        scheduledDate: existing?.scheduled_date ?? null,
+      },
+      newValues: {
+        publicationState,
+        editorialState: publicationState === 'published' ? 'published' : existing?.editorial_state ?? null,
+        scheduledDate: publicationState === 'scheduled' ? existing?.scheduled_date ?? null : null,
+      },
+      changedFields: publicationState === 'published' ? ['publicationState', 'editorialState', 'scheduledDate'] : ['publicationState', 'scheduledDate'],
+    },
+  });
 }
 
 export async function studioSetArticleFeatured(id: string, featured: boolean): Promise<void> {
   const supabase = await createSupabaseServerClient();
+  const existing = await fetchArticleActivityContext(id);
 
   const { error } = await supabase
     .from('articles')
@@ -311,6 +363,18 @@ export async function studioSetArticleFeatured(id: string, featured: boolean): P
     .eq('id', id);
 
   if (error) throw new Error(`studioSetArticleFeatured: ${error.message}`);
+
+  await logStudioActivity({
+    eventType: 'ARTICLE_UPDATED',
+    entityType: 'article',
+    entityId: id,
+    entityName: existing?.title ?? null,
+    metadata: {
+      oldValues: { featured: existing?.featured ?? null },
+      newValues: { featured },
+      changedFields: ['featured'],
+    },
+  });
 }
 
 export async function studioBulkUpdateArticles(
@@ -343,9 +407,12 @@ export async function studioBulkUpdateArticles(
   };
 
   if (operation === 'published') {
+    payload.editorial_state = 'published';
     payload.publish_date = new Date().toISOString();
     payload.scheduled_date = null;
   } else {
+    if (operation === 'archived') payload.editorial_state = 'archived';
+    if (operation === 'draft') payload.editorial_state = 'draft';
     payload.scheduled_date = null;
   }
 
