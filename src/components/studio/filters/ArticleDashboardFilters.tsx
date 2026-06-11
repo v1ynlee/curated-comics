@@ -2,13 +2,14 @@
 
 import { Search, X } from 'lucide-react';
 import { StudioSelect } from '@/components/studio/shared/StudioSelect';
-import type { PublicationState } from '@/types/article';
+import type { EditorialState, PublicationState } from '@/types/article';
 import type { FeaturedFilter, SortKey } from '@/components/studio/articles/article-dashboard-types';
-import { FEATURED_OPTIONS, SORT_OPTIONS, STATUS_OPTIONS } from '@/components/studio/articles/article-dashboard-constants';
+import { FEATURED_OPTIONS, SORT_OPTIONS, STATUS_OPTIONS, WORKFLOW_OPTIONS } from '@/components/studio/articles/article-dashboard-constants';
 
 interface ArticleDashboardFiltersProps {
   query: string;
   stateFilter: PublicationState | 'all';
+  workflowFilter: EditorialState | 'all';
   categoryFilter: string;
   tagFilter: string;
   featuredFilter: FeaturedFilter;
@@ -20,6 +21,7 @@ interface ArticleDashboardFiltersProps {
   hasFilters: boolean;
   onQueryChange: (value: string) => void;
   onStateChange: (value: PublicationState | 'all') => void;
+  onWorkflowChange: (value: EditorialState | 'all') => void;
   onCategoryChange: (value: string) => void;
   onTagChange: (value: string) => void;
   onFeaturedChange: (value: FeaturedFilter) => void;
@@ -30,6 +32,7 @@ interface ArticleDashboardFiltersProps {
 export function ArticleDashboardFilters({
   query,
   stateFilter,
+  workflowFilter,
   categoryFilter,
   tagFilter,
   featuredFilter,
@@ -41,6 +44,7 @@ export function ArticleDashboardFilters({
   hasFilters,
   onQueryChange,
   onStateChange,
+  onWorkflowChange,
   onCategoryChange,
   onTagChange,
   onFeaturedChange,
@@ -49,7 +53,7 @@ export function ArticleDashboardFilters({
 }: ArticleDashboardFiltersProps) {
   return (
     <div className="mb-4 rounded-lg border border-white/10 bg-bg-surface/40 p-3" role="search" aria-label="Filter articles">
-      <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(5,minmax(150px,190px))]">
+      <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,180px))]">
         <div className="relative min-w-0">
           <Search
             size={16}
@@ -77,7 +81,8 @@ export function ArticleDashboardFilters({
           )}
         </div>
 
-        <StudioSelect label="State" value={stateFilter} options={STATUS_OPTIONS} prefixLabel hideLabel onChange={onStateChange} buttonClassName="min-h-[42px]" />
+        <StudioSelect label="Publication" value={stateFilter} options={STATUS_OPTIONS} prefixLabel hideLabel onChange={onStateChange} buttonClassName="min-h-[42px]" />
+        <StudioSelect label="Workflow" value={workflowFilter} options={WORKFLOW_OPTIONS} prefixLabel hideLabel onChange={onWorkflowChange} buttonClassName="min-h-[42px]" />
         <StudioSelect label="Category" value={categoryFilter} options={categoryOptions} prefixLabel hideLabel onChange={onCategoryChange} buttonClassName="min-h-[42px]" />
         <StudioSelect label="Tag" value={tagFilter} options={tagOptions} prefixLabel hideLabel onChange={onTagChange} buttonClassName="min-h-[42px]" />
         <StudioSelect label="Pin" value={featuredFilter} options={FEATURED_OPTIONS} prefixLabel hideLabel onChange={onFeaturedChange} buttonClassName="min-h-[42px]" />
