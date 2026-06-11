@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { Plus, Search, Users } from 'lucide-react';
 import { CreatorModal } from '@/components/studio/creators/CreatorModal';
@@ -55,6 +56,15 @@ function Avatar({ creator }: { creator: StudioCreator }) {
         </span>
       )}
     </span>
+  );
+}
+
+function CreatorMobileField({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 font-heading text-[11px] text-text-tertiary md:hidden">{label}</p>
+      <div className={className}>{children}</div>
+    </div>
   );
 }
 
@@ -177,16 +187,28 @@ export function CreatorManagementDashboard({ initialCreators, titleOptions }: Cr
                     {creator.description && <p className="mt-0.5 line-clamp-1 font-body text-xs text-text-tertiary">{creator.description}</p>}
                   </div>
                 </div>
-                <span className="font-body text-xs capitalize text-text-secondary">{creator.type}</span>
-                <span className="font-data text-xs text-text-secondary">{creator.title_count}</span>
-                <span className={cn('font-body text-xs capitalize', creator.status === 'archived' ? 'text-text-tertiary' : 'text-emerald-400')}>{creator.status}</span>
-                <span className="font-body text-xs text-text-tertiary">{formatDate(creator.updated_at)}</span>
-                <ActionMenu items={[
-                  { label: 'Edit', tone: 'edit', onSelect: () => setModal({ mode: 'edit', type: creator.type, creator }) },
-                  { label: 'Preview', tone: 'preview', onSelect: () => window.open(`/creators/${creator.slug}`, '_blank') },
-                  { label: creator.status === 'archived' ? 'Restore' : 'Archive', tone: 'archive', onSelect: () => archiveCreator(creator) },
-                  { label: 'Delete', tone: 'delete', onSelect: () => removeCreator(creator) },
-                ]} />
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:contents">
+                  <CreatorMobileField label="Type" className="font-body text-xs capitalize text-text-secondary">
+                    {creator.type}
+                  </CreatorMobileField>
+                  <CreatorMobileField label="Related titles" className="font-data text-xs text-text-secondary">
+                    {creator.title_count}
+                  </CreatorMobileField>
+                  <CreatorMobileField label="Status" className={cn('font-body text-xs capitalize', creator.status === 'archived' ? 'text-text-tertiary' : 'text-emerald-400')}>
+                    {creator.status}
+                  </CreatorMobileField>
+                  <CreatorMobileField label="Updated" className="font-body text-xs text-text-tertiary">
+                    {formatDate(creator.updated_at)}
+                  </CreatorMobileField>
+                  <div className="col-span-2 flex justify-end md:col-span-1 md:block">
+                    <ActionMenu items={[
+                      { label: 'Edit', tone: 'edit', onSelect: () => setModal({ mode: 'edit', type: creator.type, creator }) },
+                      { label: 'Preview', tone: 'preview', onSelect: () => window.open(`/creators/${creator.slug}`, '_blank') },
+                      { label: creator.status === 'archived' ? 'Restore' : 'Archive', tone: 'archive', onSelect: () => archiveCreator(creator) },
+                      { label: 'Delete', tone: 'delete', onSelect: () => removeCreator(creator) },
+                    ]} />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
