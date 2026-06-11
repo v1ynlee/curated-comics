@@ -27,6 +27,7 @@ interface ArticleRow {
   featured_image_id: string | null;
   category_id: string | null;
   publication_state: string;
+  editorial_state?: string | null;
   publish_date: string | null;
   scheduled_date: string | null;
   featured: boolean;
@@ -142,6 +143,7 @@ function mapArticle(row: ArticleRow): Article {
     category: category,
     tags,
     publicationState: row.publication_state as Article['publicationState'],
+    editorialState: (row.editorial_state ?? row.publication_state) as Article['editorialState'],
     publishDate: row.publish_date,
     scheduledDate: row.scheduled_date,
     featured: row.featured,
