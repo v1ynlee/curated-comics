@@ -19,6 +19,9 @@ export interface SettingsCardProps {
   onFeaturedChange: (checked: boolean) => void;
   onHiddenChange: (checked: boolean) => void;
   onSave: () => Promise<void>;
+  onCancel?: () => void;
+  isDirty?: boolean;
+  isValid?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -29,12 +32,18 @@ export function SettingsCard({
   onFeaturedChange,
   onHiddenChange,
   onSave,
+  onCancel,
+  isDirty = true,
+  isValid = true,
 }: SettingsCardProps) {
   return (
     <CardWrapper
       title="Settings"
       icon={<Settings className="w-4 h-4" />}
       onSave={onSave}
+      onCancel={onCancel}
+      isDirty={isDirty}
+      isValid={isValid}
     >
       <div className="flex flex-col gap-4">
         <AnimatedCheckbox
