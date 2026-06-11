@@ -9,6 +9,8 @@ import { redirect, notFound } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { ArticleEditor } from '@/components/studio/articles/ArticleEditor';
 import { studioCreateArticleCategory, studioCreateArticleTag } from '@/services/studio/studio-articles';
+import { logStudioActivity } from '@/services/studio/activity-log';
+import { canUseEditorialState, validateArticleWorkflow } from '@/services/studio/article-workflow';
 import type { ArticleFormData } from '@/types/article';
 
 // ── Metadata ────────────────────────────────────────────────────
@@ -48,6 +50,7 @@ async function fetchArticle(slug: string) {
       featured_image_id,
       category_id,
       publication_state,
+      editorial_state,
       publish_date,
       scheduled_date,
       featured,
@@ -104,32 +107,44 @@ function createUpdateAction(articleId: string, currentSlug: string) {
 
     const supabase = await createSupabaseServerClient();
 
+    const { data: existingArticle } = await supabase
+      .from('articles')
+      .select('title, subtitle, excerpt, publication_state, editorial_state, publish_date, scheduled_date, category_id')
+      .eq('id', articleId)
+      .single();
+
     // Calculate word count and reading time
     const wordCount = formData.body
       .split(/\s+/)
       .filter((token) => token.length > 0).length;
     const readingTimeMinutes = wordCount === 0 ? 0 : Math.ceil(wordCount / 200);
+    const workflowValidation = validateArticleWorkflow({
+      ...formData,
+      wordCount,
+      readingTimeMinutes,
+      hasFeaturedImage: Boolean(formData.featuredImageId),
+    });
+
+    if (!canUseEditorialState(formData.editorialState, workflowValidation)) {
+      throw new Error(`Article is not ready for ${formData.editorialState.replace(/_/g, ' ')}: ${workflowValidation.failedChecks.map((check) => check.label).join(', ')}.`);
+    }
 
     // Determine publish_date based on state transition
     let publishDate: string | null = null;
     if (formData.publicationState === 'published') {
       // If transitioning to published, set publish_date to now (unless already set)
-      const { data: existing } = await supabase
-        .from('articles')
-        .select('publish_date, publication_state')
-        .eq('id', articleId)
-        .single();
-
-      if (existing?.publication_state === 'published' && existing?.publish_date) {
+      if (existingArticle?.publication_state === 'published' && existingArticle?.publish_date) {
         // Keep existing publish date
-        publishDate = existing.publish_date;
-      } else if (formData.scheduledDate && existing?.publication_state === 'scheduled') {
+        publishDate = existingArticle.publish_date;
+      } else if (formData.scheduledDate && existingArticle?.publication_state === 'scheduled') {
         // Publishing a scheduled article — use scheduled_date as publish_date
         publishDate = formData.scheduledDate;
       } else {
         publishDate = new Date().toISOString();
       }
     }
+
+    const nextScheduledDate = formData.publicationState === 'scheduled' ? (formData.scheduledDate ?? null) : null;
 
     // Update article row
     const { error: updateError } = await supabase
@@ -142,11 +157,9 @@ function createUpdateAction(articleId: string, currentSlug: string) {
         featured_image_id: formData.featuredImageId ?? null,
         category_id: formData.categoryId ?? null,
         publication_state: formData.publicationState,
+        editorial_state: formData.editorialState,
         publish_date: publishDate,
-        scheduled_date:
-          formData.publicationState === 'scheduled'
-            ? (formData.scheduledDate ?? null)
-            : null,
+        scheduled_date: nextScheduledDate,
         seo_title: formData.seoTitle ?? null,
         seo_description: formData.seoDescription ?? null,
         word_count: wordCount,
@@ -175,6 +188,42 @@ function createUpdateAction(articleId: string, currentSlug: string) {
         console.error('Failed to update tag assignments:', tagError);
       }
     }
+
+    const eventType = existingArticle?.publication_state !== formData.publicationState && formData.publicationState === 'published'
+      ? 'ARTICLE_PUBLISHED'
+      : existingArticle?.publication_state !== formData.publicationState && formData.publicationState === 'scheduled'
+        ? 'ARTICLE_SCHEDULED'
+        : 'ARTICLE_UPDATED';
+
+    await logStudioActivity({
+      eventType,
+      entityType: 'article',
+      entityId: articleId,
+      entityName: formData.title,
+      metadata: {
+        oldValues: existingArticle ? {
+          title: existingArticle.title,
+          subtitle: existingArticle.subtitle,
+          excerpt: existingArticle.excerpt,
+          publicationState: existingArticle.publication_state,
+          editorialState: existingArticle.editorial_state,
+          scheduledDate: existingArticle.scheduled_date,
+          categoryId: existingArticle.category_id,
+        } : undefined,
+        newValues: {
+          title: formData.title,
+          subtitle: formData.subtitle ?? null,
+          excerpt: formData.excerpt ?? null,
+          publicationState: formData.publicationState,
+          editorialState: formData.editorialState,
+          scheduledDate: nextScheduledDate,
+          categoryId: formData.categoryId ?? null,
+          wordCount,
+          readingTimeMinutes,
+        },
+        changedFields: ['title', 'subtitle', 'excerpt', 'publicationState', 'editorialState', 'scheduledDate', 'categoryId', 'wordCount', 'readingTimeMinutes'],
+      },
+    });
 
     redirect(`/studio/articles/${currentSlug}`);
   };
@@ -228,6 +277,7 @@ export default async function StudioArticleEditPage({
     categoryId: article.category_id ?? undefined,
     tagIds,
     publicationState: article.publication_state,
+    editorialState: article.editorial_state ?? article.publication_state ?? 'draft',
     scheduledDate: article.scheduled_date ?? undefined,
     seoTitle: article.seo_title ?? undefined,
     seoDescription: article.seo_description ?? undefined,
