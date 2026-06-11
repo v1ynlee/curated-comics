@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // ============================================================
 // FeaturedSection — cinematic featured titles showcase
@@ -7,22 +7,21 @@
 // Source of truth: docs/design/UI_UX_DIRECTION.md
 // ============================================================
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { TitleCard } from '@/components/library/TitleCard';
-import { TitleCardSkeleton } from '@/components/ui/Skeleton';
-import { Button } from '@/components/ui/Button';
-import { useFeaturedTitles } from '@/hooks/useTitles';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { cn } from '@/lib/utils/cn';
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { TitleCard } from "@/components/library/TitleCard";
+import { TitleCardSkeleton } from "@/components/ui/Skeleton";
+import { Button } from "@/components/ui/Button";
+import { useFeaturedTitles } from "@/hooks/useTitles";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { cn } from "@/lib/utils/cn";
 
 export function FeaturedSection() {
   const { data: titles, isLoading, error } = useFeaturedTitles(6);
   const prefersReduced = usePrefersReducedMotion();
 
   const hasTitles = !isLoading && titles && titles.length > 0;
-  const heroTitle = hasTitles ? titles[0] : null;
   const remainingTitles = hasTitles ? titles.slice(1) : [];
 
   return (
@@ -74,32 +73,23 @@ export function FeaturedSection() {
           className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: "-80px" }}
           variants={{
             hidden: {},
             visible: { transition: { staggerChildren: 0.08 } },
           }}
         >
-          {/* Hero title — spans 2 cols and 2 rows on larger screens */}
-          {heroTitle && (
-            <motion.div
-              className="col-span-2 row-span-2"
-              variants={{
-                hidden: { opacity: 0, y: prefersReduced ? 0 : 24, filter: prefersReduced ? 'none' : 'blur(6px)' },
-                visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
-              }}
-            >
-              <TitleCard title={heroTitle} index={0} featured className="h-full" />
-            </motion.div>
-          )}
-
           {/* Remaining titles — standard size */}
           {remainingTitles.map((title, i) => (
             <motion.div
               key={title.id}
               variants={{
                 hidden: { opacity: 0, y: prefersReduced ? 0 : 16 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+                },
               }}
             >
               <TitleCard title={title} index={i + 1} />
@@ -109,7 +99,8 @@ export function FeaturedSection() {
       ) : (
         <div className="state-empty">
           <p className="font-body text-text-secondary">
-            Featured titles are being curated. Explore the full library in the meantime.
+            Featured titles are being curated. Explore the full library in the
+            meantime.
           </p>
           <Button variant="secondary" size="md" asChild>
             <Link href="/library">Browse Library</Link>
