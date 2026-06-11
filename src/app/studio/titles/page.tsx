@@ -15,6 +15,7 @@ import { TIER_CONFIG } from '@/types/title';
 import type { TierLevel, Origin, SeriesStatus, ReadingStatus } from '@/types/title';
 import { CoverImage } from '@/components/ui/CoverImage';
 import { TitleFilters } from '@/components/studio/TitleFilters';
+import { calculateTitleCompletion, completionTone, type TitleCompletionResult } from '@/services/studio/title-completion';
 
 export const metadata: Metadata = {
   title: 'Titles',
@@ -36,7 +37,11 @@ interface TitleRow {
   dominant_color: string | null;
   featured: boolean;
   hidden: boolean;
+  synopsis: string | null;
+  completion: TitleCompletionResult;
 }
+
+interface RelationRow { title_id: string }
 
 interface PageProps {
   searchParams: Promise<{
@@ -45,6 +50,7 @@ interface PageProps {
     status?: string;
     reading?: string;
     origin?: string;
+    sort?: string;
   }>;
 }
 
@@ -56,13 +62,14 @@ async function fetchTitles(filters: {
   status?: string;
   reading?: string;
   origin?: string;
+  sort?: string;
 }) {
   const supabase = await createSupabaseServerClient();
 
   let query = supabase
     .from('titles')
     .select(
-      'id, slug, title_english, title_original, origin, series_status, reading_status, tier, cover_slug, dominant_color, featured, hidden',
+      'id, slug, title_english, title_original, origin, series_status, reading_status, tier, cover_slug, dominant_color, synopsis, featured, hidden',
     )
     .order('updated_at', { ascending: false });
 
@@ -90,7 +97,46 @@ async function fetchTitles(filters: {
     return [];
   }
 
-  return (data ?? []) as TitleRow[];
+  const titles = (data ?? []) as Omit<TitleRow, 'completion'>[];
+  const titleIds = titles.map((title) => title.id);
+  if (titleIds.length === 0) return [];
+
+  const [genresResult, moodsResult, creatorsResult, linksResult, reviewsResult, galleryResult] = await Promise.all([
+    supabase.from('title_genres').select('title_id').in('title_id', titleIds),
+    supabase.from('title_moods').select('title_id').in('title_id', titleIds),
+    supabase.from('title_creators').select('title_id').in('title_id', titleIds),
+    supabase.from('external_links').select('title_id').in('title_id', titleIds),
+    supabase.from('reviews').select('title_id').in('title_id', titleIds),
+    supabase.from('title_gallery').select('title_id').in('title_id', titleIds),
+  ]);
+
+  const setFrom = (rows: unknown) => new Set(((rows ?? []) as RelationRow[]).map((row) => row.title_id));
+  const genres = setFrom(genresResult.data);
+  const moods = setFrom(moodsResult.data);
+  const creators = setFrom(creatorsResult.data);
+  const links = setFrom(linksResult.data);
+  const reviews = setFrom(reviewsResult.data);
+  const gallery = setFrom(galleryResult.data);
+
+  const withCompletion = titles.map((title) => ({
+    ...title,
+    completion: calculateTitleCompletion({
+      coverSlug: title.cover_slug,
+      synopsis: title.synopsis,
+      genresCount: genres.has(title.id) ? 1 : 0,
+      moodsCount: moods.has(title.id) ? 1 : 0,
+      creatorsCount: creators.has(title.id) ? 1 : 0,
+      readingUrlsCount: links.has(title.id) ? 1 : 0,
+      hasReview: reviews.has(title.id),
+      tier: title.tier,
+      galleryAssetsCount: gallery.has(title.id) ? 1 : 0,
+      hidden: title.hidden,
+    }),
+  }));
+
+  if (filters.sort === 'completion-asc') return withCompletion.sort((a, b) => a.completion.score - b.completion.score);
+  if (filters.sort === 'completion-desc') return withCompletion.sort((a, b) => b.completion.score - a.completion.score);
+  return withCompletion;
 }
 
 // ── Page component ──────────────────────────────────────────────
@@ -145,11 +191,11 @@ export default async function StudioTitlesPage({ searchParams }: PageProps) {
             <Search size={24} className="text-text-tertiary" aria-hidden="true" />
           </div>
           <p className="font-body text-sm text-text-secondary max-w-xs">
-            {params.q || params.tier || params.status || params.reading || params.origin
+            {params.q || params.tier || params.status || params.reading || params.origin || params.sort
               ? 'No titles match your current filters. Try adjusting your search.'
               : 'No titles yet. Add your first title to get started.'}
           </p>
-          {!params.q && !params.tier && !params.status && !params.reading && !params.origin && (
+          {!params.q && !params.tier && !params.status && !params.reading && !params.origin && !params.sort && (
             <Link
               href="/studio/titles/new"
               className="font-heading text-sm text-accent-primary hover:text-accent-primary/80 transition-colors"
@@ -218,6 +264,11 @@ function TitleCard({ title }: { title: TitleRow }) {
           rounded={false}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         />
+
+        {/* Featured badge */}
+        <span className={cn('absolute right-1.5 top-1.5 rounded-md border px-2 py-1 font-data text-[10px]', completionTone(title.completion.score))}>
+          {title.completion.score}%
+        </span>
 
         {/* Featured badge */}
         {title.featured && (
