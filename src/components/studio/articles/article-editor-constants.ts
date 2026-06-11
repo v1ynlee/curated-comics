@@ -1,4 +1,5 @@
-import type { ArticleFormData, PublicationState } from '@/types/article';
+import type { ArticleFormData, EditorialState, PublicationState } from '@/types/article';
+import { EDITORIAL_STATE_LABELS, EDITORIAL_STATE_ORDER } from '@/services/studio/article-workflow';
 
 export const PUBLICATION_STATE_OPTIONS: { value: PublicationState; label: string }[] = [
   { value: 'draft', label: 'Draft' },
@@ -6,6 +7,11 @@ export const PUBLICATION_STATE_OPTIONS: { value: PublicationState; label: string
   { value: 'published', label: 'Published' },
   { value: 'archived', label: 'Archived' },
 ];
+
+export const EDITORIAL_STATE_OPTIONS: { value: EditorialState; label: string }[] = EDITORIAL_STATE_ORDER.map((value) => ({
+  value,
+  label: EDITORIAL_STATE_LABELS[value],
+}));
 
 export const DEFAULT_FORM_DATA: ArticleFormData = {
   title: '',
@@ -16,6 +22,7 @@ export const DEFAULT_FORM_DATA: ArticleFormData = {
   categoryId: undefined,
   tagIds: [],
   publicationState: 'draft',
+  editorialState: 'draft',
   scheduledDate: undefined,
   seoTitle: '',
   seoDescription: '',
