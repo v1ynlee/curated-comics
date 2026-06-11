@@ -6,8 +6,8 @@ import { SelectionBox } from '@/components/studio/shared/SelectionBox';
 import { ArticleIdentity } from './ArticleIdentity';
 import { ArticleRowActionsMenu } from './ArticleRowActionsMenu';
 import type { ArticleActionHandlers } from './article-dashboard-types';
-import { STATE_STYLES } from './article-dashboard-constants';
-import { formatDateTime, formatState } from './article-dashboard-utils';
+import { STATE_STYLES, WORKFLOW_STATE_STYLES } from './article-dashboard-constants';
+import { formatDateTime, formatState, formatWorkflowState } from './article-dashboard-utils';
 
 interface ArticleCardListProps extends ArticleActionHandlers {
   articles: StudioArticleRow[];
@@ -45,6 +45,9 @@ export function ArticleCardList({
           <div className="grid gap-2 text-xs text-text-tertiary sm:grid-cols-2">
             <span className={cn('w-fit rounded-md border px-2 py-1', STATE_STYLES[article.publicationState])}>
               {formatState(article.publicationState)}
+            </span>
+            <span className={cn('w-fit rounded-md border px-2 py-1', WORKFLOW_STATE_STYLES[article.editorialState])}>
+              {formatWorkflowState(article.editorialState)}
             </span>
             <span>{article.categoryName ?? 'Unassigned'}</span>
             <span>Created {formatDateTime(article.createdAt)}</span>
