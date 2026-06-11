@@ -8,7 +8,6 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { TIER_CONFIG } from '@/types/title';
@@ -42,17 +41,13 @@ export function TitleFilters() {
   const currentStatus = searchParams.get('status') ?? '';
   const currentReading = searchParams.get('reading') ?? '';
   const currentOrigin = searchParams.get('origin') ?? '';
+  const currentSort = searchParams.get('sort') ?? '';
 
-  const hasFilters = !!(currentQuery || currentTier || currentStatus || currentReading || currentOrigin);
+  const hasFilters = !!(currentQuery || currentTier || currentStatus || currentReading || currentOrigin || currentSort);
 
   // Local search input state for debouncing
   const [searchValue, setSearchValue] = useState(currentQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Sync local search state when URL changes externally
-  useEffect(() => {
-    setSearchValue(currentQuery);
-  }, [currentQuery]);
 
   // Update URL params without full page reload
   const updateParams = useCallback(
@@ -232,6 +227,24 @@ export function TitleFilters() {
               {label}
             </option>
           ))}
+        </select>
+
+        {/* Completion sort */}
+        <select
+          value={currentSort}
+          onChange={handleSelectChange('sort')}
+          className={cn(
+            'min-h-[44px] px-3 py-2.5 rounded-lg shrink-0',
+            'bg-bg-deep/60 border border-white/10',
+            'font-body text-sm text-text-primary',
+            'focus:outline-none focus:border-accent-primary/50',
+            'transition-colors duration-150',
+          )}
+          aria-label="Sort by completion"
+        >
+          <option value="">Recent Updates</option>
+          <option value="completion-desc">Highest Completion</option>
+          <option value="completion-asc">Lowest Completion</option>
         </select>
 
         {/* Clear filters button */}
