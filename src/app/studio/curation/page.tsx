@@ -2,20 +2,21 @@
 // Studio Curation Page — editorial control center
 // ============================================================
 
-import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { getServerUser } from '@/lib/db/supabase-server';
-import { CurationInterface } from './CurationInterface';
-import { fetchFeaturedCurationData } from './data';
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getServerUser } from "@/lib/db/supabase-server";
+import { CurationInterface } from "./CurationInterface";
+import { fetchFeaturedCurationData } from "./data";
 
 export const metadata: Metadata = {
-  title: 'Curation',
-  description: 'Manage editorial curation across homepage, discover, creators, and tiers.',
+  title: "Curation",
+  description:
+    "Manage editorial curation across homepage, discover, creators, and tiers.",
 };
 
 export default async function StudioCurationPage() {
   const user = await getServerUser();
-  if (!user) redirect('/studio/login');
+  if (!user) redirect("/studio/login");
 
   const featuredData = await fetchFeaturedCurationData();
 
@@ -26,7 +27,8 @@ export default async function StudioCurationPage() {
           Curation
         </h1>
         <p className="max-w-2xl font-body text-sm leading-relaxed text-text-secondary">
-          Manage editorial presentation for homepage features, discover themes, creator exposure, and tier organization.
+          Manage editorial presentation for homepage features, discover themes,
+          creator exposure, and tier organization.
         </p>
       </header>
 
