@@ -10,6 +10,8 @@ import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-ser
 import { ArticleEditor } from '@/components/studio/articles/ArticleEditor';
 import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
 import { studioCreateArticleCategory, studioCreateArticleTag } from '@/services/studio/studio-articles';
+import { logStudioActivity } from '@/services/studio/activity-log';
+import { canUseEditorialState, validateArticleWorkflow } from '@/services/studio/article-workflow';
 import type { ArticleFormData } from '@/types/article';
 
 export const metadata: Metadata = {
@@ -62,6 +64,16 @@ async function createArticle(formData: ArticleFormData): Promise<void> {
     .split(/\s+/)
     .filter((token) => token.length > 0).length;
   const readingTimeMinutes = wordCount === 0 ? 0 : Math.ceil(wordCount / 200);
+  const workflowValidation = validateArticleWorkflow({
+    ...formData,
+    wordCount,
+    readingTimeMinutes,
+    hasFeaturedImage: Boolean(formData.featuredImageId),
+  });
+
+  if (!canUseEditorialState(formData.editorialState, workflowValidation)) {
+    throw new Error(`Article is not ready for ${formData.editorialState.replace(/_/g, ' ')}: ${workflowValidation.failedChecks.map((check) => check.label).join(', ')}.`);
+  }
 
   // Insert article row
   const { data: articleData, error: articleError } = await supabase
@@ -75,6 +87,7 @@ async function createArticle(formData: ArticleFormData): Promise<void> {
       featured_image_id: formData.featuredImageId ?? null,
       category_id: formData.categoryId ?? null,
       publication_state: formData.publicationState,
+      editorial_state: formData.editorialState,
       publish_date: publishDate,
       scheduled_date: formData.scheduledDate ?? null,
       seo_title: formData.seoTitle ?? null,
@@ -82,7 +95,7 @@ async function createArticle(formData: ArticleFormData): Promise<void> {
       word_count: wordCount,
       reading_time_minutes: readingTimeMinutes,
     })
-    .select('id')
+    .select('id, title')
     .single();
 
   if (articleError) {
@@ -102,6 +115,25 @@ async function createArticle(formData: ArticleFormData): Promise<void> {
       console.error('Failed to insert tag assignments:', tagError);
     }
   }
+
+  await logStudioActivity({
+    eventType: 'ARTICLE_CREATED',
+    entityType: 'article',
+    entityId: articleId,
+    entityName: articleData.title,
+    metadata: {
+      newValues: {
+        slug,
+        title: formData.title,
+        publicationState: formData.publicationState,
+        editorialState: formData.editorialState,
+        scheduledDate: formData.scheduledDate ?? null,
+        wordCount,
+        readingTimeMinutes,
+      },
+      changedFields: ['title', 'publicationState', 'editorialState', 'scheduledDate', 'wordCount', 'readingTimeMinutes'],
+    },
+  });
 
   redirect(`/studio/articles/${slug}`);
 }
