@@ -39,6 +39,7 @@ export function MobileNav() {
 
   const isStudio = pathname.startsWith('/studio');
   const navItems = isStudio ? STUDIO_NAV_ITEMS : PUBLIC_NAV_ITEMS;
+  const shouldShow = visible;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,7 +62,7 @@ export function MobileNav() {
 
   return (
     <AnimatePresence>
-      {visible && (
+      {shouldShow && (
         <motion.nav
           role="navigation"
           aria-label={isStudio ? 'Studio' : 'Main'}
@@ -77,22 +78,22 @@ export function MobileNav() {
             'pb-safe',
           )}
         >
-          <ul
-            className="flex items-center justify-around px-2 h-16"
-            role="list"
-          >
+          <div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <ul
+              className="flex h-16 min-w-max items-center gap-1 px-2"
+              role="list"
+            >
             {navItems.map(({ href, label, exact, icon }) => {
               const Icon = NAV_ICONS[icon];
               const isActive = exact
                 ? pathname === href
                 : pathname.startsWith(href);
               return (
-                <li key={href} className="flex-1">
+                <li key={href} className="shrink-0">
                   <Link
                     href={href}
                     className={cn(
-                      'flex flex-col items-center gap-1 py-2 px-1',
-                      'min-h-[44px] min-w-[44px]',
+                      'flex min-h-[44px] min-w-[64px] flex-col items-center gap-1 px-2 py-2',
                       'rounded-sm transition-colors duration-150',
                       'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
                       isActive
@@ -109,7 +110,8 @@ export function MobileNav() {
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </div>
         </motion.nav>
       )}
     </AnimatePresence>
