@@ -11,7 +11,7 @@ export function ArticleIdentity({ article }: ArticleIdentityProps) {
   return (
     <div className="flex min-w-0 gap-3">
       <div
-        className="relative mt-0.5 hidden h-14 w-20 shrink-0 overflow-hidden rounded-md bg-bg-mid sm:block"
+        className="relative mt-0.5 h-12 w-16 shrink-0 overflow-hidden rounded-md bg-bg-mid sm:h-14 sm:w-20"
         style={{ backgroundColor: article.featuredImageColor ?? undefined }}
       >
         {article.featuredImageUrl && (
@@ -19,17 +19,17 @@ export function ArticleIdentity({ article }: ArticleIdentityProps) {
             src={article.featuredImageUrl}
             alt=""
             fill
-            sizes="80px"
+            sizes="(max-width: 640px) 64px, 80px"
             className="object-cover"
             unoptimized
           />
         )}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <Link
             href={`/studio/articles/${article.slug}`}
-            className="truncate font-medium text-text-primary transition-colors duration-150 hover:text-accent-primary"
+            className="min-w-0 truncate font-medium text-text-primary transition-colors duration-150 hover:text-accent-primary"
           >
             {article.title}
           </Link>
