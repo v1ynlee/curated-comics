@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { TitleEditor } from '@/components/studio/TitleEditor';
 import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
+import { logStudioActivity } from '@/services/studio/activity-log';
 import type { TitleFormData } from '@/types/studio';
 
 export const metadata: Metadata = {
@@ -76,7 +77,7 @@ async function createTitle(formData: TitleFormData): Promise<void> {
       hidden: formData.hidden,
       cover_slug: formData.coverImageId ? slug : null,
     })
-    .select('id')
+    .select('id, title_english')
     .single();
 
   if (titleError) {
@@ -130,6 +131,24 @@ async function createTitle(formData: TitleFormData): Promise<void> {
       console.error('Failed to insert review:', reviewError);
     }
   }
+
+  await logStudioActivity({
+    eventType: 'TITLE_CREATED',
+    entityType: 'title',
+    entityId: titleId,
+    entityName: title.title_english,
+    metadata: {
+      newValues: {
+        slug,
+        title: formData.englishTitle,
+        origin: formData.origin,
+        tier: formData.tier,
+        readingStatus: formData.readingStatus,
+        seriesStatus: formData.seriesStatus,
+      },
+      changedFields: ['title', 'origin', 'tier', 'readingStatus', 'seriesStatus'],
+    },
+  });
 
   redirect(`/studio/titles/${slug}`);
 }
