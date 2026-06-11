@@ -7,7 +7,7 @@ import { ArticleRowActionsMenu } from './ArticleRowActionsMenu';
 import { ArticleStateButton } from './ArticleStateButton';
 import type { ArticleActionHandlers } from './article-dashboard-types';
 import { WORKFLOW_STATE_STYLES } from './article-dashboard-constants';
-import { formatDateTime, formatWorkflowState } from './article-dashboard-utils';
+import { articleCategoryTone, formatDateTime, formatWorkflowState } from './article-dashboard-utils';
 import { cn } from '@/lib/utils/cn';
 
 interface ArticleTableProps extends ArticleActionHandlers {
@@ -75,7 +75,9 @@ export function ArticleTable({
                 </span>
               </td>
               <td className="px-4 py-4 align-top text-xs text-text-secondary">
-                {article.categoryName ?? 'Unassigned'}
+                <span className={cn('inline-flex max-w-full rounded-md border px-2 py-1', articleCategoryTone(article.categoryName, article.categorySlug))}>
+                  <span className="truncate">{article.categoryName ?? 'Unassigned'}</span>
+                </span>
               </td>
               <td className="px-4 py-4 align-top font-data text-xs text-text-tertiary">
                 {formatDateTime(article.createdAt)}
