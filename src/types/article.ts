@@ -6,6 +6,7 @@
 import type { MediaAsset } from './media';
 
 export type PublicationState = 'draft' | 'scheduled' | 'published' | 'archived';
+export type EditorialState = 'draft' | 'needs_edit' | 'ready_for_review' | 'approved' | 'scheduled' | 'published' | 'archived';
 
 export interface Article {
   id: string;
@@ -18,6 +19,7 @@ export interface Article {
   category: ArticleCategory | null;
   tags: ArticleTag[];
   publicationState: PublicationState;
+  editorialState: EditorialState;
   publishDate: string | null;
   scheduledDate: string | null;
   featured: boolean;
@@ -67,6 +69,7 @@ export interface ArticleFormData {
   categoryId?: string;
   tagIds: string[];
   publicationState: PublicationState;
+  editorialState: EditorialState;
   scheduledDate?: string;
   seoTitle?: string;
   seoDescription?: string;
