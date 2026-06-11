@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Sun, Moon, ArrowLeft, User, LogOut,
-  LayoutDashboard, BookOpen, FileText, Image as ImageIcon, Star, Home, UsersRound,
+  LayoutDashboard, BookOpen, FileText, Image as ImageIcon, Star, Home, UsersRound, History, ListChecks,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -30,6 +30,8 @@ const NAV_ICONS: Record<NavIconKey, LucideIcon> = {
   users: UsersRound,
   file: FileText,
   image: ImageIcon,
+  history: History,
+  tasks: ListChecks,
 };
 
 // ── User Menu Component ───────────────────────────────────────
