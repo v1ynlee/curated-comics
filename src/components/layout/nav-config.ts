@@ -3,7 +3,7 @@
 // Pure static data to keep SSR and CSR navigation output aligned.
 // ============================================================
 
-export type NavIconKey = 'home' | 'book' | 'search' | 'star' | 'dashboard' | 'users' | 'file' | 'image';
+export type NavIconKey = 'home' | 'book' | 'search' | 'star' | 'dashboard' | 'users' | 'file' | 'image' | 'history' | 'tasks';
 
 export interface NavItemConfig {
   href: string;
@@ -25,8 +25,12 @@ export const PUBLIC_NAV_ITEMS: readonly NavItemConfig[] = [
 
 export const STUDIO_NAV_ITEMS: readonly NavItemConfig[] = [
   { href: '/studio', label: 'Dashboard', exact: true, title: 'Overview, stats, and recent activity', icon: 'dashboard' },
+  { href: '/studio/tasks', label: 'Tasks', exact: false, title: 'Process unresolved editorial work in one queue', icon: 'tasks' },
   { href: '/studio/titles', label: 'Titles', exact: false, title: 'Manage your manga, manhwa, and manhua collection', icon: 'book' },
+  { href: '/studio/creators', label: 'Creators', exact: false, title: 'Manage authors, artists, studios, and title relationships', icon: 'users' },
   { href: '/studio/articles', label: 'Articles', exact: false, title: 'Write and manage editorial content', icon: 'file' },
   { href: '/studio/media', label: 'Media', exact: false, title: 'Upload and organize images and assets', icon: 'image' },
   { href: '/studio/curation', label: 'Curation', exact: false, title: 'Featured content, themes, creators, and tiers', icon: 'star' },
+  { href: '/studio/qa', label: 'QA', exact: false, title: 'Audit missing, draft, and broken editorial content', icon: 'search' },
+  { href: '/studio/activity', label: 'Activity', exact: false, title: 'Review editorial activity and audit metadata', icon: 'history' },
 ] as const;
