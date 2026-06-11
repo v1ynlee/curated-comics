@@ -1,4 +1,5 @@
-import type { PublicationState } from '@/types/article';
+import { EDITORIAL_STATE_LABELS } from '@/services/studio/article-workflow';
+import type { EditorialState, PublicationState } from '@/types/article';
 
 export function formatDateTime(value: string | null, fallback = 'No date') {
   if (!value) return fallback;
@@ -16,6 +17,10 @@ export function formatDateTime(value: string | null, fallback = 'No date') {
 
 export function formatState(value: PublicationState) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function formatWorkflowState(value: EditorialState) {
+  return EDITORIAL_STATE_LABELS[value];
 }
 
 export function buildFormData(values: Record<string, string>) {
