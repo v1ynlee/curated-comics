@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, FileText, Home, Image as ImageIcon, LayoutDashboard, Search, Star, UsersRound, type LucideIcon } from 'lucide-react';
+import { BookOpen, FileText, History, Home, Image as ImageIcon, LayoutDashboard, ListChecks, Search, Star, UsersRound, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { PUBLIC_NAV_ITEMS, STUDIO_NAV_ITEMS, type NavIconKey } from './nav-config';
 
@@ -26,6 +26,8 @@ const NAV_ICONS: Record<NavIconKey, LucideIcon> = {
   users: UsersRound,
   file: FileText,
   image: ImageIcon,
+  history: History,
+  tasks: ListChecks,
 };
 
 // ── Component ─────────────────────────────────────────────────
