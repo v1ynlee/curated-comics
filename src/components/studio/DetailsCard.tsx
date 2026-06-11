@@ -11,7 +11,7 @@
 import { useCallback } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { FileText, Image as ImageIcon } from 'lucide-react';
+import { Check, FileText, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { CardWrapper } from '@/components/studio/CardWrapper';
 import { CustomDropdown } from '@/components/studio/CustomDropdown';
@@ -44,6 +44,11 @@ interface DetailsCardProps {
   previewSrc?: string | null;
   onCoverFileSelect?: (file: File | null) => void;
   onCoverUpload?: (asset: MediaAsset) => void;
+  onFillWithAI?: () => void;
+  aiState?: 'idle' | 'loading' | 'success';
+  isDirty?: boolean;
+  isValid?: boolean;
+  onCancel?: () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────
@@ -113,6 +118,11 @@ export function DetailsCard({
   previewSrc,
   onCoverFileSelect,
   onCoverUpload,
+  onFillWithAI,
+  aiState = 'idle',
+  isDirty = true,
+  isValid = true,
+  onCancel,
 }: DetailsCardProps) {
   // ── Alternative titles management ─────────────────────────
 
@@ -150,7 +160,26 @@ export function DetailsCard({
       title="Details"
       icon={<FileText className="w-4 h-4" />}
       onSave={onSave}
+      onCancel={onCancel}
       disabled={disabled}
+      isDirty={isDirty}
+      isValid={isValid}
+      actions={onFillWithAI ? (
+        <button
+          type="button"
+          onClick={onFillWithAI}
+          disabled={aiState === 'loading'}
+          className={cn(
+            'flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium',
+            'text-text-secondary transition-colors duration-150 hover:bg-white/5 hover:text-text-primary',
+            'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
+            aiState === 'loading' && 'cursor-wait opacity-70',
+          )}
+        >
+          {aiState === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : aiState === 'success' ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+          {aiState === 'loading' ? 'Searching...' : aiState === 'success' ? 'Completed' : 'Fill With AI'}
+        </button>
+      ) : undefined}
     >
       {/* ── Cover Image + Banner Preview ── */}
       <div className="mb-6 pb-6 border-b border-white/5">
