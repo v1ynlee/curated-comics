@@ -340,7 +340,7 @@ describe('ReviewsCard (Req 10.4, 10.5)', () => {
   });
 });
 
-// ── Req 10.7: "Mark as unreviewed" checkbox triggers disabled state ──
+// ── Req 10.7: "Mark as unreviewed" checkbox remains toggleable ──
 
 describe('ReviewsCard - Mark as unreviewed (Req 10.7)', () => {
   it('renders "Mark as unreviewed" checkbox', () => {
@@ -359,7 +359,7 @@ describe('ReviewsCard - Mark as unreviewed (Req 10.7)', () => {
     expect(screen.getByLabelText('Mark as unreviewed')).toBeInTheDocument();
   });
 
-  it('when checked, the card enters a disabled state', () => {
+  it('when checked, the card does not disable saving', () => {
     const { container } = render(
       <ReviewsCard
         review=""
@@ -372,10 +372,10 @@ describe('ReviewsCard - Mark as unreviewed (Req 10.7)', () => {
       />
     );
 
-    // The CardWrapper renders a <fieldset> that becomes disabled
     const fieldset = container.querySelector('fieldset');
     expect(fieldset).toBeInTheDocument();
-    expect(fieldset).toBeDisabled();
+    expect(fieldset).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /save review/i })).not.toBeDisabled();
   });
 
   it('when checked, shows a yellow warning message', () => {
