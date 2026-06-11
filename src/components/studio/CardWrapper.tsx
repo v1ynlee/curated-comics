@@ -22,7 +22,11 @@ export interface CardWrapperProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   onSave: () => Promise<void>;
+  onCancel?: () => void;
   disabled?: boolean;
+  isDirty?: boolean;
+  isValid?: boolean;
+  actions?: React.ReactNode;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -32,18 +36,24 @@ export function CardWrapper({
   icon,
   children,
   onSave,
+  onCancel,
   disabled: externalDisabled = false,
+  isDirty = true,
+  isValid = true,
+  actions,
 }: CardWrapperProps) {
   const [cardState, setCardState] = useState<CardState>('editing');
 
-  const isDisabled = cardState === 'saved' || cardState === 'saving' || externalDisabled;
+  const contentDisabled = cardState === 'saved' || cardState === 'saving' || externalDisabled;
+  const saveDisabled = contentDisabled || !isDirty || !isValid;
   const isSaving = cardState === 'saving';
   const isSaved = cardState === 'saved';
+  const showCancel = isSaved || isDirty;
 
   // ── Save handler ──────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
-    if (isDisabled) return;
+    if (saveDisabled) return;
 
     setCardState('saving');
     toast.loading(`Saving ${title.toLowerCase()}...`, { id: `card-${title}` });
@@ -56,25 +66,25 @@ export function CardWrapper({
       setCardState('editing');
       toast.error(error instanceof Error ? error.message : `${title} save failed.`, { id: `card-${title}` });
     }
-  }, [onSave, isDisabled, title]);
+  }, [onSave, saveDisabled, title]);
 
   // ── Cancel handler ────────────────────────────────────────
 
   const handleCancel = useCallback(() => {
+    onCancel?.();
     setCardState('editing');
-    toast.info(`${title} unlocked for editing.`);
-  }, [title]);
+    toast.info(`${title} changes restored.`);
+  }, [onCancel, title]);
 
   // ── Render ────────────────────────────────────────────────
 
   return (
     <fieldset
-      disabled={isDisabled}
       className={cn(
         'p-5 rounded-lg',
         'bg-bg-surface/40 border border-white/5',
         'transition-opacity duration-200',
-        isDisabled && 'opacity-70',
+        contentDisabled && 'opacity-70',
       )}
     >
       {/* Header row: icon + title + action buttons */}
@@ -89,8 +99,9 @@ export function CardWrapper({
         </legend>
 
         <div className="flex items-center gap-2">
-          {/* Cancel button — visible only in saved state */}
-          {isSaved && (
+          {actions}
+          {/* Cancel button — visible when there is state to restore */}
+          {showCancel && (
             <button
               type="button"
               onClick={handleCancel}
@@ -111,7 +122,8 @@ export function CardWrapper({
           <button
             type="button"
             onClick={handleSave}
-            disabled={isDisabled}
+            disabled={saveDisabled}
+            aria-disabled={saveDisabled}
             aria-label={`Save ${title}`}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium',
@@ -119,7 +131,7 @@ export function CardWrapper({
               'hover:bg-accent-primary/30',
               'transition-colors duration-150',
               'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
-              isDisabled && 'opacity-50 cursor-not-allowed',
+              saveDisabled && 'opacity-50 cursor-not-allowed',
             )}
           >
             {isSaving ? (
@@ -133,9 +145,9 @@ export function CardWrapper({
       </div>
 
       {/* Card content — children are disabled via fieldset when in saved/saving state */}
-      <div className={cn(isSaved && 'pointer-events-none select-none')}>
+      <fieldset disabled={contentDisabled} className={cn(isSaved && 'pointer-events-none select-none')}>
         {children}
-      </div>
+      </fieldset>
     </fieldset>
   );
 }
