@@ -25,6 +25,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Search, Trash2 } from 'lucide-react';
 import { CoverImage } from '@/components/ui/CoverImage';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { cn } from '@/lib/utils/cn';
 import { getErrorMessage, toast } from '@/lib/utils/toast';
 import {
@@ -160,7 +161,8 @@ function AssignTierTitleModal({ tier, titles, onClose, onAssign }: { tier: TierD
     .slice(0, 30);
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <ModalPortal>
+    <div className="fixed left-0 top-0 z-modal flex h-[100dvh] w-[100dvw] items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl rounded-lg border border-white/10 bg-bg-surface p-4 shadow-lg shadow-black/30">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="font-heading text-lg font-semibold text-text-primary">Assign Title to {tier.name}</h3>
@@ -182,6 +184,7 @@ function AssignTierTitleModal({ tier, titles, onClose, onAssign }: { tier: TierD
         </div>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }
 
