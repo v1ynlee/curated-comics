@@ -255,7 +255,7 @@ export function ArticleManagementDashboard({
   };
 
   return (
-    <div className="container-content max-w-7xl py-8 md:py-10">
+    <div className="container-content max-w-7xl min-w-0 py-8 md:py-10">
       <ArticleDashboardHeader />
       <StatStrip items={stats} className="mb-5" />
 
