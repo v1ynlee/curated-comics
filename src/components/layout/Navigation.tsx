@@ -181,7 +181,7 @@ export function Navigation() {
           transition={{ type: 'spring', stiffness: 350, damping: 30 }}
           className={cn(
             'fixed top-4 inset-x-4 md:inset-x-8 max-w-6xl mx-auto z-nav',
-            'hidden md:flex items-center justify-between',
+            'hidden md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-2',
             'px-4 h-14 rounded-full',
             'transition-all duration-300 ease-in-out',
             scrolled
@@ -192,12 +192,12 @@ export function Navigation() {
           )}
         >
           {/* Logo */}
-          <div className="flex items-center gap-4 pl-2">
+          <div className="flex min-w-0 items-center gap-3 pl-1">
             {isStudio && (
               <Link
                 href="/"
                 className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-full',
+                  'flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5',
                   'bg-surface-elevated/30 hover:bg-surface-elevated/60',
                   'text-text-tertiary hover:text-text-primary',
                   'transition-all duration-200',
@@ -212,7 +212,7 @@ export function Navigation() {
             <Link
               href={isStudio ? '/studio' : '/'}
               className={cn(
-                'font-heading font-bold text-lg tracking-wide',
+                'shrink-0 font-heading text-lg font-bold tracking-wide',
                 'hover:opacity-80 transition-opacity duration-200',
                 'focus-visible:outline-accent-primary',
               )}
@@ -223,8 +223,8 @@ export function Navigation() {
           </div>
 
           {/* Nav links */}
-         <nav role="navigation" aria-label={isStudio ? 'Studio' : 'Main'} className="absolute left-1/2 -translate-x-1/2">
-            <ul className="flex items-center gap-1" role="list">
+          <nav role="navigation" aria-label={isStudio ? 'Studio' : 'Main'} className="min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <ul className="flex min-w-max items-center justify-center gap-1" role="list">
               {navItems.map(({ href, label, exact, title, icon }) => {
                 const Icon = NAV_ICONS[icon];
                 const isActive = exact
@@ -236,7 +236,7 @@ export function Navigation() {
                       href={href}
                       title={title ?? undefined}
                       className={cn(
-                        'relative flex items-center gap-2 px-3.5 py-1.5 rounded-full',
+                         'relative flex items-center gap-1.5 rounded-md px-2.5 py-1.5 xl:gap-2 xl:px-3',
                         'font-body text-sm font-medium',
                         'transition-colors duration-200',
                         'focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2',
@@ -271,7 +271,7 @@ export function Navigation() {
           </nav>
 
           {/* Right actions */}
-          <div className="flex items-center gap-3 pr-1">
+           <div className="flex shrink-0 items-center gap-2 pr-1 xl:gap-3">
             {/* Search (public only) */}
             {!isStudio && (
               <Link
