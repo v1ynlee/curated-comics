@@ -9,6 +9,7 @@
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { toSlug } from '@/lib/utils/utils';
+import { logStudioActivity } from '@/services/studio/activity-log';
 import { fetchMoodThemesData, fetchTiersData } from './data';
 
 // ── Types ───────────────────────────────────────────────────────
@@ -308,9 +309,16 @@ export interface FeaturedNarrativeUpdate {
   title?: string;
   subtitle?: string | null;
   description?: string | null;
+  cover_slugs?: string[];
   display_order?: number;
   featured_weight?: number;
   visible?: boolean;
+}
+
+export interface FeaturedNarrativeInput {
+  title: string;
+  description: string;
+  cover_slugs: string[];
 }
 
 export interface FeaturedTitleUpdate {
@@ -391,9 +399,18 @@ export async function updateCurationSetting(key: CurationSettingKey, enabled: bo
   return { success: true };
 }
 
-export async function createFeaturedNarrative() {
+export async function createFeaturedNarrative(input: FeaturedNarrativeInput) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const title = input.title.trim();
+  const description = input.description.trim();
+  if (!title) return { success: false, error: 'Narrative title is required.' };
+  if (title.length > 120) return { success: false, error: 'Narrative title must be 120 characters or less.' };
+  if (!description) return { success: false, error: 'Narrative description is required.' };
+  if (input.cover_slugs.length < 4 || input.cover_slugs.length > 6) {
+    return { success: false, error: 'Select between 4 and 6 narrative titles.' };
+  }
 
   const { data: existing } = await supabase
     .from('featured_narratives')
@@ -406,15 +423,15 @@ export async function createFeaturedNarrative() {
   const { data, error } = await supabase
     .from('featured_narratives')
     .insert({
-      title: 'Untitled narrative',
-      subtitle: 'Draft subtitle',
-      description: 'Add the editorial setup for this homepage narrative.',
+      title,
+      subtitle: null,
+      description,
       cta_text: 'Explore',
       cta_href: '/discover',
-      cover_slugs: [],
+      cover_slugs: input.cover_slugs,
       display_order: displayOrder,
       featured_weight: 50,
-      visible: false,
+      visible: true,
     })
     .select('*')
     .single();
@@ -422,12 +439,53 @@ export async function createFeaturedNarrative() {
   if (error) return { success: false, error: error.message };
 
   revalidateCurationSurfaces();
+
+  await logStudioActivity({
+    eventType: 'NARRATIVE_CREATED',
+    entityType: 'narrative',
+    entityId: data.id,
+    entityName: data.title,
+    metadata: {
+      newValues: {
+        title,
+        description,
+        coverSlugs: input.cover_slugs,
+        displayOrder,
+      },
+      changedFields: ['title', 'description', 'coverSlugs', 'displayOrder'],
+    },
+  });
+
   return { success: true, data };
 }
 
 export async function updateFeaturedNarrative(id: string, update: FeaturedNarrativeUpdate) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
+  if (!id) return { success: false, error: 'Narrative id is required.' };
+
+  const { data: existing } = await supabase
+    .from('featured_narratives')
+    .select('title, description, cover_slugs, display_order, featured_weight, visible')
+    .eq('id', id)
+    .single();
+
+  if (update.title !== undefined) {
+    const title = update.title.trim();
+    if (!title) return { success: false, error: 'Narrative title is required.' };
+    if (title.length > 120) return { success: false, error: 'Narrative title must be 120 characters or less.' };
+    update.title = title;
+  }
+
+  if (update.description !== undefined) {
+    const description = update.description?.trim() ?? '';
+    if (!description) return { success: false, error: 'Narrative description is required.' };
+    update.description = description;
+  }
+
+  if (update.cover_slugs !== undefined && (update.cover_slugs.length < 4 || update.cover_slugs.length > 6)) {
+    return { success: false, error: 'Select between 4 and 6 narrative titles.' };
+  }
 
   const payload = {
     ...update,
@@ -442,6 +500,26 @@ export async function updateFeaturedNarrative(id: string, update: FeaturedNarrat
   if (error) return { success: false, error: error.message };
 
   revalidateCurationSurfaces();
+
+  await logStudioActivity({
+    eventType: 'NARRATIVE_UPDATED',
+    entityType: 'narrative',
+    entityId: id,
+    entityName: update.title ?? existing?.title ?? null,
+    metadata: {
+      oldValues: existing ? {
+        title: existing.title,
+        description: existing.description,
+        coverSlugs: existing.cover_slugs,
+        displayOrder: existing.display_order,
+        featuredWeight: existing.featured_weight,
+        visible: existing.visible,
+      } : undefined,
+      newValues: payload,
+      changedFields: Object.keys(payload).filter((key) => payload[key as keyof typeof payload] !== undefined),
+    },
+  });
+
   return { success: true };
 }
 
@@ -491,6 +569,12 @@ export async function deleteFeaturedNarrative(id: string) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
 
+  const { data: existing } = await supabase
+    .from('featured_narratives')
+    .select('title, description, cover_slugs')
+    .eq('id', id)
+    .single();
+
   const { error } = await supabase
     .from('featured_narratives')
     .delete()
@@ -499,6 +583,22 @@ export async function deleteFeaturedNarrative(id: string) {
   if (error) return { success: false, error: error.message };
 
   revalidateCurationSurfaces();
+
+  await logStudioActivity({
+    eventType: 'NARRATIVE_DELETED',
+    entityType: 'narrative',
+    entityId: id,
+    entityName: existing?.title ?? null,
+    metadata: {
+      oldValues: existing ? {
+        title: existing.title,
+        description: existing.description,
+        coverSlugs: existing.cover_slugs,
+      } : undefined,
+      changedFields: ['deleted'],
+    },
+  });
+
   return { success: true };
 }
 
@@ -526,8 +626,18 @@ export async function saveFeaturedTitles(updates: FeaturedTitleUpdate[]) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
 
+  const validUpdates = updates.filter((item) => item.id);
+  if (validUpdates.length !== updates.length) return { success: false, error: 'Featured title id is required.' };
+  if (validUpdates.length === 0) return { success: true };
+
+  const { data: existingTitles } = await supabase
+    .from('titles')
+    .select('id, title_english, featured, featured_order, featured_weight')
+    .in('id', validUpdates.map((item) => item.id));
+  const existingById = new Map((existingTitles ?? []).map((item) => [item.id, item]));
+
   const results = await Promise.all(
-    updates.map((item) =>
+    validUpdates.map((item) =>
       supabase
         .from('titles')
         .update({
@@ -544,12 +654,46 @@ export async function saveFeaturedTitles(updates: FeaturedTitleUpdate[]) {
   if (failed?.error) return { success: false, error: failed.error.message };
 
   revalidateCurationSurfaces();
+
+  await Promise.all(
+    validUpdates.map(async (item) => {
+      const existing = existingById.get(item.id);
+      if (!existing || existing.featured === item.featured) return;
+
+      await logStudioActivity({
+        eventType: item.featured ? 'FEATURED_TITLE_ADDED' : 'FEATURED_TITLE_REMOVED',
+        entityType: 'featured',
+        entityId: item.id,
+        entityName: existing.title_english,
+        metadata: {
+          oldValues: {
+            featured: existing.featured,
+            featuredOrder: existing.featured_order,
+            featuredWeight: existing.featured_weight,
+          },
+          newValues: {
+            featured: item.featured,
+            featuredOrder: item.featured_order,
+            featuredWeight: clampWeight(item.featured_weight),
+          },
+          changedFields: ['featured', 'featuredOrder', 'featuredWeight'],
+        },
+      });
+    }),
+  );
+
   return { success: true };
 }
 
 export async function addFeaturedCreator(creatorId: string) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
+
+  const { data: creator } = await supabase
+    .from('creators')
+    .select('name')
+    .eq('id', creatorId)
+    .single();
 
   const { data: existing } = await supabase
     .from('featured_creators')
@@ -571,6 +715,23 @@ export async function addFeaturedCreator(creatorId: string) {
   if (error) return { success: false, error: error.message };
 
   revalidateCurationSurfaces();
+
+  await logStudioActivity({
+    eventType: 'FEATURED_CREATOR_ADDED',
+    entityType: 'featured',
+    entityId: creatorId,
+    entityName: creator?.name ?? null,
+    metadata: {
+      newValues: {
+        creatorId,
+        displayOrder,
+        featuredWeight: 50,
+        visible: true,
+      },
+      changedFields: ['creatorId', 'displayOrder', 'featuredWeight', 'visible'],
+    },
+  });
+
   return { success: true };
 }
 
@@ -600,6 +761,12 @@ export async function removeFeaturedCreator(creatorId: string) {
   const supabase = await requireStudioUser();
   if (!supabase) return { success: false, error: 'Unauthorized' };
 
+  const { data: creator } = await supabase
+    .from('creators')
+    .select('name')
+    .eq('id', creatorId)
+    .single();
+
   const { error } = await supabase
     .from('featured_creators')
     .delete()
@@ -608,6 +775,18 @@ export async function removeFeaturedCreator(creatorId: string) {
   if (error) return { success: false, error: error.message };
 
   revalidateCurationSurfaces();
+
+  await logStudioActivity({
+    eventType: 'FEATURED_CREATOR_REMOVED',
+    entityType: 'featured',
+    entityId: creatorId,
+    entityName: creator?.name ?? null,
+    metadata: {
+      oldValues: { creatorId, visible: true },
+      changedFields: ['creatorId', 'visible'],
+    },
+  });
+
   return { success: true };
 }
 
