@@ -24,6 +24,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Image as ImageIcon, Plus, Search, Trash2 } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { cn } from '@/lib/utils/cn';
 import { getErrorMessage, toast } from '@/lib/utils/toast';
 import { ActionMenu } from './ActionMenu';
@@ -97,7 +98,8 @@ function ThemeEditModal({ theme, onClose, onSave }: { theme: MoodTheme; onClose:
   const [draft, setDraft] = useState(theme);
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <ModalPortal>
+    <div className="fixed left-0 top-0 z-modal flex h-[100dvh] w-[100dvw] items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <motion.form
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,6 +142,7 @@ function ThemeEditModal({ theme, onClose, onSave }: { theme: MoodTheme; onClose:
         </div>
       </motion.form>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -165,7 +168,8 @@ function AssignTitlesModal({
     .slice(0, 30);
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <ModalPortal>
+    <div className="fixed left-0 top-0 z-modal flex h-[100dvh] w-[100dvw] items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid max-h-[86vh] w-full max-w-4xl gap-4 rounded-lg border border-white/10 bg-bg-surface p-4 shadow-lg shadow-black/30 md:grid-cols-[1fr_1fr]">
         <div className="min-h-0">
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -219,6 +223,7 @@ function AssignTitlesModal({
         </div>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }
 
