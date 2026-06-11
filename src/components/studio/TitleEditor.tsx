@@ -17,9 +17,15 @@ import { DetailsCard } from '@/components/studio/DetailsCard';
 import { ProgressCard } from '@/components/studio/ProgressCard';
 import { ReviewsCard } from '@/components/studio/ReviewsCard';
 import { SettingsCard } from '@/components/studio/SettingsCard';
+import { AIPreviewModal } from '@/components/studio/AIPreviewModal';
+import { DraftManagerModals } from '@/components/studio/DraftManagerModals';
 import { ConfirmDialog } from '@/components/studio/ConfirmDialog';
 import { getErrorMessage } from '@/lib/utils/toast';
-import type { TitleFormData } from '@/types/studio';
+import { useDraftManager } from '@/hooks/useDraftManager';
+import { useGeminiAutofill } from '@/hooks/useGeminiAutofill';
+import { logStudioActivityAction } from '@/app/studio/activity/actions';
+import { calculateTitleFormCompletion, completionTone, type TitleFormCompletionSeed, type TitleCompletionResult } from '@/services/studio/title-completion';
+import type { AutofillPayload, AutofillPayloadField, TitleFormData } from '@/types/studio';
 import type { MediaAsset } from '@/types/media';
 
 // ── Props ─────────────────────────────────────────────────────
@@ -30,6 +36,7 @@ interface TitleEditorProps {
   onSave: (data: TitleFormData) => Promise<void>;
   genres?: { id: string; name: string }[];
   moods?: { id: string; name: string }[];
+  completionSeed?: TitleFormCompletionSeed;
 }
 
 // ── Default form state ────────────────────────────────────────
@@ -64,6 +71,111 @@ function getDefaultFormData(): TitleFormData {
   };
 }
 
+function serialize(value: unknown) {
+  return JSON.stringify(value);
+}
+
+function pickDetails(data: TitleFormData) {
+  return {
+    englishTitle: data.englishTitle,
+    originalTitle: data.originalTitle,
+    alternativeTitles: data.alternativeTitles,
+    origin: data.origin,
+    seriesStatus: data.seriesStatus,
+    readingStatus: data.readingStatus,
+    author: data.author,
+    artist: data.artist,
+    releaseDate: data.releaseDate,
+    completedDate: data.completedDate,
+    synopsis: data.synopsis,
+    vibeCheck: data.vibeCheck,
+    genres: data.genres,
+    moods: data.moods,
+    coverImageId: data.coverImageId,
+    bannerImageId: data.bannerImageId,
+  };
+}
+
+function pickProgress(data: TitleFormData) {
+  return {
+    chaptersRead: data.chaptersRead,
+    totalChapters: data.totalChapters,
+    startedDate: data.startedDate,
+    completedDate: data.completedDate,
+    lastReadDate: data.lastReadDate,
+  };
+}
+
+function pickReviews(data: TitleFormData) {
+  return { review: data.review, reviewHtml: data.reviewHtml, isUnreviewed: data.isUnreviewed };
+}
+
+function pickSettings(data: TitleFormData) {
+  return { featured: data.featured, hidden: data.hidden };
+}
+
+function unique(values: string[]) {
+  return Array.from(new Set(values.filter((value) => value.trim()).map((value) => value.trim())));
+}
+
+function pickAutofillValues(data: TitleFormData | AutofillPayload, fields: AutofillPayloadField[]) {
+  return Object.fromEntries(fields.map((field) => [field, data[field as keyof typeof data] ?? null]));
+}
+
+function pickAutofillIntelligence(payload: AutofillPayload, fields: AutofillPayloadField[]) {
+  return Object.fromEntries(fields.map((field) => [field, payload.fieldIntelligence?.[field] ?? null]));
+}
+
+function payloadFields(payload: AutofillPayload): AutofillPayloadField[] {
+  const fields: AutofillPayloadField[] = [
+    'englishTitle',
+    'originalTitle',
+    'alternativeTitles',
+    'origin',
+    'seriesStatus',
+    'readingStatus',
+    'author',
+    'artist',
+    'releaseDate',
+    'completedDate',
+    'synopsis',
+    'vibeCheck',
+    'genres',
+    'moods',
+  ];
+  return fields.filter((field) => {
+    const value = payload[field];
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== undefined && value !== null && String(value).trim().length > 0;
+  });
+}
+
+function CompletionBreakdown({ completion }: { completion: TitleCompletionResult }) {
+  return (
+    <section className="rounded-lg border border-white/10 bg-bg-surface/35 p-4" aria-label="Title completion">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-heading text-lg font-semibold text-text-primary">Completion</h2>
+          <p className="mt-1 font-body text-sm text-text-secondary">{completion.status}</p>
+        </div>
+        <span className={cn('inline-flex self-start rounded-md border px-3 py-1.5 font-data text-sm', completionTone(completion.score))}>
+          {completion.score}%
+        </span>
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {completion.breakdown.map((item) => (
+          <div key={item.key} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-bg-deep/35 px-3 py-2">
+            <span className="font-body text-xs text-text-secondary">{item.label}</span>
+            <span className={cn('font-body text-xs', item.complete ? 'text-emerald-300' : 'text-red-300')}>
+              {item.complete ? '✓' : '✗'} {item.points}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────
 
 export function TitleEditor({
@@ -72,19 +184,36 @@ export function TitleEditor({
   onSave,
   genres = [],
   moods = [],
+  completionSeed = {},
 }: TitleEditorProps) {
   const [formData, setFormData] = useState<TitleFormData>(
     initialData ?? getDefaultFormData()
   );
+  const [savedFormData, setSavedFormData] = useState<TitleFormData>(initialData ?? getDefaultFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [aiPreviewPayload, setAiPreviewPayload] = useState<AutofillPayload | null>(null);
   const unsavedToastShown = useRef(false);
 
   // ── Deferred upload state ─────────────────────────────────
 
   const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const detailsValid = formData.englishTitle.trim().length > 0;
+  const progressValid = (formData.chaptersRead ?? 0) >= 0
+    && (formData.totalChapters ?? 0) >= 0
+    && (formData.totalChapters === undefined || formData.chaptersRead === undefined || formData.chaptersRead <= formData.totalChapters);
+  const reviewsValid = true;
+  const settingsValid = true;
+
+  const detailsDirty = serialize(pickDetails(formData)) !== serialize(pickDetails(savedFormData)) || Boolean(pendingCoverFile);
+  const progressDirty = serialize(pickProgress(formData)) !== serialize(pickProgress(savedFormData));
+  const reviewsDirty = serialize(pickReviews(formData)) !== serialize(pickReviews(savedFormData));
+  const settingsDirty = serialize(pickSettings(formData)) !== serialize(pickSettings(savedFormData));
+  const isDirty = serialize(formData) !== serialize(savedFormData) || Boolean(pendingCoverFile);
+  const completion = useMemo(() => calculateTitleFormCompletion(formData, completionSeed), [completionSeed, formData]);
 
   // ── Slug for image uploader (derived from english title) ──
 
@@ -104,6 +233,46 @@ export function TitleEditor({
     unsavedToastShown.current = true;
     toast.info('Unsaved changes detected.');
   }, []);
+
+  const applyAutofillPayload = useCallback((payload: AutofillPayload, fields?: AutofillPayloadField[]) => {
+    const shouldApply = (field: AutofillPayloadField) => !fields || fields.includes(field);
+    const genreIds = payload.genres
+      ?.map((name) => genres.find((genre) => genre.name.toLowerCase() === name.toLowerCase())?.id)
+      .filter((id): id is string => Boolean(id));
+    const moodIds = payload.moods
+      ?.map((name) => moods.find((mood) => mood.name.toLowerCase() === name.toLowerCase())?.id)
+      .filter((id): id is string => Boolean(id));
+
+    setFormData((prev) => ({
+      ...prev,
+      englishTitle: shouldApply('englishTitle') ? payload.englishTitle ?? prev.englishTitle : prev.englishTitle,
+      originalTitle: shouldApply('originalTitle') ? payload.originalTitle ?? prev.originalTitle : prev.originalTitle,
+      alternativeTitles: shouldApply('alternativeTitles') ? unique([...(payload.alternativeTitles ?? []), ...(prev.alternativeTitles ?? [])]) : prev.alternativeTitles,
+      origin: shouldApply('origin') ? payload.origin ?? prev.origin : prev.origin,
+      seriesStatus: shouldApply('seriesStatus') ? payload.seriesStatus ?? prev.seriesStatus : prev.seriesStatus,
+      readingStatus: shouldApply('readingStatus') ? payload.readingStatus ?? prev.readingStatus : prev.readingStatus,
+      author: shouldApply('author') ? payload.author ?? prev.author : prev.author,
+      artist: shouldApply('artist') ? payload.artist ?? prev.artist : prev.artist,
+      releaseDate: shouldApply('releaseDate') ? payload.releaseDate ?? prev.releaseDate : prev.releaseDate,
+      completedDate: shouldApply('completedDate') ? payload.completedDate ?? prev.completedDate : prev.completedDate,
+      synopsis: shouldApply('synopsis') ? payload.synopsis ?? prev.synopsis : prev.synopsis,
+      vibeCheck: shouldApply('vibeCheck') ? payload.vibeCheck ?? prev.vibeCheck : prev.vibeCheck,
+      genres: shouldApply('genres') && genreIds?.length ? unique([...prev.genres, ...genreIds]) : prev.genres,
+      moods: shouldApply('moods') && moodIds?.length ? unique([...prev.moods, ...moodIds]) : prev.moods,
+    }));
+    markUnsaved();
+  }, [genres, markUnsaved, moods]);
+
+  const { state: aiState, runAutofill } = useGeminiAutofill(setAiPreviewPayload);
+  const draftManager = useDraftManager({
+    type: 'title',
+    key: mode === 'create' ? 'new' : slug,
+    title: formData.englishTitle || 'Untitled title',
+    preview: formData.synopsis || formData.vibeCheck || '',
+    data: formData,
+    isDirty,
+    onRestore: setFormData,
+  });
 
   const handleCoverFileSelectWithPreview = useCallback((file: File | null) => {
     // Revoke previous blob URL
@@ -185,6 +354,8 @@ export function TitleEditor({
     if (!validateTitle()) return;
     try {
       await onSave(formData);
+      setSavedFormData(formData);
+      draftManager.markClean();
       unsavedToastShown.current = false;
     } catch (error) {
       if (error instanceof Error && error.message) {
@@ -192,7 +363,26 @@ export function TitleEditor({
       }
       throw new Error(`${section} save failed.`);
     }
-  }, [formData, onSave, validateTitle]);
+  }, [draftManager, formData, onSave, validateTitle]);
+
+  const restoreDetails = useCallback(() => {
+    setFormData((prev) => ({ ...prev, ...pickDetails(savedFormData) }));
+    setPendingCoverFile(null);
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    setCoverPreviewUrl(null);
+  }, [coverPreviewUrl, savedFormData]);
+
+  const restoreProgress = useCallback(() => {
+    setFormData((prev) => ({ ...prev, ...pickProgress(savedFormData) }));
+  }, [savedFormData]);
+
+  const restoreReviews = useCallback(() => {
+    setFormData((prev) => ({ ...prev, ...pickReviews(savedFormData) }));
+  }, [savedFormData]);
+
+  const restoreSettings = useCallback(() => {
+    setFormData((prev) => ({ ...prev, ...pickSettings(savedFormData) }));
+  }, [savedFormData]);
 
   // ── Upload pending cover image to R2 ──────────────────────
 
@@ -265,6 +455,8 @@ export function TitleEditor({
       // Step 2: Save the title form data
       toast.loading('Saving title...', { id: toastId });
       await onSave(finalFormData);
+      setSavedFormData(finalFormData);
+      draftManager.markClean();
       toast.success(mode === 'create' ? 'Title created.' : 'Title updated.', { id: toastId });
       unsavedToastShown.current = false;
       setShowConfirmDialog(false);
@@ -276,7 +468,54 @@ export function TitleEditor({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, mode, onSave, pendingCoverFile, uploadPendingCoverImage]);
+  }, [draftManager, formData, mode, onSave, pendingCoverFile, uploadPendingCoverImage]);
+
+  const handleApplyAIChanges = useCallback((fields: AutofillPayloadField[]) => {
+    if (!aiPreviewPayload) return;
+    const oldValues = pickAutofillValues(formData, fields);
+    const newValues = pickAutofillValues(aiPreviewPayload, fields);
+    const confidenceLevels = pickAutofillIntelligence(aiPreviewPayload, fields);
+    applyAutofillPayload(aiPreviewPayload, fields);
+    setAiPreviewPayload(null);
+    void logStudioActivityAction({
+      eventType: 'AI_AUTOFILL_APPLIED',
+      entityType: 'ai',
+      entityId: mode === 'create' ? 'title:new' : `title:${slug}`,
+      entityName: formData.englishTitle || aiPreviewPayload.englishTitle || 'Untitled title',
+      metadata: {
+        oldValues,
+        newValues,
+        confidenceLevels,
+        appliedFields: fields,
+        appliedAt: new Date().toISOString(),
+        changedFields: fields,
+      },
+    }).catch((error) => console.error('AI activity logging failed:', error));
+    toast.success('Applied successfully.');
+  }, [aiPreviewPayload, applyAutofillPayload, formData, mode, slug]);
+
+  const handleDiscardAIChanges = useCallback(() => {
+    if (aiPreviewPayload) {
+      const fields = payloadFields(aiPreviewPayload);
+      void logStudioActivityAction({
+        eventType: 'AI_AUTOFILL_REJECTED',
+        entityType: 'ai',
+        entityId: mode === 'create' ? 'title:new' : `title:${slug}`,
+        entityName: formData.englishTitle || aiPreviewPayload.englishTitle || 'Untitled title',
+        metadata: {
+          newValues: pickAutofillValues(aiPreviewPayload, fields),
+          confidenceLevels: pickAutofillIntelligence(aiPreviewPayload, fields),
+          rejectedFields: fields,
+          rejectedAt: new Date().toISOString(),
+          changedFields: fields,
+        },
+      }).catch((error) => console.error('AI activity logging failed:', error));
+    }
+    setAiPreviewPayload(null);
+  }, [aiPreviewPayload, formData.englishTitle, mode, slug]);
+
+  const genreLabels = useMemo(() => Object.fromEntries(genres.map((genre) => [genre.id, genre.name])), [genres]);
+  const moodLabels = useMemo(() => Object.fromEntries(moods.map((mood) => [mood.id, mood.name])), [moods]);
 
   const handleCancelDialog = useCallback(() => {
     if (!isSubmitting) {
@@ -288,6 +527,8 @@ export function TitleEditor({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <CompletionBreakdown completion={completion} />
+
       {/* ═══════════════════════════════════════════════════════
           Section: Details (with integrated cover image upload)
           ═══════════════════════════════════════════════════════ */}
@@ -305,6 +546,11 @@ export function TitleEditor({
         previewSrc={previewSrc}
         onCoverFileSelect={handleCoverFileSelectWithPreview}
         onCoverUpload={handleCoverUpload}
+        onFillWithAI={() => runAutofill(formData.englishTitle)}
+        aiState={aiState}
+        isDirty={detailsDirty}
+        isValid={detailsValid}
+        onCancel={restoreDetails}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -322,6 +568,9 @@ export function TitleEditor({
         onCompletedDateChange={(value) => updateField('completedDate', value)}
         onLastReadDateChange={(value) => updateField('lastReadDate', value)}
         onSave={() => saveSection('Progress')}
+        onCancel={restoreProgress}
+        isDirty={progressDirty}
+        isValid={progressValid}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -335,6 +584,9 @@ export function TitleEditor({
         onReviewHtmlChange={(html) => updateField('reviewHtml', html)}
         onUnreviewedChange={(checked) => updateField('isUnreviewed', checked)}
         onSave={() => saveSection('Review')}
+        onCancel={restoreReviews}
+        isDirty={reviewsDirty}
+        isValid={reviewsValid}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -346,6 +598,9 @@ export function TitleEditor({
         onFeaturedChange={(checked) => updateField('featured', checked)}
         onHiddenChange={(checked) => updateField('hidden', checked)}
         onSave={() => saveSection('Settings')}
+        onCancel={restoreSettings}
+        isDirty={settingsDirty}
+        isValid={settingsValid}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -363,7 +618,8 @@ export function TitleEditor({
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !detailsValid}
+          aria-disabled={isSubmitting || !detailsValid}
           className={cn(
             'px-6 py-3 rounded-lg',
             'bg-accent-primary text-white font-heading text-sm font-bold',
@@ -407,6 +663,30 @@ export function TitleEditor({
         onCancel={handleCancelDialog}
         loading={isSubmitting}
       />
+
+      <DraftManagerModals
+        draft={draftManager.draft}
+        showRecovery={draftManager.showRecovery}
+        showUnsaved={draftManager.showUnsaved}
+        onContinueDraft={draftManager.continueDraft}
+        onStartFresh={draftManager.startFresh}
+        onDeleteDraft={draftManager.deleteDraft}
+        onSaveDraft={draftManager.saveDraftAndContinue}
+        onDiscard={draftManager.discardAndContinue}
+        onCancel={draftManager.cancelNavigation}
+      />
+
+      {aiPreviewPayload && (
+        <AIPreviewModal
+          open
+          currentData={formData}
+          payload={aiPreviewPayload}
+          genreLabels={genreLabels}
+          moodLabels={moodLabels}
+          onApply={handleApplyAIChanges}
+          onDiscard={handleDiscardAIChanges}
+        />
+      )}
     </form>
   );
 }
