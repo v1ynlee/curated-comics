@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   closestCenter,
@@ -23,15 +24,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { BookOpen, Brush, FileText, GripVertical, Plus, UserRound } from 'lucide-react';
+import { BookOpen, FileText, GripVertical, Plus, UserRound } from 'lucide-react';
+import { DraftManagerModals } from '@/components/studio/DraftManagerModals';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { CoverImage } from '@/components/ui/CoverImage';
+import { NarrativeModal, type NarrativeModalInput } from '@/components/studio/curation/NarrativeModal';
+import { useDraftManager } from '@/hooks/useDraftManager';
 import { cn } from '@/lib/utils/cn';
 import { getErrorMessage, toast } from '@/lib/utils/toast';
 import {
   addFeaturedCreator,
   createFeaturedNarrative,
   deleteFeaturedNarrative,
-  duplicateFeaturedNarrative,
   removeFeaturedCreator,
   saveFeaturedCreators,
   saveFeaturedNarrativeOrder,
@@ -66,10 +70,10 @@ async function runFeaturedAction<T>(promise: Promise<ServerActionResult<T>>, loa
 
 type SortKey = 'title' | 'updated' | 'created' | 'total-titles';
 type EditableItem =
-  | { kind: 'narrative'; item: FeaturedNarrative }
   | { kind: 'title'; item: CurationTitle }
   | { kind: 'creator'; item: CurationCreator }
   | null;
+type NarrativeModalState = { mode: 'create' } | { mode: 'edit'; item: FeaturedNarrative } | null;
 
 const PAGE_SIZE = 6;
 
@@ -98,6 +102,29 @@ function StatusText({ enabled }: { enabled: boolean }) {
   return (
     <span className={cn('font-body text-xs', enabled ? 'text-emerald-400' : 'text-text-tertiary')}>
       {enabled ? 'Visible' : 'Hidden'}
+    </span>
+  );
+}
+
+function getCreatorInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'C';
+}
+
+function CreatorAvatar({ creator }: { creator: CurationCreator }) {
+  return (
+    <span className="relative flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-bg-deep" aria-hidden="true">
+      {creator.image ? (
+        <Image src={creator.image} alt="" fill sizes="36px" className="object-cover" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center font-heading text-[10px] text-text-secondary">
+          {getCreatorInitials(creator.name)}
+        </span>
+      )}
     </span>
   );
 }
@@ -209,21 +236,19 @@ function AddItemModal({
   title,
   searchLabel,
   items,
-  renderItem,
   onClose,
 }: {
   title: string;
   searchLabel: string;
   items: { id: string; searchText: string; node: React.ReactNode; onSelect: () => void }[];
-  renderItem?: never;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
   const visibleItems = items.filter((item) => matches(item.searchText, query)).slice(0, 24);
-  void renderItem;
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <ModalPortal>
+    <div className="fixed left-0 top-0 z-modal flex h-[100dvh] w-[100dvw] items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -246,43 +271,61 @@ function AddItemModal({
         <div className="max-h-[55vh] overflow-y-auto pr-1 studio-dropdown-scroll" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
           <div className="flex flex-col gap-1.5">
             {visibleItems.map((item) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                onClick={() => {
-                  item.onSelect();
-                  onClose();
-                }}
-                className="rounded-md border border-white/10 bg-bg-deep/35 px-3 py-2 text-left transition-colors hover:border-white/20 hover:bg-white/5"
+                className="grid grid-cols-[1fr_36px] items-center gap-3 rounded-md border border-white/10 bg-bg-deep/35 px-3 py-2 transition-colors hover:border-white/20 hover:bg-white/5"
               >
                 {item.node}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    item.onSelect();
+                    onClose();
+                  }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-text-secondary transition-colors hover:border-white/20 hover:bg-white/5 hover:text-text-primary"
+                  aria-label={`Add ${item.searchText}`}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
             ))}
             {visibleItems.length === 0 && <p className="py-8 text-center font-body text-sm text-text-tertiary">No matches.</p>}
           </div>
         </div>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }
 
-function EditModal({ item, onClose, onSave }: { item: EditableItem; onClose: () => void; onSave: (item: EditableItem, weight: number, visible?: boolean) => void }) {
+function EditModal({ item, onClose, onSave }: { item: NonNullable<EditableItem>; onClose: () => void; onSave: (item: NonNullable<EditableItem>, weight: number, visible?: boolean) => void }) {
   const [weight, setWeight] = useState(() => {
-    if (!item) return 50;
     return item.item.featured_weight;
   });
   const [visible, setVisible] = useState(() => {
-    if (!item) return true;
     if (item.kind === 'title') return item.item.featured;
     return item.item.visible;
   });
 
-  if (!item) return null;
-
-  const label = item.kind === 'narrative' ? item.item.title : item.kind === 'title' ? item.item.title_english : item.item.name;
+  const label = item.kind === 'title' ? item.item.title_english : item.item.name;
+  const initialVisible = item.kind === 'title' ? item.item.featured : item.item.visible;
+  const draftData = { weight, visible };
+  const draftManager = useDraftManager({
+    type: 'featured',
+    key: `${item.kind}-${item.item.id}`,
+    title: label,
+    preview: `Weight ${weight}, ${visible ? 'visible' : 'hidden'}`,
+    data: draftData,
+    isDirty: weight !== item.item.featured_weight || visible !== initialVisible,
+    onRestore: (data) => {
+      setWeight(data.weight);
+      setVisible(data.visible);
+    },
+  });
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <ModalPortal>
+    <div className="fixed left-0 top-0 z-modal flex h-[100dvh] w-[100dvw] items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-lg border border-white/10 bg-bg-surface p-4 shadow-lg shadow-black/30">
         <h3 className="font-heading text-lg font-semibold text-text-primary">Edit Featured</h3>
         <p className="mt-1 font-body text-sm text-text-secondary">{label}</p>
@@ -308,10 +351,22 @@ function EditModal({ item, onClose, onSave }: { item: EditableItem; onClose: () 
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-md px-3 py-2 font-body text-sm text-text-secondary hover:bg-white/5 hover:text-text-primary">Cancel</button>
-          <button type="button" onClick={() => onSave(item, weight, visible)} className="rounded-md bg-accent-primary px-3 py-2 font-heading text-sm text-white hover:bg-accent-primary/90">Save</button>
+          <button type="button" onClick={() => { onSave(item, weight, visible); draftManager.markClean(); }} className="rounded-md bg-accent-primary px-3 py-2 font-heading text-sm text-white hover:bg-accent-primary/90">Save</button>
         </div>
       </motion.div>
+      <DraftManagerModals
+        draft={draftManager.draft}
+        showRecovery={draftManager.showRecovery}
+        showUnsaved={draftManager.showUnsaved}
+        onContinueDraft={draftManager.continueDraft}
+        onStartFresh={draftManager.startFresh}
+        onDeleteDraft={draftManager.deleteDraft}
+        onSaveDraft={draftManager.saveDraftAndContinue}
+        onDiscard={draftManager.discardAndContinue}
+        onCancel={draftManager.cancelNavigation}
+      />
     </div>
+    </ModalPortal>
   );
 }
 
@@ -322,6 +377,7 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
   const [creators, setCreators] = useState(data.creators);
   const [modal, setModal] = useState<'title' | 'creator' | null>(null);
   const [editing, setEditing] = useState<EditableItem>(null);
+  const [narrativeModal, setNarrativeModal] = useState<NarrativeModalState>(null);
   const [isPending, startTransition] = useTransition();
   const [narrativePage, setNarrativePage] = useState(0);
   const [titlePage, setTitlePage] = useState(0);
@@ -418,12 +474,6 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
 
   const saveEdit = (item: EditableItem, weight: number, visible?: boolean) => {
     if (!item) return;
-    if (item.kind === 'narrative') {
-      setNarratives((current) => current.map((entry) => entry.id === item.item.id ? { ...entry, featured_weight: weight, visible: Boolean(visible) } : entry));
-      startTransition(() => {
-        void runFeaturedAction(updateFeaturedNarrative(item.item.id, { featured_weight: weight, visible: Boolean(visible) }), 'Saving narrative...', 'Narrative updated.', 'Narrative update failed.');
-      });
-    }
     if (item.kind === 'title') {
       setTitles((current) => current.map((entry) => entry.id === item.item.id ? { ...entry, featured_weight: weight, featured: Boolean(visible) } : entry));
       startTransition(() => {
@@ -439,10 +489,27 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
     setEditing(null);
   };
 
-  const createNarrative = () => {
+  const saveNarrative = (input: NarrativeModalInput) => {
+    if (narrativeModal?.mode === 'edit') {
+      const now = new Date().toISOString();
+      const currentItem = narrativeModal.item;
+      setNarratives((current) => current.map((entry) => entry.id === currentItem.id ? { ...entry, ...input, updated_at: now } : entry));
+      startTransition(async () => {
+        const result = await runFeaturedAction(
+          updateFeaturedNarrative(currentItem.id, input),
+          'Saving narrative...',
+          'Narrative updated.',
+          'Narrative update failed.',
+        );
+        if (result?.success) setNarrativeModal(null);
+      });
+      return;
+    }
+
     startTransition(async () => {
-      const result = await runFeaturedAction(createFeaturedNarrative(), 'Creating narrative...', 'Narrative created.', 'Narrative creation failed.');
+      const result = await runFeaturedAction(createFeaturedNarrative(input), 'Creating narrative...', 'Narrative created.', 'Narrative creation failed.');
       if (result?.success && result.data) setNarratives((current) => [...current, result.data as FeaturedNarrative]);
+      if (result?.success) setNarrativeModal(null);
     });
   };
 
@@ -468,13 +535,6 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
     setCreators((current) => current.map((item) => item.id === creator.id ? { ...item, featured: true, visible: true, display_order: order } : item));
     startTransition(() => {
       void runFeaturedAction(addFeaturedCreator(creator.id), 'Adding featured creator...', 'Featured creator added.', 'Featured creator add failed.');
-    });
-  };
-
-  const duplicateNarrative = (id: string) => {
-    startTransition(async () => {
-      const result = await runFeaturedAction(duplicateFeaturedNarrative(id), 'Duplicating narrative...', 'Narrative duplicated.', 'Narrative duplicate failed.');
-      if (result?.success && result.data) setNarratives((current) => [...current, result.data as FeaturedNarrative]);
     });
   };
 
@@ -505,9 +565,9 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
   };
 
   return (
-    <div className={cn('flex flex-col gap-5', isPending && 'pointer-events-none opacity-80')}>
+    <div className={cn('flex flex-col gap-5', isPending && 'opacity-80')}>
       <div className="flex justify-end">
-        <NewFeaturedDropdown onNewNarrative={createNarrative} onNewTitle={() => setModal('title')} onNewCreator={() => setModal('creator')} />
+        <NewFeaturedDropdown onNewNarrative={() => setNarrativeModal({ mode: 'create' })} onNewTitle={() => setModal('title')} onNewCreator={() => setModal('creator')} />
       </div>
 
       <SectionPanel
@@ -533,9 +593,8 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
                       <StatusText enabled={item.visible} />
                       <span className="font-body text-xs text-text-tertiary">{formatDate(item.updated_at)}</span>
                       <ActionMenu items={[
-                        { label: 'Edit', tone: 'edit', onSelect: () => setEditing({ kind: 'narrative', item }) },
+                        { label: 'Edit', tone: 'edit', onSelect: () => setNarrativeModal({ mode: 'edit', item }) },
                         { label: 'Preview', tone: 'preview', onSelect: () => window.open('/', '_blank') },
-                        { label: 'Duplicate', tone: 'duplicate', onSelect: () => duplicateNarrative(item.id) },
                         { label: item.visible ? 'Archive' : 'Restore', tone: 'archive', onSelect: () => toggleNarrativeVisibility(item) },
                         { label: 'Delete', tone: 'delete', onSelect: () => deleteNarrative(item.id) },
                       ]} />
@@ -548,7 +607,7 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
               {paginate(orderedNarratives, narrativePage).map((item) => (
                 <SortableShell key={item.id} id={item.id}>
                   <div className="rounded-md border border-white/10 bg-bg-deep/35 p-3">
-                    <div className="flex items-start justify-between gap-3"><div><p className="font-body text-sm font-semibold text-text-primary">{item.title}</p><p className="mt-1 line-clamp-2 font-body text-xs text-text-secondary">{item.description ?? item.subtitle}</p></div><ActionMenu items={[{ label: 'Edit', tone: 'edit', onSelect: () => setEditing({ kind: 'narrative', item }) }, { label: 'Duplicate', tone: 'duplicate', onSelect: () => duplicateNarrative(item.id) }, { label: item.visible ? 'Archive' : 'Restore', tone: 'archive', onSelect: () => toggleNarrativeVisibility(item) }, { label: 'Delete', tone: 'delete', onSelect: () => deleteNarrative(item.id) }]} /></div>
+                    <div className="flex items-start justify-between gap-3"><div><p className="font-body text-sm font-semibold text-text-primary">{item.title}</p><p className="mt-1 line-clamp-2 font-body text-xs text-text-secondary">{item.description ?? item.subtitle}</p></div><ActionMenu items={[{ label: 'Edit', tone: 'edit', onSelect: () => setNarrativeModal({ mode: 'edit', item }) }, { label: 'Preview', tone: 'preview', onSelect: () => window.open('/', '_blank') }, { label: item.visible ? 'Archive' : 'Restore', tone: 'archive', onSelect: () => toggleNarrativeVisibility(item) }, { label: 'Delete', tone: 'delete', onSelect: () => deleteNarrative(item.id) }]} /></div>
                     <div className="mt-3 flex items-center justify-between font-body text-xs text-text-tertiary"><span>Order {item.display_order + 1}</span><StatusText enabled={item.visible} /></div>
                   </div>
                 </SortableShell>
@@ -617,7 +676,7 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
                 {paginate(orderedCreators, creatorPage).map((item) => (
                   <SortableShell key={item.id} id={item.id}>
                     <div className="grid min-h-14 grid-cols-[1.7fr_100px_110px_140px_120px_48px] items-center gap-3 rounded-md border border-white/5 bg-bg-deep/35 px-3 py-2">
-                      <span className="font-body text-sm font-medium text-text-primary">{item.name}</span>
+                      <span className="inline-flex min-w-0 items-center gap-2 font-body text-sm font-medium text-text-primary"><CreatorAvatar creator={item} /> <span className="truncate">{item.name}</span></span>
                       <span className="font-body text-xs capitalize text-text-secondary">{item.type}</span>
                       <span className="font-data text-xs text-text-secondary">{item.title_count}</span>
                       <input type="number" min={1} max={100} value={item.featured_weight} onChange={(event) => saveEdit({ kind: 'creator', item }, Number(event.target.value), true)} className="h-8 w-20 rounded-md border border-white/10 bg-bg-surface px-2 font-data text-xs text-text-primary outline-none focus:border-accent-primary/60" />
@@ -631,7 +690,7 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
             <div className="flex flex-col gap-2 md:hidden">
               {paginate(orderedCreators, creatorPage).map((item) => (
                 <SortableShell key={item.id} id={item.id}>
-                  <div className="rounded-md border border-white/10 bg-bg-deep/35 p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-body text-sm font-semibold text-text-primary">{item.name}</p><p className="font-data text-xs capitalize text-text-tertiary">{item.type} · {item.title_count} titles · Weight {item.featured_weight}</p></div><ActionMenu items={[{ label: 'Edit', tone: 'edit', onSelect: () => setEditing({ kind: 'creator', item }) }, { label: 'Remove', tone: 'delete', onSelect: () => removeCreator(item.id) }]} /></div></div>
+                  <div className="rounded-md border border-white/10 bg-bg-deep/35 p-3"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-3"><CreatorAvatar creator={item} /><div className="min-w-0"><p className="truncate font-body text-sm font-semibold text-text-primary">{item.name}</p><p className="font-data text-xs capitalize text-text-tertiary">{item.type} · {item.title_count} titles · Weight {item.featured_weight}</p></div></div><ActionMenu items={[{ label: 'Edit', tone: 'edit', onSelect: () => setEditing({ kind: 'creator', item }) }, { label: 'Preview', tone: 'preview', onSelect: () => window.open(`/creators/${item.slug}`, '_blank') }, { label: 'Remove', tone: 'delete', onSelect: () => removeCreator(item.id) }]} /></div></div>
                 </SortableShell>
               ))}
             </div>
@@ -645,7 +704,7 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
           <AddItemModal
             title="Add Featured Title"
             searchLabel="Search titles"
-            items={titles.filter((item) => !item.featured).map((item) => ({ id: item.id, searchText: item.title_english, onSelect: () => addTitle(item), node: <span className="font-body text-sm text-text-primary">{item.title_english}</span> }))}
+            items={titles.filter((item) => !item.featured).map((item) => ({ id: item.id, searchText: item.title_english, onSelect: () => addTitle(item), node: <span className="inline-flex min-w-0 items-center gap-3"><span className="w-9 overflow-hidden rounded-md"><CoverImage slug={item.cover_slug ?? item.slug} alt="" origin={item.origin} tier={item.tier as never} rounded /></span><span className="min-w-0"><span className="block truncate font-body text-sm text-text-primary">{item.title_english}</span><span className="block font-data text-xs text-text-tertiary">{item.tier ?? '-'} · {item.origin}</span></span></span> }))}
             onClose={() => setModal(null)}
           />
         )}
@@ -653,8 +712,18 @@ export function FeaturedTab({ data, search, sortBy }: { data: FeaturedCurationDa
           <AddItemModal
             title="Add Featured Creator"
             searchLabel="Search creators"
-            items={creators.filter((item) => !item.featured).map((item) => ({ id: item.id, searchText: item.name, onSelect: () => addCreator(item), node: <span className="inline-flex items-center gap-2 font-body text-sm text-text-primary"><Brush className="h-4 w-4 text-text-tertiary" aria-hidden="true" />{item.name}</span> }))}
+            items={creators.filter((item) => !item.featured).map((item) => ({ id: item.id, searchText: item.name, onSelect: () => addCreator(item), node: <span className="inline-flex min-w-0 items-center gap-3"><CreatorAvatar creator={item} /><span className="min-w-0"><span className="block truncate font-body text-sm text-text-primary">{item.name}</span><span className="block font-data text-xs capitalize text-text-tertiary">{item.type} · {item.title_count} titles</span></span></span> }))}
             onClose={() => setModal(null)}
+          />
+        )}
+        {narrativeModal && (
+          <NarrativeModal
+            mode={narrativeModal.mode}
+            narrative={narrativeModal.mode === 'edit' ? narrativeModal.item : undefined}
+            titles={titles}
+            submitting={isPending}
+            onClose={() => setNarrativeModal(null)}
+            onSubmit={saveNarrative}
           />
         )}
         {editing && <EditModal item={editing} onClose={() => setEditing(null)} onSave={saveEdit} />}
