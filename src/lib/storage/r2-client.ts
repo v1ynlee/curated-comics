@@ -7,6 +7,7 @@
 
 import {
   S3Client,
+  CopyObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
@@ -151,6 +152,27 @@ export async function deleteR2Prefix(prefix: string): Promise<void> {
       ? listResponse.NextContinuationToken
       : undefined;
   } while (continuationToken);
+}
+
+export async function moveR2Prefix(sourcePrefix: string, destinationPrefix: string): Promise<{ moved: number }> {
+  const config = validateR2Config();
+  const client = createR2Client();
+  const objects = await listR2Objects(sourcePrefix);
+  let moved = 0;
+
+  for (const object of objects) {
+    const destinationKey = `${destinationPrefix}${object.key.slice(sourcePrefix.length)}`;
+    await client.send(new CopyObjectCommand({
+      Bucket: config.bucketName,
+      CopySource: `${config.bucketName}/${encodeURIComponent(object.key).replace(/%2F/g, '/')}`,
+      Key: destinationKey,
+      CacheControl: 'public, max-age=31536000, immutable',
+    }));
+    moved += 1;
+  }
+
+  await deleteR2Prefix(sourcePrefix);
+  return { moved };
 }
 
 /**
