@@ -7,9 +7,10 @@ export type QAIssueType =
   | 'missing-reading-urls'
   | 'unreviewed-titles'
   | 'draft-content'
-  | 'broken-featured';
+  | 'broken-featured'
+  | 'media-health';
 
-export type QAEntityType = 'title' | 'article' | 'creator' | 'featured-title' | 'featured-creator' | 'narrative';
+export type QAEntityType = 'title' | 'article' | 'creator' | 'featured-title' | 'featured-creator' | 'narrative' | 'media' | 'character';
 
 export type QAQuickAction =
   | 'open-editor'
@@ -31,7 +32,8 @@ export type QAQuickAction =
   | 'replace-featured-creator'
   | 'archive-creator'
   | 'open-narrative-editor'
-  | 'auto-remove-broken-references';
+  | 'auto-remove-broken-references'
+  | 'open-media';
 
 export type QABulkAction = 'mark-reviewed' | 'archive' | 'ignore' | 'remove-featured';
 
