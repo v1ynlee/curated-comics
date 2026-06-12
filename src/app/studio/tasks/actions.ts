@@ -47,7 +47,7 @@ function qaTask(item: QAResultItem): StudioTask {
     id: `qa:${item.id}`,
     priority: qaPriority(item),
     source: 'qa',
-    entityType: item.entityType === 'article' ? 'article' : item.entityType === 'creator' || item.entityType === 'featured-creator' ? 'creator' : item.entityType === 'narrative' ? 'narrative' : 'title',
+    entityType: item.entityType === 'article' ? 'article' : item.entityType === 'creator' || item.entityType === 'featured-creator' ? 'creator' : item.entityType === 'media' || item.entityType === 'character' ? 'media' : item.entityType === 'narrative' ? 'narrative' : 'title',
     entityId: item.entityId,
     entityName: item.title,
     issue: item.issueLabel,
