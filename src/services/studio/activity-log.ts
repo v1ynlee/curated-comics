@@ -23,9 +23,17 @@ export type ActivityEventType =
   | 'NARRATIVE_CREATED'
   | 'NARRATIVE_UPDATED'
   | 'NARRATIVE_DELETED'
+  | 'ASSET_UPLOADED'
+  | 'ASSET_REPLACED'
+  | 'ASSET_ARCHIVED'
+  | 'ASSET_RESTORED'
+  | 'ASSET_DELETED'
+  | 'GALLERY_UPDATED'
+  | 'CHARACTER_UPDATED'
+  | 'MEDIA_BULK_ACTION_APPLIED'
   | 'QA_ACTION_APPLIED';
 
-export type ActivityEntityType = 'title' | 'article' | 'creator' | 'curation' | 'narrative' | 'featured' | 'qa' | 'draft' | 'ai';
+export type ActivityEntityType = 'title' | 'article' | 'creator' | 'curation' | 'narrative' | 'featured' | 'qa' | 'draft' | 'ai' | 'media' | 'gallery' | 'character';
 
 export interface LogActivityInput {
   eventType: ActivityEventType;
