@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AssetGrid } from '@/components/studio/media/assets/AssetGrid';
 import { CharacterDashboard } from '@/components/studio/media/characters/CharacterDashboard';
 import { GalleryDashboard } from '@/components/studio/media/gallery/GalleryDashboard';
+import { MediaSearchPanel } from '@/components/studio/media/search/MediaSearchPanel';
 import { StorageExplorer } from '@/components/studio/media/storage/StorageExplorer';
 import { UploadDropzone } from '@/components/studio/media/upload/UploadDropzone';
 import { MediaStats } from './MediaStats';
@@ -36,13 +37,17 @@ export function MediaDashboard({ data, initialTab }: { data: MediaWorkspaceData;
 
       <MediaStats stats={data.stats} />
 
+      <div className="mt-6">
+        <MediaSearchPanel healthIssues={data.healthIssues} />
+      </div>
+
       <div className="mt-6 rounded-lg border border-white/10 bg-bg-surface/30">
         <MediaTabs activeTab={activeTab} onChange={setActiveTab} />
         <div className="p-4 md:p-5">
-          {activeTab === 'assets' && <AssetGrid assets={data.assets} />}
+          {activeTab === 'assets' && <AssetGrid assets={data.assets} healthIssues={data.healthIssues} />}
           {activeTab === 'gallery' && <GalleryDashboard galleries={data.galleries} assets={data.assets} />}
           {activeTab === 'characters' && <CharacterDashboard characters={data.characters} assets={data.assets} />}
-          {activeTab === 'storage-explorer' && <StorageExplorer folders={data.storageExplorer} healthIssues={data.healthIssues} />}
+          {activeTab === 'storage-explorer' && <StorageExplorer folders={data.storageExplorer} healthIssues={data.healthIssues} assets={data.assets} />}
           {activeTab === 'storage' && (
             <div className="grid gap-5 lg:grid-cols-2">
               <section className="rounded-lg border border-white/10 bg-bg-surface/35 p-4">
