@@ -20,6 +20,7 @@ const FILTER_ENTITY_TYPES: Record<Exclude<ActivityFilter, 'all'>, string[]> = {
   titles: ['title'],
   articles: ['article'],
   creators: ['creator'],
+  media: ['media', 'gallery', 'character'],
   curation: ['curation', 'narrative', 'featured'],
   ai: ['ai'],
   drafts: ['draft'],
