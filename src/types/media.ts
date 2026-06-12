@@ -3,7 +3,17 @@
 // Source of truth: .kiro/specs/platform-evolution-planning/design.md
 // ============================================================
 
-export type AssetType = 'cover' | 'banner' | 'article-image' | 'thumbnail' | 'og-asset';
+export type AssetType =
+  | 'cover'
+  | 'banner'
+  | 'article-image'
+  | 'thumbnail'
+  | 'og-asset'
+  | 'title_cover'
+  | 'creator_image'
+  | 'article_cover'
+  | 'gallery_image'
+  | 'character_image';
 
 export interface MediaVariant {
   width: number;
