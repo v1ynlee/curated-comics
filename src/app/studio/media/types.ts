@@ -23,6 +23,7 @@ export interface StudioMediaAsset {
   mimeType: string | null;
   dominantColor: string | null;
   variants: MediaVariant[];
+  canonicalPreviewUrl: string | null;
   previewUrl: string | null;
   r2BasePath: string | null;
   storageProvider: string;
