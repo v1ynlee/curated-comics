@@ -29,7 +29,7 @@ export async function atomicUploadVariants(
 
   try {
     for (const variant of variants) {
-      const url = await uploadToR2(variant.key, variant.buffer, variant.contentType);
+      await uploadToR2(variant.key, variant.buffer, variant.contentType);
       uploadedKeys.push(variant.key);
     }
   } catch (error) {
