@@ -14,7 +14,7 @@ interface PageProps {
   searchParams: Promise<{ filter?: StudioTaskFilter }>;
 }
 
-const FILTERS: StudioTaskFilter[] = ['all', 'titles', 'articles', 'creators', 'narratives', 'ai', 'qa'];
+const FILTERS: StudioTaskFilter[] = ['all', 'titles', 'articles', 'creators', 'media', 'narratives', 'ai', 'qa'];
 
 function normalizeFilter(value: StudioTaskFilter | undefined): StudioTaskFilter {
   if (value && FILTERS.includes(value)) return value;
