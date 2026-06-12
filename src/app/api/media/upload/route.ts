@@ -11,8 +11,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/db/supabase-server';
 import { validateUpload, processImage } from '@/lib/storage/image-processor';
 import { atomicUploadVariants, type UploadVariant } from '@/lib/storage/atomic-upload';
-import { buildR2Key, buildR2Prefix } from '@/lib/storage/r2-paths';
+import { getMediaAssetPath, getMediaAssetPrefix } from '@/lib/storage/media-paths';
 import { getR2PublicUrl } from '@/lib/storage/r2-client';
+import { registerUploadedAsset } from '@/services/studio/media-registry';
 import type { AssetType, MediaVariant } from '@/types/media';
 
 const VALID_ASSET_TYPES: AssetType[] = [
@@ -21,6 +22,11 @@ const VALID_ASSET_TYPES: AssetType[] = [
   'article-image',
   'thumbnail',
   'og-asset',
+  'title_cover',
+  'creator_image',
+  'article_cover',
+  'gallery_image',
+  'character_image',
 ];
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -108,7 +114,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const uploadVariants: UploadVariant[] = variants.map((variant) => {
     const descriptor = `${variant.width}w`;
-    const key = buildR2Key(assetType, slug, contentHash, descriptor, variant.format);
+    const key = getMediaAssetPath(assetType, { slug, contentHash, descriptor, format: variant.format });
     return {
       key,
       buffer: variant.buffer,
@@ -116,9 +122,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
   });
 
-  let uploadedKeys: string[];
   try {
-    uploadedKeys = await atomicUploadVariants(uploadVariants);
+    await atomicUploadVariants(uploadVariants);
   } catch {
     return NextResponse.json(
       { error: 'Storage service unavailable' },
@@ -137,34 +142,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
   });
 
-  const r2BasePath = buildR2Prefix(assetType, slug, contentHash);
+  const r2BasePath = getMediaAssetPrefix(assetType, slug, contentHash);
   const fileSizeTotal = variants.reduce((sum, v) => sum + v.size, 0);
 
   // 7. UPSERT media_assets row in Supabase
-  const { data: asset, error: dbError } = await supabase
-    .from('media_assets')
-    .upsert(
-      {
-        slug,
-        asset_type: assetType,
-        content_hash: contentHash,
-        original_width: originalWidth,
-        original_height: originalHeight,
-        aspect_ratio: aspectRatio,
-        mime_type: mimeType,
-        dominant_color: dominantColor,
-        blur_data_uri: blurDataUri,
-        variants: variantMetadata,
-        r2_base_path: r2BasePath,
-        file_size_total: fileSizeTotal,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'slug,asset_type,content_hash',
-      }
-    )
-    .select()
-    .single();
+  const { data: asset, error: dbError } = await registerUploadedAsset(supabase, {
+    slug,
+    assetType,
+    contentHash,
+    originalWidth,
+    originalHeight,
+    aspectRatio,
+    mimeType,
+    dominantColor,
+    blurDataUri,
+    variants: variantMetadata,
+    r2BasePath,
+    fileSizeTotal,
+  });
 
   if (dbError) {
     return NextResponse.json(
