@@ -16,6 +16,11 @@ const ASSET_TYPE_PREFIX_MAP: Record<AssetType, string> = {
   'article-image': 'articles',
   thumbnail: 'thumbnails',
   'og-asset': 'og-assets',
+  title_cover: 'covers',
+  creator_image: 'creators',
+  article_cover: 'articles',
+  gallery_image: 'galleries',
+  character_image: 'characters',
 };
 
 /**
