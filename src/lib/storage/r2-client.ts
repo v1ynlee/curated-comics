@@ -13,6 +13,13 @@ import {
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 
+export interface R2ObjectSummary {
+  key: string;
+  size: number;
+  lastModified: string | null;
+  etag: string | null;
+}
+
 interface R2Config {
   accountId: string;
   accessKeyId: string;
@@ -144,6 +151,41 @@ export async function deleteR2Prefix(prefix: string): Promise<void> {
       ? listResponse.NextContinuationToken
       : undefined;
   } while (continuationToken);
+}
+
+/**
+ * Lists all R2 objects under a prefix. Studio Media uses this to treat
+ * R2 as storage source-of-truth instead of relying only on DB metadata.
+ */
+export async function listR2Objects(prefix = ''): Promise<R2ObjectSummary[]> {
+  const config = validateR2Config();
+  const client = createR2Client();
+  const objects: R2ObjectSummary[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const response = await client.send(
+      new ListObjectsV2Command({
+        Bucket: config.bucketName,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+
+    for (const object of response.Contents ?? []) {
+      if (!object.Key) continue;
+      objects.push({
+        key: object.Key,
+        size: object.Size ?? 0,
+        lastModified: object.LastModified?.toISOString() ?? null,
+        etag: object.ETag?.replace(/^"|"$/g, '') ?? null,
+      });
+    }
+
+    continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return objects;
 }
 
 /**
