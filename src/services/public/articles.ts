@@ -7,6 +7,7 @@
 // ============================================================
 
 import { supabase } from '../api';
+import { resolveMediaUrl, resolveMediaVariants } from '@/lib/storage/media-resolver';
 import type {
   Article,
   ArticleSummary,
@@ -103,7 +104,7 @@ function mapMediaAsset(row: MediaAssetRow): MediaAsset {
     mimeType: row.mime_type,
     dominantColor: row.dominant_color,
     blurDataUri: row.blur_data_uri,
-    variants: row.variants ?? [],
+    variants: resolveMediaVariants(row.variants, 'article-cover'),
     r2BasePath: row.r2_base_path,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -173,7 +174,7 @@ function mapArticleSummary(row: ArticleSummaryRow): ArticleSummary {
 
   const featuredImage = row.media_assets
     ? {
-        url: row.media_assets.variants?.[0]?.url ?? '',
+        url: resolveMediaUrl(row.media_assets.variants?.[0]?.url, 'article-cover'),
         blurDataUri: row.media_assets.blur_data_uri,
         dominantColor: row.media_assets.dominant_color,
       }
