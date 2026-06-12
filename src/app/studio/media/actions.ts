@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
-import { buildMediaStorageSnapshot, deleteRegisteredAsset, listMediaStorageObjects, archiveRegisteredAssets } from '@/services/studio/media-registry';
+import { missingKindForAssetType, resolveCanonicalPath, resolveMediaUrl, resolveMediaVariants } from '@/lib/storage/media-resolver';
+import { buildMediaStorageSnapshot, listMediaStorageObjects } from '@/services/studio/media-registry';
+import { archiveAsset, bulkArchiveAssets, bulkDeleteAssets, deleteAsset, replaceAsset } from '@/services/studio/media-operations';
+import { archiveUnusedAsset, deleteOrphanObject, firstCanonicalMatch, registerMissingMetadata, relinkBrokenReference } from '@/services/studio/media-reconcile';
 import { logStudioActivity } from '@/services/studio/activity-log';
 import type { AssetType, MediaVariant } from '@/types/media';
 import type {
@@ -57,13 +60,21 @@ function assetPreviewUrl(asset: MediaAssetRow) {
     .sort((a, b) => a.width - b.width)[0]?.url ?? null;
 }
 
+function assetCanonicalPreviewPath(asset: MediaAssetRow) {
+  return resolveCanonicalPath(assetPreviewUrl(asset));
+}
+
+function resolvedAssetPreviewUrl(asset: MediaAssetRow) {
+  return resolveMediaUrl(assetPreviewUrl(asset), missingKindForAssetType(asset.asset_type));
+}
+
 function assetStorageSize(asset: MediaAssetRow) {
   if (asset.file_size_total && asset.file_size_total > 0) return asset.file_size_total;
   return (asset.variants ?? []).reduce((sum, variant) => sum + (variant.size ?? 0), 0);
 }
 
 function assetUrlSet(asset: MediaAssetRow) {
-  return new Set((asset.variants ?? []).map((variant) => variant.url).filter(Boolean));
+  return new Set((asset.variants ?? []).flatMap((variant) => [variant.url, resolveMediaUrl(variant.url, missingKindForAssetType(asset.asset_type))]).filter(Boolean));
 }
 
 function firstRelation<T>(value: MaybeArray<T>): T | null {
@@ -172,8 +183,9 @@ export async function fetchMediaWorkspaceData(): Promise<MediaWorkspaceData> {
       originalHeight: asset.original_height,
       mimeType: asset.mime_type,
       dominantColor: asset.dominant_color,
-      variants: asset.variants ?? [],
-      previewUrl: assetPreviewUrl(asset),
+      variants: resolveMediaVariants(asset.variants, missingKindForAssetType(asset.asset_type)),
+      canonicalPreviewUrl: assetCanonicalPreviewPath(asset),
+      previewUrl: resolvedAssetPreviewUrl(asset),
       r2BasePath: asset.r2_path ?? asset.r2_base_path,
       storageProvider: asset.storage_provider ?? 'r2',
       fileSizeTotal: assetStorageSize(asset),
@@ -191,7 +203,7 @@ export async function fetchMediaWorkspaceData(): Promise<MediaWorkspaceData> {
     const title = firstRelation(row.titles);
     const titleName = title?.title_english ?? 'Untitled title';
     const titleSlug = title?.slug ?? row.title_id;
-    const image: StudioGalleryImage = { id: row.id, titleId: row.title_id, titleName, titleSlug, category: row.category, imageUrl: row.image_url, caption: row.caption, sortOrder: row.sort_order, createdAt: row.created_at };
+    const image: StudioGalleryImage = { id: row.id, titleId: row.title_id, titleName, titleSlug, category: row.category, imageUrl: resolveMediaUrl(row.image_url, 'gallery-image'), caption: row.caption, sortOrder: row.sort_order, createdAt: row.created_at };
     const key = `${row.title_id}:${row.category}`;
     galleryMap.set(key, [...(galleryMap.get(key) ?? []), image]);
   }
@@ -224,7 +236,7 @@ export async function fetchMediaWorkspaceData(): Promise<MediaWorkspaceData> {
       role: row.role,
       description: row.description,
       imageCount: images.length,
-      previewImageUrl: images[0]?.image_url ?? null,
+      previewImageUrl: images[0]?.image_url ? resolveMediaUrl(images[0].image_url, 'character') : null,
       updatedAt: row.created_at,
     };
   });
@@ -290,59 +302,37 @@ export async function fetchMediaWorkspaceData(): Promise<MediaWorkspaceData> {
 }
 
 export async function archiveMediaAsset(assetId: string, archived: boolean): Promise<MediaActionResult> {
-  const supabase = await requireStudio();
-  const { data: asset } = await supabase.from('media_assets').select('id, slug, archived').eq('id', assetId).single();
-  const { error } = await supabase.from('media_assets').update({ archived, updated_at: new Date().toISOString() }).eq('id', assetId);
-  if (error) return { success: false, error: error.message };
-
-  await logStudioActivity({
-    eventType: archived ? 'ASSET_ARCHIVED' : 'ASSET_RESTORED',
-    entityType: 'media',
-    entityId: assetId,
-    entityName: asset?.slug ?? null,
-    metadata: { oldValues: { archived: asset?.archived ?? false }, newValues: { archived }, changedFields: ['archived'] },
-  });
-
-  revalidatePath('/studio/media');
-  revalidatePath('/studio/activity');
-  return { success: true };
+  const data = await fetchMediaWorkspaceData();
+  const asset = data.assets.find((item) => item.id === assetId);
+  if (!asset) return { success: false, error: 'Asset not found.' };
+  const result = await archiveAsset(await requireStudio(), asset, archived);
+  return result.success ? { success: true } : { success: false, error: result.error };
 }
 
 export async function deleteMediaAsset(assetId: string): Promise<MediaActionResult> {
   const data = await fetchMediaWorkspaceData();
   const asset = data.assets.find((item) => item.id === assetId);
   if (!asset) return { success: false, error: 'Asset not found.' };
-  if (asset.usageCount > 0) return { success: false, error: 'Asset is still in use. Replace or detach usages before deleting.' };
-
-  const supabase = await requireStudio();
-  const { error } = await deleteRegisteredAsset(supabase, { id: asset.id, slug: asset.slug, assetType: asset.assetType, contentHash: asset.contentHash || asset.hash, r2BasePath: asset.r2BasePath });
-  if (error) return { success: false, error: error.message };
-
-  await logStudioActivity({ eventType: 'ASSET_DELETED', entityType: 'media', entityId: assetId, entityName: asset.slug, metadata: { fileSizeTotal: asset.fileSizeTotal, assetType: asset.assetType } });
-  revalidatePath('/studio/media');
-  revalidatePath('/studio/activity');
-  return { success: true };
+  const result = await deleteAsset(await requireStudio(), asset);
+  return result.success ? { success: true } : { success: false, error: result.error };
 }
 
 export async function archiveMediaAssets(assetIds: string[]): Promise<MediaActionResult> {
   const uniqueIds = Array.from(new Set(assetIds)).filter(Boolean);
   if (uniqueIds.length === 0) return { success: false, error: 'Select at least one asset.' };
+  const data = await fetchMediaWorkspaceData();
+  const assets = data.assets.filter((asset) => uniqueIds.includes(asset.id));
+  const result = await bulkArchiveAssets(await requireStudio(), assets);
+  return result.success ? { success: true } : { success: false, error: result.error };
+}
 
-  const supabase = await requireStudio();
-  const { error } = await archiveRegisteredAssets(supabase, uniqueIds);
-  if (error) return { success: false, error: error.message };
-
-  await logStudioActivity({
-    eventType: 'MEDIA_BULK_ACTION_APPLIED',
-    entityType: 'media',
-    entityId: 'bulk-archive',
-    entityName: 'Archive selected assets',
-    metadata: { action: 'archive', assetIds: uniqueIds, count: uniqueIds.length },
-  });
-
-  revalidatePath('/studio/media');
-  revalidatePath('/studio/activity');
-  return { success: true };
+export async function deleteMediaAssets(assetIds: string[]): Promise<MediaActionResult> {
+  const uniqueIds = Array.from(new Set(assetIds)).filter(Boolean);
+  if (uniqueIds.length === 0) return { success: false, error: 'Select at least one asset.' };
+  const data = await fetchMediaWorkspaceData();
+  const assets = data.assets.filter((asset) => uniqueIds.includes(asset.id));
+  const result = await bulkDeleteAssets(await requireStudio(), assets);
+  return result.success ? { success: true } : { success: false, error: result.error };
 }
 
 export async function replaceMediaAssetReferences(oldAssetId: string, newAssetId: string): Promise<MediaActionResult> {
@@ -351,41 +341,14 @@ export async function replaceMediaAssetReferences(oldAssetId: string, newAssetId
   const newAsset = data.assets.find((asset) => asset.id === newAssetId);
   if (!oldAsset || !newAsset) return { success: false, error: 'Replacement asset not found.' };
 
-  const supabase = await requireStudio();
-  const newUrl = newAsset.previewUrl;
-
-  for (const usage of oldAsset.usages) {
-    if (usage.type === 'article') await supabase.from('articles').update({ featured_image_id: newAsset.id, updated_at: new Date().toISOString() }).eq('id', usage.id);
-    if (usage.type === 'title') await supabase.from('titles').update({ cover_slug: newAsset.slug, updated_at: new Date().toISOString() }).eq('id', usage.id);
-    if (usage.type === 'creator' && newUrl) await supabase.from('creators').update({ image: newUrl, updated_at: new Date().toISOString() }).eq('id', usage.id);
-    if (usage.type === 'gallery' && newUrl) await supabase.from('title_gallery').update({ image_url: newUrl }).eq('id', usage.id);
-    if (usage.type === 'character' && newUrl) {
-      const oldUrls = new Set(oldAsset.variants.map((variant) => variant.url));
-      const imageRows = await supabase.from('character_images').select('id, image_url').eq('character_id', usage.id);
-      for (const row of (imageRows.data ?? []) as { id: string; image_url: string }[]) {
-        if (oldUrls.has(row.image_url) || row.image_url.includes(oldAsset.slug)) await supabase.from('character_images').update({ image_url: newUrl }).eq('id', row.id);
-      }
-    }
-  }
-
-  await logStudioActivity({
-    eventType: 'ASSET_REPLACED',
-    entityType: 'media',
-    entityId: oldAssetId,
-    entityName: oldAsset.slug,
-    metadata: { oldValues: { assetId: oldAssetId, slug: oldAsset.slug }, newValues: { assetId: newAssetId, slug: newAsset.slug }, changedFields: ['assetReferences'], usageCount: oldAsset.usageCount },
-  });
-
-  revalidatePath('/studio/media');
-  revalidatePath('/studio');
-  revalidatePath('/studio/activity');
-  return { success: true };
+  const result = await replaceAsset(await requireStudio(), oldAsset, newAsset);
+  return result.success ? { success: true } : { success: false, error: result.error };
 }
 
 export async function addGalleryAssetToGroup(input: { titleId: string; category: string; assetId: string; caption?: string }): Promise<MediaActionResult> {
   const data = await fetchMediaWorkspaceData();
   const asset = data.assets.find((item) => item.id === input.assetId);
-  if (!asset?.previewUrl) return { success: false, error: 'Select an asset with a usable preview URL.' };
+  if (!asset?.canonicalPreviewUrl) return { success: false, error: 'Select an asset with a usable preview URL.' };
 
   const supabase = await requireStudio();
   const latest = await supabase
@@ -401,7 +364,7 @@ export async function addGalleryAssetToGroup(input: { titleId: string; category:
   const { error } = await supabase.from('title_gallery').insert({
     title_id: input.titleId,
     category: input.category,
-    image_url: asset.previewUrl,
+    image_url: asset.canonicalPreviewUrl,
     caption: input.caption?.trim() || null,
     sort_order: ((latest.data as { sort_order: number } | null)?.sort_order ?? -1) + 1,
   });
@@ -423,7 +386,7 @@ export async function addGalleryAssetToGroup(input: { titleId: string; category:
 export async function addCharacterAssetImage(input: { characterId: string; assetId: string; caption?: string }): Promise<MediaActionResult> {
   const data = await fetchMediaWorkspaceData();
   const asset = data.assets.find((item) => item.id === input.assetId);
-  if (!asset?.previewUrl) return { success: false, error: 'Select an asset with a usable preview URL.' };
+  if (!asset?.canonicalPreviewUrl) return { success: false, error: 'Select an asset with a usable preview URL.' };
 
   const supabase = await requireStudio();
   const latest = await supabase
@@ -437,7 +400,7 @@ export async function addCharacterAssetImage(input: { characterId: string; asset
 
   const { error } = await supabase.from('character_images').insert({
     character_id: input.characterId,
-    image_url: asset.previewUrl,
+    image_url: asset.canonicalPreviewUrl,
     caption: input.caption?.trim() || null,
     sort_order: ((latest.data as { sort_order: number } | null)?.sort_order ?? -1) + 1,
   });
@@ -454,4 +417,43 @@ export async function addCharacterAssetImage(input: { characterId: string; asset
   revalidatePath('/studio/media');
   revalidatePath('/studio/activity');
   return { success: true };
+}
+
+export async function reconcileMediaIssue(issue: MediaHealthIssue): Promise<MediaActionResult> {
+  const data = await fetchMediaWorkspaceData();
+  const supabase = await requireStudio();
+  const asset = issue.assetId ? data.assets.find((item) => item.id === issue.assetId) : null;
+  const objectKey = issue.objectKey;
+
+  if (issue.type === 'missing-db-metadata' && objectKey) {
+    const result = await registerMissingMetadata(supabase, objectKey);
+    return result.success ? { success: true } : { success: false, error: result.error };
+  }
+
+  if (issue.type === 'unused-asset' && asset) {
+    const result = await archiveUnusedAsset(supabase, asset);
+    return result.success ? { success: true } : { success: false, error: result.error };
+  }
+
+  if (issue.type === 'orphan-asset' && objectKey) {
+    const result = await deleteOrphanObject(supabase, objectKey);
+    return result.success ? { success: true } : { success: false, error: result.error };
+  }
+
+  if (issue.type === 'broken-reference' && objectKey) {
+    const replacement = firstCanonicalMatch(data.assets, objectKey);
+    if (!replacement) return { success: false, error: 'No replacement asset could be inferred. Open the asset drawer and replace manually.' };
+    const result = await relinkBrokenReference(supabase, objectKey, replacement);
+    return result.success ? { success: true } : { success: false, error: result.error };
+  }
+
+  if (issue.type === 'missing-r2-object' && asset) {
+    if (asset.usageCount === 0) {
+      const result = await archiveUnusedAsset(supabase, asset);
+      return result.success ? { success: true } : { success: false, error: result.error };
+    }
+    return { success: false, error: 'This asset is referenced. Upload a replacement from the asset drawer before repairing.' };
+  }
+
+  return { success: false, error: 'No automatic repair is available for this issue.' };
 }
