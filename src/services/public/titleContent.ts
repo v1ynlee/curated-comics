@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from '../api';
+import { resolveMediaUrl } from '@/lib/storage/media-resolver';
 
 export interface GalleryImage {
   id: string;
@@ -40,7 +41,7 @@ export async function fetchTitleGallery(titleId: string): Promise<GalleryImage[]
   return (data ?? []).map((row) => ({
     id: row.id,
     category: row.category,
-    imageUrl: row.image_url,
+    imageUrl: resolveMediaUrl(row.image_url, 'gallery-image'),
     caption: row.caption ?? undefined,
     sortOrder: row.sort_order,
   }));
@@ -66,7 +67,7 @@ export async function fetchTitleCharacters(titleId: string): Promise<Character[]
     sortOrder: row.sort_order,
     images: (row.character_images ?? []).map((img: { id: string; image_url: string; caption: string | null; sort_order: number }) => ({
       id: img.id,
-      imageUrl: img.image_url,
+      imageUrl: resolveMediaUrl(img.image_url, 'character'),
       caption: img.caption ?? undefined,
       sortOrder: img.sort_order,
     })),
