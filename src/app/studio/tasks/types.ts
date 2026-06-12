@@ -1,7 +1,7 @@
 export type StudioTaskPriority = 'critical' | 'high' | 'medium' | 'low';
-export type StudioTaskFilter = 'all' | 'titles' | 'articles' | 'creators' | 'narratives' | 'ai' | 'qa';
+export type StudioTaskFilter = 'all' | 'titles' | 'articles' | 'creators' | 'media' | 'narratives' | 'ai' | 'qa';
 export type StudioTaskSource = 'qa' | 'ai' | 'draft' | 'article' | 'creator' | 'narrative';
-export type StudioTaskEntityType = 'title' | 'article' | 'creator' | 'narrative' | 'ai' | 'draft';
+export type StudioTaskEntityType = 'title' | 'article' | 'creator' | 'media' | 'narrative' | 'ai' | 'draft';
 
 export interface StudioTask {
   id: string;
