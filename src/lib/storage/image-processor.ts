@@ -62,11 +62,16 @@ function getWidthsForAssetType(assetType: AssetType): number[] {
   switch (assetType) {
     case 'cover':
     case 'thumbnail':
+    case 'title_cover':
+    case 'creator_image':
+    case 'gallery_image':
+    case 'character_image':
       return COVER_WIDTHS;
     case 'banner':
     case 'og-asset':
       return BANNER_WIDTHS;
     case 'article-image':
+    case 'article_cover':
       return ARTICLE_WIDTHS;
     default:
       return COVER_WIDTHS;
