@@ -4,7 +4,8 @@ import { X } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { AssetUsagePanel } from './AssetUsagePanel';
 import { AssetReplaceDialog } from './AssetReplaceDialog';
-import type { StudioMediaAsset } from '@/app/studio/media/types';
+import { AssetHealthPanel } from './AssetHealthPanel';
+import type { MediaHealthIssue, StudioMediaAsset } from '@/app/studio/media/types';
 
 function formatBytes(value: number) {
   if (value <= 0) return '0 B';
@@ -13,7 +14,7 @@ function formatBytes(value: number) {
   return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
-export function AssetPreviewDrawer({ asset, onClose }: { asset: StudioMediaAsset; onClose: () => void }) {
+export function AssetPreviewDrawer({ asset, healthIssues, onClose }: { asset: StudioMediaAsset; healthIssues: MediaHealthIssue[]; onClose: () => void }) {
   return (
     <ModalPortal>
       <div className="fixed left-0 top-0 z-modal h-[100dvh] w-[100dvw] bg-black/55" role="dialog" aria-modal="true" aria-label="Asset preview">
@@ -41,6 +42,7 @@ export function AssetPreviewDrawer({ asset, onClose }: { asset: StudioMediaAsset
               <Info label="Usage Count" value={asset.usageCount.toString()} />
               <Info label="Hash" value={asset.hash || 'Unknown'} />
             </dl>
+            <AssetHealthPanel asset={asset} healthIssues={healthIssues} />
             <AssetReplaceDialog asset={asset} />
             <AssetUsagePanel usages={asset.usages} />
           </div>
