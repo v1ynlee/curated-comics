@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { deleteR2Prefix, getR2PublicUrl, listR2Objects } from '@/lib/storage/r2-client';
-import { getMediaAssetPrefix, getMediaRootPrefix } from '@/lib/storage/media-paths';
+import { getR2PublicUrl, listR2Objects } from '@/lib/storage/r2-client';
+import { getMediaRootPrefix } from '@/lib/storage/media-paths';
+import { mediaKeyFromUrl, resolveMediaUrl } from '@/lib/storage/media-resolver';
 import type { MediaHealthIssue, MediaStorageObject, StorageExplorerFolder, StudioMediaAsset } from '@/app/studio/media/types';
 import type { AssetType, MediaVariant } from '@/types/media';
 
@@ -17,24 +18,24 @@ export interface RegisterUploadedAssetInput {
   variants: MediaVariant[];
   r2BasePath: string;
   fileSizeTotal: number;
+  destination?: string;
+  entityType?: string;
+  entityId?: string | null;
+  canonicalPath?: string | null;
+  provider?: string;
 }
 
 const EXPLORER_FOLDERS = [
   { id: 'titles', name: 'titles', prefix: 'titles/' },
   { id: 'creators', name: 'creators', prefix: 'creators/' },
   { id: 'articles', name: 'articles', prefix: 'articles/' },
+  { id: 'gallery', name: 'gallery', prefix: 'gallery/' },
+  { id: 'characters', name: 'characters', prefix: 'characters/' },
   { id: 'temp', name: 'temp', prefix: 'temp/' },
 ];
 
 function publicUrlKey(url: string | null | undefined) {
-  if (!url) return null;
-  const baseUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, '');
-  if (baseUrl && url.startsWith(`${baseUrl}/`)) return decodeURIComponent(url.slice(baseUrl.length + 1));
-  try {
-    return decodeURIComponent(new URL(url).pathname.replace(/^\/+/, ''));
-  } catch {
-    return null;
-  }
+  return mediaKeyFromUrl(url);
 }
 
 function assetObjectKeys(asset: StudioMediaAsset) {
@@ -63,7 +64,7 @@ export function buildMediaStorageSnapshot(assets: StudioMediaAsset[], referenced
     const asset = assetByObjectKey.get(object.key) ?? null;
     return {
       key: object.key,
-      url: getR2PublicUrl(object.key),
+      url: resolveMediaUrl(getR2PublicUrl(object.key)),
       size: object.size,
       lastModified: object.lastModified,
       etag: object.etag,
@@ -189,7 +190,10 @@ export async function registerUploadedAsset(supabase: SupabaseClient, input: Reg
         variants: input.variants,
         r2_base_path: input.r2BasePath,
         r2_path: input.r2BasePath,
-        storage_provider: 'r2',
+        canonical_path: input.canonicalPath,
+        upload_destination: input.destination,
+        storage_provider: input.provider ?? 'r2',
+        entity_id: input.entityId ?? null,
         file_size_total: input.fileSizeTotal,
         updated_at: new Date().toISOString(),
       },
@@ -197,17 +201,4 @@ export async function registerUploadedAsset(supabase: SupabaseClient, input: Reg
     )
     .select()
     .single();
-}
-
-export async function archiveRegisteredAssets(supabase: SupabaseClient, assetIds: string[]) {
-  return supabase
-    .from('media_assets')
-    .update({ archived: true, updated_at: new Date().toISOString() })
-    .in('id', assetIds);
-}
-
-export async function deleteRegisteredAsset(supabase: SupabaseClient, asset: { id: string; slug: string; assetType: string; contentHash: string; r2BasePath: string | null }) {
-  const prefix = asset.r2BasePath ?? getMediaAssetPrefix(asset.assetType, asset.slug, asset.contentHash);
-  await deleteR2Prefix(prefix);
-  return supabase.from('media_assets').delete().eq('id', asset.id);
 }
