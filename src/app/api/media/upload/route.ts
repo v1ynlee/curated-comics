@@ -11,8 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/db/supabase-server';
 import { validateUpload, processImage } from '@/lib/storage/image-processor';
 import { atomicUploadVariants, type UploadVariant } from '@/lib/storage/atomic-upload';
-import { getMediaAssetPath, getMediaAssetPrefix } from '@/lib/storage/media-paths';
-import { getR2PublicUrl } from '@/lib/storage/r2-client';
+import { getUploadAssetPath, getUploadAssetPrefix, getUploadMetadata, type UploadDestination } from '@/lib/storage/media-paths';
 import { registerUploadedAsset } from '@/services/studio/media-registry';
 import type { AssetType, MediaVariant } from '@/types/media';
 
@@ -53,7 +52,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const file = formData.get('file') as File | null;
   const slug = formData.get('slug') as string | null;
-  const assetType = formData.get('assetType') as AssetType | null;
+  const destination = (formData.get('destination') as UploadDestination | null) ?? 'temporary';
+  const uploadMetadata = getUploadMetadata(destination);
+  const assetType = (formData.get('assetType') as AssetType | null) ?? uploadMetadata.assetType;
+  const entityId = formData.get('entityId') as string | null;
 
   if (!file || !slug || !assetType) {
     return NextResponse.json(
@@ -114,7 +116,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const uploadVariants: UploadVariant[] = variants.map((variant) => {
     const descriptor = `${variant.width}w`;
-    const key = getMediaAssetPath(assetType, { slug, contentHash, descriptor, format: variant.format });
+    const key = getUploadAssetPath(destination, { slug, contentHash, descriptor, format: variant.format });
     return {
       key,
       buffer: variant.buffer,
@@ -137,12 +139,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return {
       width: variant.width,
       format: variant.format,
-      url: getR2PublicUrl(key),
+      url: key,
       size: variant.size,
     };
   });
 
-  const r2BasePath = getMediaAssetPrefix(assetType, slug, contentHash);
+  const r2BasePath = getUploadAssetPrefix(destination, slug, contentHash);
   const fileSizeTotal = variants.reduce((sum, v) => sum + v.size, 0);
 
   // 7. UPSERT media_assets row in Supabase
@@ -159,6 +161,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     variants: variantMetadata,
     r2BasePath,
     fileSizeTotal,
+    destination,
+    entityType: uploadMetadata.entityType,
+    entityId,
+    canonicalPath: variantMetadata[0]?.url ?? null,
+    provider: uploadMetadata.provider,
   });
 
   if (dbError) {
