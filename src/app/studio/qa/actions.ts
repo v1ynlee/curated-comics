@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient, getServerUser } from '@/lib/db/supabase-server';
 import { generateTitleAutofill, GeminiTitleGeneratorError } from '@/services/studio/gemini-title-generator';
 import { logStudioActivity } from '@/services/studio/activity-log';
+import { fetchMediaWorkspaceData } from '@/app/studio/media/actions';
 import { calculateTitleCompletion } from '@/services/studio/title-completion';
 import type { QABulkAction, QAData, QAEntityType, QAIssueSummary, QAIssueType, QAQuickAction, QAResultItem } from './types';
 
@@ -30,6 +31,9 @@ interface FeaturedCreatorRow { creator_id: string; visible: boolean; updated_at:
 interface NarrativeRow { id: string; title: string; cover_slugs: string[] | null; visible: boolean; updated_at: string }
 interface IgnoreRow { issue_key: string }
 interface GalleryRow { title_id: string }
+interface MediaQARow { id: string; slug: string; asset_type: string; content_hash: string | null; updated_at: string; archived?: boolean | null }
+type MaybeArray<T> = T | T[] | null;
+interface CharacterQARow { id: string; name: string; created_at: string; titles: MaybeArray<{ slug: string; title_english: string }>; character_images: { id: string }[] | null }
 
 type QAActionResult<T = undefined> = T extends undefined
   ? { success: true } | { success: false; error: string }
@@ -45,6 +49,7 @@ const ISSUE_META: Record<QAIssueType, Omit<QAIssueSummary, 'count'>> = {
   'unreviewed-titles': { type: 'unreviewed-titles', label: 'Unreviewed Titles', description: 'Titles without a saved review.' },
   'draft-content': { type: 'draft-content', label: 'Draft Content', description: 'Hidden titles, draft articles, and archived creators.' },
   'broken-featured': { type: 'broken-featured', label: 'Broken Featured', description: 'Featured/editorial records that need attention.' },
+  'media-health': { type: 'media-health', label: 'Media Health', description: 'Duplicate assets, missing character media, and broken media relationships.' },
 };
 
 async function requireStudioAccess() {
@@ -77,6 +82,7 @@ function actionSet(issueType: QAIssueType, entityType: QAEntityType): QAQuickAct
   if (issueType === 'broken-featured' && entityType === 'featured-title') return ['remove-featured-title', 'replace-featured-title', 'open-title'];
   if (issueType === 'broken-featured' && entityType === 'featured-creator') return ['remove-featured-creator', 'replace-featured-creator', 'archive-creator'];
   if (issueType === 'broken-featured' && entityType === 'narrative') return ['open-narrative-editor', 'auto-remove-broken-references'];
+  if (issueType === 'media-health') return ['open-media'];
   return ['open-editor'];
 }
 
@@ -85,8 +91,22 @@ function bulkSet(issueType: QAIssueType, entityType: QAEntityType): QABulkAction
   if (issueType === 'unreviewed-titles') actions.push('mark-reviewed');
   if (entityType === 'title' || entityType === 'creator') actions.push('archive');
   if (issueType === 'missing-synopsis' || issueType === 'missing-reading-urls') actions.push('ignore');
+  if (issueType === 'media-health') actions.push('ignore');
   if (issueType === 'broken-featured' && (entityType === 'featured-title' || entityType === 'featured-creator')) actions.push('remove-featured');
   return actions;
+}
+
+async function fetchMediaRowsForQA(): Promise<MediaQARow[]> {
+  const supabase = await createSupabaseServerClient();
+  const result = await supabase.from('media_assets').select('id, slug, asset_type, content_hash, updated_at, archived').order('updated_at', { ascending: false });
+  if (!result.error) return (result.data ?? []) as MediaQARow[];
+  const fallback = await supabase.from('media_assets').select('id, slug, asset_type, content_hash, updated_at').order('updated_at', { ascending: false });
+  return fallback.error ? [] : (fallback.data ?? []) as MediaQARow[];
+}
+
+function firstRelation<T>(value: MaybeArray<T>): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
 }
 
 function titleIssue(title: TitleRow, issueType: QAIssueType, quickFixLabel: string, issueDetail: string | null, completionScore: number | null): QAResultItem {
@@ -186,6 +206,9 @@ export async function fetchQAData(): Promise<QAData> {
   ]);
 
   const creatorRows = await fetchCreatorRowsWithStatus();
+  const mediaRows = await fetchMediaRowsForQA();
+  const mediaWorkspace = await fetchMediaWorkspaceData().catch(() => null);
+  const characterMediaResult = await supabase.from('title_characters').select('id, name, created_at, titles:titles(slug, title_english), character_images(id)');
   const titles = titlesResult.error ? [] : (titlesResult.data ?? []) as TitleRow[];
   const titleSlugs = new Set(titles.map((title) => title.slug));
   const titleBySlug = new Map(titles.map((title) => [title.slug, title]));
@@ -314,6 +337,63 @@ export async function fetchQAData(): Promise<QAData> {
           metadata: { coverSlugs: slugs, validSlugs: slugs.filter((slug) => titleBySlug.has(slug)), missingSlugs },
         }));
       }
+    }
+  }
+
+  const mediaByHash = new Map<string, MediaQARow[]>();
+  for (const asset of mediaRows) {
+    if (!asset.content_hash || asset.archived) continue;
+    mediaByHash.set(asset.content_hash, [...(mediaByHash.get(asset.content_hash) ?? []), asset]);
+  }
+  for (const duplicateGroup of mediaByHash.values()) {
+    if (duplicateGroup.length <= 1) continue;
+    const asset = duplicateGroup[0];
+    pushIssue(genericIssue({
+      id: asset.id,
+      entityType: 'media',
+      title: asset.slug,
+      subtitle: asset.asset_type,
+      issueType: 'media-health',
+      issueDetail: `${duplicateGroup.length} assets share the same content hash.`,
+      updatedAt: asset.updated_at,
+      editorHref: '/studio/media?tab=usage',
+      quickFixLabel: 'Open Media',
+      metadata: { duplicateAssetIds: duplicateGroup.map((item) => item.id), contentHash: asset.content_hash },
+    }));
+  }
+
+  for (const issue of mediaWorkspace?.healthIssues ?? []) {
+    if (issue.type === 'unused-asset') continue;
+    pushIssue(genericIssue({
+      id: issue.id,
+      entityType: 'media',
+      title: issue.title,
+      subtitle: issue.objectKey ?? issue.assetId ?? 'R2 storage',
+      issueType: 'media-health',
+      issueDetail: issue.detail,
+      updatedAt: issue.updatedAt,
+      editorHref: '/studio/media?tab=storage-explorer',
+      quickFixLabel: 'Open Media',
+      metadata: { mediaHealthType: issue.type, objectKey: issue.objectKey, assetId: issue.assetId, severity: issue.severity },
+    }));
+  }
+
+  if (!characterMediaResult.error) {
+    for (const character of (characterMediaResult.data ?? []) as unknown as CharacterQARow[]) {
+      if ((character.character_images ?? []).length > 0) continue;
+      const title = firstRelation(character.titles);
+      pushIssue(genericIssue({
+        id: character.id,
+        entityType: 'character',
+        slug: title?.slug ?? null,
+        title: character.name,
+        subtitle: title?.title_english ?? 'Character missing image',
+        issueType: 'media-health',
+        issueDetail: 'Character has no image assigned.',
+        updatedAt: character.created_at,
+        editorHref: '/studio/media?tab=characters',
+        quickFixLabel: 'Open Media',
+      }));
     }
   }
 
