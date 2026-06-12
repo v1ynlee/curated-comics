@@ -14,7 +14,7 @@ interface PageProps {
   searchParams: Promise<{ filter?: ActivityFilter; q?: string }>;
 }
 
-const VALID_FILTERS: ActivityFilter[] = ['all', 'titles', 'articles', 'creators', 'curation', 'ai', 'drafts', 'qa'];
+const VALID_FILTERS: ActivityFilter[] = ['all', 'titles', 'articles', 'creators', 'media', 'curation', 'ai', 'drafts', 'qa'];
 
 function normalizeFilter(value: ActivityFilter | undefined): ActivityFilter {
   if (value && VALID_FILTERS.includes(value)) return value;
