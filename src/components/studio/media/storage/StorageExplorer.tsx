@@ -1,5 +1,11 @@
+'use client';
+
+import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, Folder, HardDrive } from 'lucide-react';
-import type { MediaHealthIssue, StorageExplorerFolder } from '@/app/studio/media/types';
+import { toast } from 'sonner';
+import { reconcileMediaIssue } from '@/app/studio/media/actions';
+import type { MediaHealthIssue, StorageExplorerFolder, StudioMediaAsset } from '@/app/studio/media/types';
 
 function formatBytes(value: number) {
   if (value <= 0) return '0 B';
@@ -8,7 +14,39 @@ function formatBytes(value: number) {
   return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
-export function StorageExplorer({ folders, healthIssues }: { folders: StorageExplorerFolder[]; healthIssues: MediaHealthIssue[] }) {
+function actionFor(issue: MediaHealthIssue) {
+  if (issue.type === 'missing-db-metadata') return 'Register Metadata';
+  if (issue.type === 'missing-r2-object') return 'Replace Missing Object';
+  if (issue.type === 'broken-reference') return 'Relink Asset';
+  if (issue.type === 'unused-asset') return 'Archive Asset';
+  if (issue.type === 'orphan-asset') return 'Delete Orphan';
+  return 'Review Issue';
+}
+
+function toneClass(severity: MediaHealthIssue['severity']) {
+  if (severity === 'critical') return 'text-semantic-danger';
+  if (severity === 'warning') return 'text-semantic-warning';
+  return 'text-text-secondary';
+}
+
+export function StorageExplorer({ folders, healthIssues, assets }: { folders: StorageExplorerFolder[]; healthIssues: MediaHealthIssue[]; assets: StudioMediaAsset[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function fixIssue(issue: MediaHealthIssue) {
+    const action = actionFor(issue);
+    if (!window.confirm(`${action}? This will update storage or metadata and write an activity log entry.`)) return;
+    startTransition(async () => {
+      const result = await reconcileMediaIssue(issue);
+      if (result.success) {
+        toast.success(`${action} complete.`);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-lg border border-white/10 bg-bg-surface/35 p-4">
@@ -50,15 +88,24 @@ export function StorageExplorer({ folders, healthIssues }: { folders: StorageExp
           <h2 className="font-heading text-lg font-semibold text-text-primary">Storage Health</h2>
         </div>
         <div className="mt-4 space-y-2">
-          {healthIssues.slice(0, 12).map((issue) => (
+          {healthIssues.slice(0, 12).map((issue) => {
+            const asset = issue.assetId ? assets.find((item) => item.id === issue.assetId) : null;
+            return (
             <div key={issue.id} className="rounded-md border border-white/10 bg-bg-deep/35 px-3 py-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-body text-sm text-text-primary">{issue.title}</p>
-                <span className="font-data text-xs text-text-tertiary">{issue.type}</span>
+                <span className={`font-data text-xs ${toneClass(issue.severity)}`}>{issue.severity}</span>
               </div>
               <p className="mt-1 truncate font-body text-xs text-text-secondary">{issue.detail}</p>
+              <div className="mt-2 grid gap-1 font-body text-xs text-text-tertiary sm:grid-cols-3">
+                <span>Detected: {new Date(issue.updatedAt).toLocaleDateString()}</span>
+                <span>Affected: {asset?.slug ?? issue.objectKey ?? 'Unknown'}</span>
+                <span>Action: {actionFor(issue)}</span>
+              </div>
+              <button type="button" disabled={pending} onClick={() => fixIssue(issue)} className="mt-3 h-8 rounded-md border border-white/10 px-3 font-body text-xs text-text-secondary hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50">Fix</button>
             </div>
-          ))}
+            );
+          })}
           {healthIssues.length === 0 && <p className="font-body text-sm text-text-secondary">No R2 storage health issues detected.</p>}
         </div>
       </section>
