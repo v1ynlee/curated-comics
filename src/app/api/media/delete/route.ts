@@ -16,9 +16,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser, createSupabaseServerClient } from '@/lib/db/supabase-server';
-import { deleteR2Prefix } from '@/lib/storage/r2-client';
-import { getMediaAssetPrefix } from '@/lib/storage/media-paths';
-import type { AssetType } from '@/types/media';
+import { deleteAsset } from '@/services/studio/media-operations';
+import { fetchMediaWorkspaceData } from '@/app/studio/media/actions';
 
 export async function DELETE(request: NextRequest) {
   // 1. Validate auth session
@@ -38,47 +37,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 2. Verify asset exists in media_assets
     const supabase = await createSupabaseServerClient();
-    const { data: asset, error: fetchError } = await supabase
-      .from('media_assets')
-      .select('id, slug, asset_type, content_hash, r2_base_path, r2_path')
-      .eq('id', assetId)
-      .single();
+    const data = await fetchMediaWorkspaceData();
+    const asset = data.assets.find((item) => item.id === assetId);
 
-    if (fetchError || !asset) {
+    if (!asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
 
-    // 3. Delete R2 objects by prefix
-    // Use r2_base_path if available, otherwise construct from asset_type/slug/content_hash
-    const prefix = asset.r2_path || asset.r2_base_path || getMediaAssetPrefix(asset.asset_type as AssetType, asset.slug, asset.content_hash);
+    const result = await deleteAsset(supabase, asset);
+    if (!result.success) return NextResponse.json({ error: result.error, report: result.report }, { status: 409 });
 
-    try {
-      await deleteR2Prefix(prefix);
-    } catch (r2Error) {
-      console.error('[media/delete] R2 deletion failed:', r2Error);
-      return NextResponse.json(
-        { error: 'Storage service unavailable' },
-        { status: 503 },
-      );
-    }
-
-    // 4. Remove media_assets row from Supabase
-    const { error: deleteError } = await supabase
-      .from('media_assets')
-      .delete()
-      .eq('id', assetId);
-
-    if (deleteError) {
-      console.error('[media/delete] Supabase deletion failed:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to remove asset record' },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, report: result.report });
   } catch (err) {
     console.error('[media/delete] Unexpected error:', err);
     return NextResponse.json(
