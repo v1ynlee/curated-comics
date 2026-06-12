@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, BookOpen, CheckCircle2, Clock, FileText, History, Search, Sparkles, UserRound, X } from 'lucide-react';
+import { Bot, BookOpen, CheckCircle2, Clock, FileText, History, Image as ImageIcon, Search, Sparkles, UserRound, X } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { cn } from '@/lib/utils/cn';
 import type { ActivityFilter, ActivityItem } from '@/app/studio/activity/types';
@@ -12,6 +12,7 @@ const FILTERS: Array<{ value: ActivityFilter; label: string }> = [
   { value: 'titles', label: 'Titles' },
   { value: 'articles', label: 'Articles' },
   { value: 'creators', label: 'Creators' },
+  { value: 'media', label: 'Media' },
   { value: 'curation', label: 'Curation' },
   { value: 'ai', label: 'AI' },
   { value: 'drafts', label: 'Drafts' },
@@ -44,6 +45,7 @@ function activityIcon(item: ActivityItem) {
   if (item.entityType === 'ai') return Bot;
   if (item.entityType === 'article') return FileText;
   if (item.entityType === 'creator') return UserRound;
+  if (item.entityType === 'media' || item.entityType === 'gallery' || item.entityType === 'character') return ImageIcon;
   if (item.entityType === 'title') return BookOpen;
   if (item.entityType === 'draft') return Clock;
   if (item.entityType === 'qa') return CheckCircle2;
