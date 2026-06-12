@@ -1,6 +1,8 @@
 import { sanitizePathSegment } from './r2-paths';
+import type { AssetType } from '@/types/media';
 
 export type MediaPathFormat = 'avif' | 'webp' | 'gif' | 'jpg' | 'jpeg' | 'png' | 'mp4' | 'webm' | 'mp3' | 'wav';
+export type UploadDestination = 'title-cover' | 'gallery' | 'character' | 'creator-author' | 'creator-artist' | 'creator-studio' | 'article-cover' | 'temporary';
 
 interface MediaPathInput {
   slug: string;
@@ -25,6 +27,32 @@ function objectPrefix(folder: string, slug: string, contentHash: string) {
   return `${storageRoot()}/${folder}/${sanitizePathSegment(slug)}/${sanitizePathSegment(contentHash)}/`;
 }
 
+const DESTINATIONS: Record<UploadDestination, { label: string; folder: string; assetType: AssetType; entityType: string }> = {
+  'title-cover': { label: 'Title Cover', folder: 'titles/covers', assetType: 'title_cover', entityType: 'title' },
+  gallery: { label: 'Gallery', folder: 'titles/gallery', assetType: 'gallery_image', entityType: 'gallery' },
+  character: { label: 'Character', folder: 'characters', assetType: 'character_image', entityType: 'character' },
+  'creator-author': { label: 'Creator Author', folder: 'creators/authors', assetType: 'creator_image', entityType: 'creator' },
+  'creator-artist': { label: 'Creator Artist', folder: 'creators/artists', assetType: 'creator_image', entityType: 'creator' },
+  'creator-studio': { label: 'Creator Studio', folder: 'creators/studios', assetType: 'creator_image', entityType: 'creator' },
+  'article-cover': { label: 'Article Cover', folder: 'articles/covers', assetType: 'article_cover', entityType: 'article' },
+  temporary: { label: 'Temporary Asset', folder: 'temp', assetType: 'thumbnail', entityType: 'media' },
+};
+
+export const UPLOAD_DESTINATION_OPTIONS = (Object.keys(DESTINATIONS) as UploadDestination[]).map((value) => ({ value, label: DESTINATIONS[value].label }));
+
+export function getUploadDestination(destination: UploadDestination) {
+  return DESTINATIONS[destination] ?? DESTINATIONS.temporary;
+}
+
+export function getUploadFolder(destination: UploadDestination) {
+  return `${storageRoot()}/${getUploadDestination(destination).folder}/`;
+}
+
+export function getUploadMetadata(destination: UploadDestination) {
+  const metadata = getUploadDestination(destination);
+  return { ...metadata, destination, folder: getUploadFolder(destination), provider: 'r2' as const };
+}
+
 export function getMediaRootPrefix() {
   return `${storageRoot()}/`;
 }
@@ -38,7 +66,7 @@ export function getGalleryImagePath(input: MediaPathInput) {
 }
 
 export function getCharacterImagePath(input: MediaPathInput) {
-  return objectPath('titles/characters', input);
+  return objectPath('characters', input);
 }
 
 export function getAuthorImagePath(input: MediaPathInput) {
@@ -75,10 +103,18 @@ export function getMediaAssetPath(assetType: string, input: MediaPathInput) {
   return getTempAssetPath(input);
 }
 
+export function getUploadAssetPath(destination: UploadDestination, input: MediaPathInput) {
+  return objectPath(getUploadDestination(destination).folder, input);
+}
+
+export function getUploadAssetPrefix(destination: UploadDestination, slug: string, contentHash: string) {
+  return objectPrefix(getUploadDestination(destination).folder, slug, contentHash);
+}
+
 export function getMediaAssetPrefix(assetType: string, slug: string, contentHash: string) {
   if (assetType === 'cover' || assetType === 'title_cover') return objectPrefix('titles/covers', slug, contentHash);
   if (assetType === 'gallery_image') return objectPrefix('titles/gallery', slug, contentHash);
-  if (assetType === 'character_image') return objectPrefix('titles/characters', slug, contentHash);
+  if (assetType === 'character_image') return objectPrefix('characters', slug, contentHash);
   if (assetType === 'article-image' || assetType === 'article_cover') return objectPrefix('articles/covers', slug, contentHash);
   if (assetType === 'creator_image') return objectPrefix('creators', slug, contentHash);
   if (assetType === 'thumbnail') return objectPrefix('temp', slug, contentHash);
