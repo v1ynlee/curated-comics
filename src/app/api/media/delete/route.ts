@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser, createSupabaseServerClient } from '@/lib/db/supabase-server';
 import { deleteR2Prefix } from '@/lib/storage/r2-client';
-import { buildR2Prefix } from '@/lib/storage/r2-paths';
+import { getMediaAssetPrefix } from '@/lib/storage/media-paths';
 import type { AssetType } from '@/types/media';
 
 export async function DELETE(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { data: asset, error: fetchError } = await supabase
       .from('media_assets')
-      .select('id, slug, asset_type, content_hash, r2_base_path')
+      .select('id, slug, asset_type, content_hash, r2_base_path, r2_path')
       .eq('id', assetId)
       .single();
 
@@ -52,9 +52,7 @@ export async function DELETE(request: NextRequest) {
 
     // 3. Delete R2 objects by prefix
     // Use r2_base_path if available, otherwise construct from asset_type/slug/content_hash
-    const prefix = asset.r2_base_path
-      ? asset.r2_base_path
-      : buildR2Prefix(asset.asset_type as AssetType, asset.slug, asset.content_hash);
+    const prefix = asset.r2_path || asset.r2_base_path || getMediaAssetPrefix(asset.asset_type as AssetType, asset.slug, asset.content_hash);
 
     try {
       await deleteR2Prefix(prefix);
