@@ -7,6 +7,7 @@
 // ============================================================
 
 import { supabase } from '../api';
+import { resolveMediaUrl, resolveMediaVariants } from '@/lib/storage/media-resolver';
 import type { AssetType, MediaAsset, MediaVariant } from '@/types/media';
 
 // ── Row shape returned by Supabase ────────────────────────────
@@ -42,7 +43,7 @@ function mapMediaAsset(row: MediaAssetRow): MediaAsset {
     mimeType: row.mime_type,
     dominantColor: row.dominant_color,
     blurDataUri: row.blur_data_uri,
-    variants: row.variants ?? [],
+    variants: resolveMediaVariants(row.variants, 'title-cover'),
     r2BasePath: row.r2_base_path,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -141,11 +142,11 @@ export async function getImageUrl(
         (v) => v.width === width && v.format === format,
       );
       if (match) {
-        return match.url;
+        return resolveMediaUrl(match.url, 'title-cover');
       }
     }
   }
 
   // Fall back to local filesystem path
-  return `/images/covers/${slug}-${width}w.${format}`;
+  return resolveMediaUrl(`/platforms/titles/covers/${slug}-${width}w.${format}`, 'title-cover');
 }
