@@ -1,6 +1,6 @@
 import type { ActivityEntityType, ActivityEventType } from '@/services/studio/activity-log';
 
-export type ActivityFilter = 'all' | 'titles' | 'articles' | 'creators' | 'curation' | 'ai' | 'drafts' | 'qa';
+export type ActivityFilter = 'all' | 'titles' | 'articles' | 'creators' | 'media' | 'curation' | 'ai' | 'drafts' | 'qa';
 
 export interface ActivityItem {
   id: string;
