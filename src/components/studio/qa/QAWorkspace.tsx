@@ -55,6 +55,7 @@ const ACTION_LABELS: Record<QAQuickAction, string> = {
   'archive-creator': 'Archive Creator',
   'open-narrative-editor': 'Open Narrative Editor',
   'auto-remove-broken-references': 'Auto Remove Broken References',
+  'open-media': 'Open Media',
 };
 
 const BULK_LABELS: Record<QABulkAction, string> = {
