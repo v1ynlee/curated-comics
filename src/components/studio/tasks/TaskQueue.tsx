@@ -22,6 +22,7 @@ const FILTERS: Array<{ value: StudioTaskFilter; label: string }> = [
   { value: 'titles', label: 'Titles' },
   { value: 'articles', label: 'Articles' },
   { value: 'creators', label: 'Creators' },
+  { value: 'media', label: 'Media' },
   { value: 'narratives', label: 'Narratives' },
   { value: 'ai', label: 'AI' },
   { value: 'qa', label: 'QA' },
@@ -94,6 +95,7 @@ function filterMatches(task: StudioTask, filter: StudioTaskFilter) {
   if (filter === 'titles') return task.entityType === 'title';
   if (filter === 'articles') return task.entityType === 'article';
   if (filter === 'creators') return task.entityType === 'creator';
+  if (filter === 'media') return task.entityType === 'media';
   if (filter === 'narratives') return task.entityType === 'narrative';
   if (filter === 'ai') return task.source === 'ai';
   if (filter === 'qa') return task.source === 'qa';
