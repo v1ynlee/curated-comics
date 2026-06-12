@@ -3,15 +3,15 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { archiveMediaAsset, archiveMediaAssets, deleteMediaAsset } from '@/app/studio/media/actions';
+import { archiveMediaAsset, archiveMediaAssets, deleteMediaAsset, deleteMediaAssets } from '@/app/studio/media/actions';
 import type { AssetType } from '@/types/media';
-import type { StudioMediaAsset } from '@/app/studio/media/types';
+import type { MediaHealthIssue, StudioMediaAsset } from '@/app/studio/media/types';
 import { AssetBulkActions } from './AssetBulkActions';
 import { AssetCard } from './AssetCard';
 import { AssetFilters, type AssetUsageFilter } from './AssetFilters';
 import { AssetPreviewDrawer } from './AssetPreviewDrawer';
 
-export function AssetGrid({ assets }: { assets: StudioMediaAsset[] }) {
+export function AssetGrid({ assets, healthIssues }: { assets: StudioMediaAsset[]; healthIssues: MediaHealthIssue[] }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [type, setType] = useState<AssetType | 'all'>('all');
@@ -69,13 +69,24 @@ export function AssetGrid({ assets }: { assets: StudioMediaAsset[] }) {
     });
   }
 
+  function runBulkDelete() {
+    startTransition(async () => {
+      const result = await deleteMediaAssets(selectedIds);
+      if (result.success) {
+        toast.success(`${selectedIds.length} asset${selectedIds.length === 1 ? '' : 's'} deleted.`);
+        setSelectedIds([]);
+        router.refresh();
+      } else toast.error(result.error);
+    });
+  }
+
   const selectedAssets = assets.filter((asset) => selectedIds.includes(asset.id));
 
   return (
     <div className={pending ? 'opacity-80' : undefined}>
       <div className="space-y-3">
         <AssetFilters query={query} type={type} usage={usage} types={types} onQueryChange={setQuery} onTypeChange={setType} onUsageChange={setUsage} />
-        <AssetBulkActions selectedAssets={selectedAssets} onArchiveSelected={runBulkArchive} onClear={() => setSelectedIds([])} />
+        <AssetBulkActions selectedAssets={selectedAssets} onArchiveSelected={runBulkArchive} onDeleteSelected={runBulkDelete} onClear={() => setSelectedIds([])} />
       </div>
       {filtered.length === 0 ? (
         <div className="mt-5 rounded-lg border border-white/10 bg-bg-surface/35 px-4 py-12 text-center font-body text-sm text-text-secondary">No assets match this view.</div>
@@ -86,7 +97,7 @@ export function AssetGrid({ assets }: { assets: StudioMediaAsset[] }) {
           ))}
         </div>
       )}
-      {preview && <AssetPreviewDrawer asset={preview} onClose={() => setPreview(null)} />}
+      {preview && <AssetPreviewDrawer asset={preview} healthIssues={healthIssues} onClose={() => setPreview(null)} />}
     </div>
   );
 }
